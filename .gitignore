@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# 환경변수 (클라우드 Supabase 키 등 민감 정보)
+.env
+.env.*
+!.env.example
+
+# Supabase 로컬 시크릿 (클라우드 방식이어도 발급될 수 있음)
+supabase/.branches
+supabase/.temp
+
 # 빌드 분석 산출물 (rollup-plugin-visualizer)
 stats.html
 
