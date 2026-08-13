@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# 빌드 분석 산출물 (rollup-plugin-visualizer)
+stats.html
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
