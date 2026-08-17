@@ -1,0 +1,52 @@
+[
+  {
+    "id": "plan-a-5g",
+    "name": "5G 데이터 무제한 플러스",
+    "dataGB": -1,
+    "voiceMin": -1,
+    "smsCount": -1,
+    "price": 95000,
+    "ott": ["넷플릭스", "유튜브 프리미엄"],
+    "tags": ["무제한", "OTT", "프리미엄"]
+  },
+  {
+    "id": "plan-a-5g-lite",
+    "name": "5G 데이터 30GB",
+    "dataGB": 30,
+    "voiceMin": 300,
+    "smsCount": 500,
+    "price": 45000,
+    "ott": ["왓챠"],
+    "tags": ["중간 사용량", "OTT"]
+  },
+  {
+    "id": "plan-a-4g-basic",
+    "name": "4G 데이터 10GB",
+    "dataGB": 10,
+    "voiceMin": 100,
+    "smsCount": 100,
+    "price": 29000,
+    "ott": [],
+    "tags": ["가성비", "기본"]
+  },
+  {
+    "id": "plan-a-4g-mini",
+    "name": "4G 데이터 5GB",
+    "dataGB": 5,
+    "voiceMin": 50,
+    "smsCount": 50,
+    "price": 19000,
+    "ott": [],
+    "tags": ["저렴", "최소 사용"]
+  },
+  {
+    "id": "plan-b-5g-50gb",
+    "name": "5G 데이터 50GB",
+    "dataGB": 50,
+    "voiceMin": -1,
+    "smsCount": -1,
+    "price": 69000,
+    "ott": ["디즈니 플러스"],
+    "tags": ["대용량", "OTT"]
+  }
+]
