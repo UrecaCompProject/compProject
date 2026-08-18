@@ -1,4 +1,4 @@
-// AI 상담용 프롬프트 템플릿.
+/* // AI 상담용 프롬프트 템플릿.
 import { PromptTemplate } from 'npm:@langchain/core/prompts';
 
 // 요금제 추천용 시스템 프롬프트.
@@ -42,3 +42,4 @@ export const usageAnalysisPrompt = PromptTemplate.fromTemplate(`
 
 {{"summary": "string", "averageDataUsageGB": number, "averageVoiceUsageMin": number, "averageSmsUsageCount": number, "overUsageLikely": boolean, "savingPotentialWon": number}}
 `);
+ */
