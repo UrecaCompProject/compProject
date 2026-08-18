@@ -12,6 +12,31 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 색상 토큰 */
+  /* Foreground */
+  --color-fg-primary: #1f2229;
+  --color-fg-secondary: #3b414c;
+  --color-fg-tertiary: #69717e;
+  --color-fg-disabled: #a8afb9;
+  /* Border */
+  --color-border: #dbe6f3;
+  --color-border-strong: #b9cfea;
+  --color-border-brand: #9dc0ec;
+  /* Background */
+  --color-bg: #ffffff;
+  --color-bg-canvas: #f4f7fc;
+  --color-bg-subtle: #eaf1fa;
+  --color-bg-pressed: #dbe7f6;
+  /* Brand */
+  --color-brand-primary: #4c8fe1;
+  --color-brand-secondary: #3572c2;
+  --color-brand-light: #a9c9f0;
+  --color-brand-soft: #eef3f9;
+  /* Sementic */
+  --color-error: #c9455f;
+  --color-warning: #8c6415;
+  --color-success: #287a5b;
 }
 
 html {
