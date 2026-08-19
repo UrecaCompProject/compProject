@@ -96,7 +96,9 @@ function buildUserQueryText(input: ConsultInput): string {
     `예산 ${input.budget ?? 0}원`,
     `연령대 ${input.ageGroup ?? '미제공'}`,
     `우선순위 ${input.priority || 'budget'}`,
-    input.ott && input.ott.length > 0 ? `OTT ${input.ott.join(', ')}` : 'OTT 없음',
+    input.ott && input.ott.length > 0
+      ? `OTT ${input.ott.join(', ')}`
+      : 'OTT 없음',
   ];
   return parts.join('. ');
 }
@@ -140,13 +142,18 @@ function filterRecommendPlans(
   } else if (isDataPriority) {
     // data: 1) 예산 내 데이터 충족 → 2) 데이터 충족(예산 무관) → 3) 70% 데이터
     candidates = plans.filter(
-      (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
+      (p) =>
+        ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
     );
     if (candidates.length < 3) {
-      candidates = plans.filter((p) => ageOk(p) && parseDataGB(p.data) >= dataUsage);
+      candidates = plans.filter(
+        (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage,
+      );
     }
     if (candidates.length < 3) {
-      candidates = plans.filter((p) => ageOk(p) && parseDataGB(p.data) >= dataUsage * 0.7);
+      candidates = plans.filter(
+        (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage * 0.7,
+      );
     }
     if (candidates.length < 3) {
       candidates = plans.filter((p) => ageOk(p) && p.monthly_fee <= budget);
@@ -171,12 +178,18 @@ function filterRecommendPlans(
     }
     if (candidates.length < 3) {
       candidates = plans.filter(
-        (p) => ageOk(p) && p.monthly_fee <= budget && parseDataGB(p.data) >= dataUsage,
+        (p) =>
+          ageOk(p) &&
+          p.monthly_fee <= budget &&
+          parseDataGB(p.data) >= dataUsage,
       );
     }
     if (candidates.length < 3) {
       candidates = plans.filter(
-        (p) => ageOk(p) && p.monthly_fee <= budget && parseDataGB(p.data) >= dataUsage * 0.7,
+        (p) =>
+          ageOk(p) &&
+          p.monthly_fee <= budget &&
+          parseDataGB(p.data) >= dataUsage * 0.7,
       );
     }
     if (candidates.length < 3) {
@@ -196,14 +209,16 @@ function filterRecommendPlans(
       const isExact = dataValue >= dataUsage;
       const ottBonus = hasOttMatch(ott, p.benefits) ? 1_000 : 0;
       const planEmb = planEmbeddings?.get(String(p.id));
-      const vectorBonus = userEmbedding && planEmb
-        ? cosineSimilarity(userEmbedding, planEmb) * VECTOR_WEIGHT
-        : 0;
+      const vectorBonus =
+        userEmbedding && planEmb
+          ? cosineSimilarity(userEmbedding, planEmb) * VECTOR_WEIGHT
+          : 0;
 
       let score: number;
       if (isMaxDataPriority) {
         // max_data: 예산 내에서 데이터 용량이 큰 순, 용량 같으면 가격 낮은 순
-        score = -dataValue * DATA_WEIGHT + p.monthly_fee - vectorBonus - ottBonus;
+        score =
+          -dataValue * DATA_WEIGHT + p.monthly_fee - vectorBonus - ottBonus;
       } else if (isDataPriority) {
         // data: 데이터를 충족하는 요금제 중 가장 저렴한 순
         score = p.monthly_fee - vectorBonus - ottBonus;
@@ -212,7 +227,11 @@ function filterRecommendPlans(
         const EXACT_BONUS = 2_000 * DATA_WEIGHT;
         score = isExact
           ? p.monthly_fee - vectorBonus - ottBonus
-          : EXACT_BONUS - dataValue * DATA_WEIGHT + p.monthly_fee - vectorBonus - ottBonus;
+          : EXACT_BONUS -
+            dataValue * DATA_WEIGHT +
+            p.monthly_fee -
+            vectorBonus -
+            ottBonus;
       }
       return { plan: p, score };
     })
@@ -270,16 +289,14 @@ function sanitizeRecommendations(
 
 // 추천 전 반드시 필요한 정보가 누락되었는지 확인.
 function buildInfoRequest(input: ConsultInput): string | undefined {
-  if (!input.ageGroup || input.ageGroup === '미제공') {
-    return '고객님의 나이를 알려주시면 더 나은 요금제를 추천해드릴 수 있습니다.';
-  }
-  if (input.dataUsage === undefined) {
-    return '월 데이터 사용량을 알려주시면 맞는 요금제를 추천해드릴 수 있습니다.';
-  }
-  if (input.budget === undefined) {
-    return '예산을 알려주시면 맞는 요금제를 추천해드릴 수 있습니다.';
-  }
-  return undefined;
+  const critical: string[] = [];
+  if (!input.ageGroup || input.ageGroup === '미제공') critical.push('나이');
+  if (input.dataUsage === undefined) critical.push('월 데이터 사용량');
+
+  if (critical.length === 0) return undefined;
+
+  if (input.budget === undefined) critical.push('예산');
+  return `상세 정보를 입력하시면 더 자세한 맞춤 요금제를 추천해드릴 수 있어요! (${critical.join(', ')}을 알려주세요)`;
 }
 
 // 상위 3개 요금제 추천 및 사유, 절감액 산출.
@@ -289,10 +306,18 @@ export async function recommendPlan(
   const missingInfo = buildInfoRequest(input);
   if (missingInfo) return { recommendations: [], notice: missingInfo };
 
-  const [plans, planEmbeds] = await Promise.all([loadPlans(), loadPlanEmbeddings()]);
+  const [plans, planEmbeds] = await Promise.all([
+    loadPlans(),
+    loadPlanEmbeddings(),
+  ]);
   const planEmbeddingMap = new Map(planEmbeds.map((e) => [e.id, e.embedding]));
   const userEmbedding = await getEmbedding(buildUserQueryText(input));
-  const candidates = filterRecommendPlans(plans, input, userEmbedding, planEmbeddingMap);
+  const candidates = filterRecommendPlans(
+    plans,
+    input,
+    userEmbedding,
+    planEmbeddingMap,
+  );
   const planText = candidates
     .map(
       (p) =>
@@ -308,12 +333,15 @@ export async function recommendPlan(
   let parsed: RecommendOutput;
   if (notice) {
     parsed = {
-      recommendations: candidates.slice(0, 3).map((p) => ({
-        planId: String(p.id),
-        planName: p.name,
-        reason: '',
-        savingAmount: 0,
-      } as RecommendedPlan)),
+      recommendations: candidates.slice(0, 3).map(
+        (p) =>
+          ({
+            planId: String(p.id),
+            planName: p.name,
+            reason: '',
+            savingAmount: 0,
+          }) as RecommendedPlan,
+      ),
     };
   } else {
     const raw = await recommendChain.invoke({
@@ -347,24 +375,36 @@ export async function generateQuickReplies(
   const isMaxData = input.priority === 'max_data';
   const hasOtt = (input.ott || []).length > 0;
 
-  // 필수 정보가 누락된 경우: 정보를 유도하는 Quick Reply
+  // 필수 정보가 누락된 경우: 누락된 항목별로 Quick Reply를 섞어서 최대 3개 반환
+  const missingGroups: string[][] = [];
   if (!input.ageGroup || input.ageGroup === '미제공') {
-    qs.push('20대 직장인이에요');
-    qs.push('청소년이에요');
-    qs.push('어르신이에요');
-    return qs.slice(0, 3);
+    missingGroups.push(['20대 직장인이에요', '청소년이에요', '어르신이에요']);
   }
   if (input.dataUsage === undefined) {
-    qs.push('월 10GB 사용해요');
-    qs.push('월 30GB 사용해요');
-    qs.push('데이터를 많이 써요');
-    return qs.slice(0, 3);
+    missingGroups.push([
+      '월 10GB 사용해요',
+      '월 30GB 사용해요',
+      '데이터를 많이 써요',
+    ]);
   }
   if (input.budget === undefined) {
-    qs.push('예산 5만원이에요');
-    qs.push('예산 7만원이에요');
-    qs.push('가장 저렴한 걸로 보여줘');
-    return qs.slice(0, 3);
+    missingGroups.push([
+      '예산 5만원이에요',
+      '예산 7만원이에요',
+      '가장 저렴한 걸로 보여줘',
+    ]);
+  }
+  if (missingGroups.length > 0) {
+    let idx = 0;
+    while (qs.length < 3 && missingGroups.some((g) => idx < g.length)) {
+      for (const group of missingGroups) {
+        if (idx < group.length && qs.length < 3) {
+          qs.push(group[idx]);
+        }
+      }
+      idx++;
+    }
+    return qs;
   }
 
   // 조건을 충족하지 못해 fallback 안내가 나온 경우
@@ -400,6 +440,10 @@ function buildNotice(
   plans: Awaited<ReturnType<typeof loadPlans>>,
   input: ConsultInput,
 ): string | undefined {
+  if (input.budget === undefined) {
+    return '예산을 알려주시면 더 정확한 맞춤 요금제를 추천해드릴 수 있어요! 현재 상태로 요금제를 추천해드릴까요?';
+  }
+
   const dataUsage = input.dataUsage ?? 0;
   const budget = input.budget ?? Number.MAX_SAFE_INTEGER;
   const ageGroup = input.ageGroup;
@@ -417,9 +461,10 @@ function buildNotice(
       (p) => ageMatches(ageGroup, p.target_age) && p.monthly_fee <= budget,
     );
     if (budgetPlans.length > 0) {
-      const countSuffix = budgetPlans.length < 3
-        ? ` (예산 내 후보가 ${budgetPlans.length}개뿐입니다.)`
-        : '';
+      const countSuffix =
+        budgetPlans.length < 3
+          ? ` (예산 내 후보가 ${budgetPlans.length}개뿐입니다.)`
+          : '';
       return `예산 ${budget.toLocaleString()}원 내에서 데이터가 많은 순으로 추천해드리겠습니다.${countSuffix}`;
     }
     return `예산 ${budget.toLocaleString()}원 내의 요금제가 없어 연령대 기준으로 추천해드리겠습니다.`;
@@ -427,7 +472,8 @@ function buildNotice(
 
   if (input.priority === 'data') {
     const hasExactAny = plans.some(
-      (p) => ageMatches(ageGroup, p.target_age) && parseDataGB(p.data) >= dataUsage,
+      (p) =>
+        ageMatches(ageGroup, p.target_age) && parseDataGB(p.data) >= dataUsage,
     );
     if (hasExactAny) {
       const overBudgetSuffix = !hasExactInBudget
