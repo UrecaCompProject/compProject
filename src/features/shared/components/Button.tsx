@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'outline';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,19 +10,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-brand-primary text-white hover:bg-brand-secondary disabled:bg-brand-light',
+    'bg-brand-promo-primary text-white hover:bg-brand-promo-secondary disabled:bg-surface-pressed disabled:text-brand-light',
   secondary:
-    'bg-bg-subtle text-fg-primary hover:bg-bg-pressed disabled:text-fg-disabled',
+    'bg-surface-page text-brand-primary hover:bg-bg-pressed disabled:text-fg-disabled',
   outline:
-    'border border-border-strong text-fg-primary hover:bg-bg-subtle disabled:text-fg-disabled disabled:border-border',
-  ghost:
-    'text-fg-primary hover:bg-bg-subtle disabled:text-fg-disabled',
+    'border border-brand-promo-primary text-brand-promo-secondary hover:bg-bg-subtle disabled:text-fg-disabled disabled:border-border',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-sm',
-  md: 'h-10 px-4 text-base',
-  lg: 'h-12 px-6 text-lg',
+  sm: 'h-8 px-3 text-caption',
+  md: 'h-[45px] px-5 py-3 text-body rounded-[8px]',
+  lg: 'h-[50px] px-6 py-4 text-body-lg rounded-[12px]',
 };
 
 export default function Button({
@@ -33,7 +31,7 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex box-border items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     />
   );
