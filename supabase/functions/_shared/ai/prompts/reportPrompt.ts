@@ -1,4 +1,5 @@
-import { PromptTemplate } from 'npm:@langchain/core/prompts';
+// @ts-nocheck
+
 
 /**
  * 관련 기능
@@ -8,7 +9,7 @@ import { PromptTemplate } from 'npm:@langchain/core/prompts';
  * - 상담 종료 후 대화 내용을 요약
  * - 추천 결과와 핵심 사용자 조건을 구조화
  */
-export const reportPrompt = PromptTemplate.fromTemplate(`
+export const reportPromptText = `
 [ROLE]
 
 당신은 AI 통신 요금제 상담 내용을 요약하는 역할을 담당합니다.
@@ -60,4 +61,6 @@ export const reportPrompt = PromptTemplate.fromTemplate(`
 }}
 
 JSON 이외의 추가 설명 문장은 포함하지 마세요.
-`);
+`;
+
+

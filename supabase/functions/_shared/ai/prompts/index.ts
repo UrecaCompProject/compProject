@@ -1,5 +1,5 @@
-export { recommendPrompt } from './recommendPrompt';
-export { usageAnalysisPrompt } from './usageAnalysisPrompt';
-export { comparePrompt } from './comparePrompt';
-export { quickReplyPrompt } from './quickReplyPrompt';
-export { reportPrompt } from './reportPrompt';
+export { systemPromptText } from './systemPrompt.ts';
+export { recommendPromptText } from './recommendPrompt.ts';
+export { usageAnalysisPromptText } from './usageAnalysisPrompt.ts';
+export { comparePromptText } from './comparePrompt.ts';
+export { reportPromptText } from './reportPrompt.ts';

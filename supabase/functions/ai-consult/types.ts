@@ -5,7 +5,10 @@ export interface ConsultRequest {
   voiceUsage?: number;
   smsUsage?: number;
   budget?: number;
+  ageGroup?: string;
   ott?: string[];
+  priority?: 'budget' | 'data' | 'max_data';
+  userMessage?: string;
 }
 
 export interface ConsultResponse {
@@ -15,4 +18,6 @@ export interface ConsultResponse {
     reason: string;
     savingAmount: number;
   }[];
+  notice?: string;
+  quickReplies?: string[];
 }

@@ -1,4 +1,5 @@
-import { PromptTemplate } from 'npm:@langchain/core/prompts';
+// @ts-nocheck
+
 
 /**
  * 관련 기능
@@ -9,7 +10,7 @@ import { PromptTemplate } from 'npm:@langchain/core/prompts';
  * - 최근 3개월 사용량과 현재 요금제를 비교
  * - 사용 패턴과 초과 사용 가능성을 분석
  */
-export const usageAnalysisPrompt = PromptTemplate.fromTemplate(`
+export const usageAnalysisPromptText = `
 [ROLE]
 
 당신은 사용자의 통신 사용 패턴을 분석하는 AI 상담원입니다.
@@ -73,4 +74,6 @@ export const usageAnalysisPrompt = PromptTemplate.fromTemplate(`
 }}
 
 JSON 이외의 추가 설명 문장은 포함하지 마세요.
-`);
+`;
+
+

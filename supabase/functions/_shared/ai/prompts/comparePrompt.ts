@@ -1,4 +1,5 @@
-import { PromptTemplate } from 'npm:@langchain/core/prompts';
+// @ts-nocheck
+
 
 /**
  * 관련 기능
@@ -14,7 +15,7 @@ import { PromptTemplate } from 'npm:@langchain/core/prompts';
  * - tethering
  * - notes
  */
-export const comparePrompt = PromptTemplate.fromTemplate(`
+export const comparePromptText = `
 [ROLE]
 
 당신은 통신 요금제를 비교하는 AI 상담원입니다.
@@ -80,4 +81,6 @@ export const comparePrompt = PromptTemplate.fromTemplate(`
 }}
 
 JSON 이외의 추가 설명 문장은 포함하지 마세요.
-`);
+`;
+
+

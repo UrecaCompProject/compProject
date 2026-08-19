@@ -5,7 +5,9 @@ export interface ConsultInput {
   voiceUsage?: number;
   smsUsage?: number;
   budget?: number;
+  ageGroup?: string;
   ott?: string[];
+  priority?: 'budget' | 'data' | 'max_data';
 }
 
 export interface RecommendedPlan {
@@ -17,6 +19,8 @@ export interface RecommendedPlan {
 
 export interface RecommendOutput {
   recommendations: RecommendedPlan[];
+  notice?: string;
+  quickReplies?: string[];
 }
 
 export interface UsageAnalysisOutput {
@@ -26,4 +30,35 @@ export interface UsageAnalysisOutput {
   averageSmsUsageCount: number;
   overUsageLikely: boolean;
   savingPotentialWon: number;
+}
+
+export interface CompareInput {
+  userProfile: string;
+  usageAnalysis: string;
+  planA: string;
+  planB: string;
+}
+
+export interface CompareOutput {
+  summary: string;
+  planAAdvantage: string;
+  planBAdvantage: string;
+  recommendedPlanId: string;
+  reason: string;
+}
+
+export interface ReportInput {
+  conversation: string;
+  currentPlan: string;
+  recommendationResult: string;
+}
+
+export interface ReportOutput {
+  summary: string;
+  usageType: string;
+  currentPlan: string;
+  recommendedPlans: string[];
+  recommendationReason: string;
+  monthlySavingAmount: number;
+  importantConditions: string[];
 }

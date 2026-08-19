@@ -1,4 +1,5 @@
-import { PromptTemplate } from 'npm:@langchain/core/prompts';
+// @ts-nocheck
+
 
 /**
  * AI 상담 공통 시스템 프롬프트
@@ -15,7 +16,7 @@ import { PromptTemplate } from 'npm:@langchain/core/prompts';
  * - AI 상담 전체에서 공통으로 지켜야 하는 역할과 규칙 정의
  * - 개별 Prompt에서 반복되는 공통 제약사항 관리
  */
-export const systemPrompt = PromptTemplate.fromTemplate(`
+export const systemPromptText = `
 [ROLE]
 
 당신은 사용자의 통신 이용 패턴과 요구 조건을 바탕으로
@@ -60,6 +61,10 @@ export const systemPrompt = PromptTemplate.fromTemplate(`
 12. 현재 요청에 필요한 범위에서만 답변하고
     관련 없는 정보를 임의로 추가하지 마세요.
 
+13. 모든 답변은 한국어로만 작성하세요.
+    영어, 중국어, 일본어 등 다른 언어를 섞어 사용하지 마세요.
+    자연스럽고 이해하기 쉬운 한국어로 답변하세요.
+
 
 [RESPONSE POLICY]
 
@@ -77,4 +82,6 @@ export const systemPrompt = PromptTemplate.fromTemplate(`
 
 - 데이터 없음:
   존재하지 않는 정보를 생성하여 응답하지 않습니다.
-`);
+`;
+
+
