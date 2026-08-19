@@ -1,9 +1,15 @@
+@import 'pretendard/dist/web/variable/pretendardvariable.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'Segoe UI', sans-serif;
+  font-family:
+    'Pretendard Variable',
+    'Pretendard',
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #111827;
