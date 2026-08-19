@@ -94,6 +94,13 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    settings: {
+      'import-x/resolver': {
+        typescript: {
+          project: './tsconfig.app.json',
+        },
+      },
+    },
     rules: {
       ...importOrderRules,
       ...unusedImportsRules,
