@@ -71,6 +71,9 @@ export default defineConfig([
     'stats.html',
     'supabase/.branches',
     'supabase/.temp',
+    // Supabase Edge Functions(Deno 런타임)는 npm: specifier 를 사용하므로
+    // import-x resolver 가 해석할 수 없어 별도 런타임 검사로 분리한다.
+    'supabase/functions/**/*.{ts,tsx}',
     // flat config 파일 자신을 자기 자신으로 린트하면 순환적 경고가 발생하므로 제외
     'eslint.config.js',
   ]),
@@ -93,6 +96,13 @@ export default defineConfig([
     },
     languageOptions: {
       globals: globals.browser,
+    },
+    settings: {
+      'import-x/resolver': {
+        typescript: {
+          project: './tsconfig.app.json',
+        },
+      },
     },
     rules: {
       ...importOrderRules,
