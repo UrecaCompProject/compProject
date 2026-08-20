@@ -11,10 +11,11 @@ export const ollama = new ChatOllama({
   model,
   temperature: 0.1,
   format: 'json',
-  numPredict: 200,
+  numPredict: 150,
 });
 
-const embedModel = Deno.env.get('OLLAMA_EMBED_MODEL') || 'nomic-embed-text:latest';
+const embedModel =
+  Deno.env.get('OLLAMA_EMBED_MODEL') || 'nomic-embed-text:latest';
 
 // Ollama /api/embed를 이용해 텍스트 임베딩을 가져옵니다.
 export async function getEmbedding(text: string): Promise<number[]> {
@@ -29,6 +30,6 @@ export async function getEmbedding(text: string): Promise<number[]> {
   if (!res.ok) {
     throw new Error(`Ollama embed failed: ${res.status} ${await res.text()}`);
   }
-  const json = await res.json() as { embeddings: number[][] };
+  const json = (await res.json()) as { embeddings: number[][] };
   return json.embeddings[0];
 }

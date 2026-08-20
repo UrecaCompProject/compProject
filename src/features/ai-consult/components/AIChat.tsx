@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function AIChat({ sentence }: { sentence: string }) {
   return (
     <div className="flex gap-2">

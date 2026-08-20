@@ -6,7 +6,10 @@ export interface ConsultInput {
   voiceUsage?: number;
   smsUsage?: number;
   budget?: number;
+  ageGroup?: string;
   ott?: string[];
+  priority?: 'budget' | 'data' | 'max_data';
+  userMessage?: string;
 }
 
 export interface RecommendedPlan {
@@ -18,6 +21,8 @@ export interface RecommendedPlan {
 
 export interface ConsultResponse {
   recommendations: RecommendedPlan[];
+  notice?: string;
+  quickReplies?: string[];
 }
 
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.

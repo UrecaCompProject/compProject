@@ -89,6 +89,19 @@ function hasOttMatch(ott: string[] | undefined, benefits: string[]): boolean {
   return ott.some((o) => benefitText.includes(o.toLowerCase()));
 }
 
+const OTT_SERVICES = [
+  '넷플릭스',
+  '유튜브 프리미엄',
+  '디즈니+',
+  '왓챠',
+  '웨이브',
+  '쿠팡플레이',
+  '티빙',
+  '애플 뮤직',
+  '멜론',
+  '스포티파이',
+];
+
 // 사용자 입력을 임베딩할 수 있도록 한 문단으로 조합.
 function buildUserQueryText(input: ConsultInput): string {
   const parts = [
@@ -201,6 +214,16 @@ function filterRecommendPlans(
     candidates = plans.filter((p) => ageOk(p));
   }
 
+  // OTT 선호가 명시된 경우 다른 조건에 맞지 않아도 OTT 포함 요금제를 후보에 추가
+  if (ott && ott.length > 0) {
+    const seen = new Set(candidates.map((p) => p.id));
+    for (const p of plans) {
+      if (ageOk(p) && hasOttMatch(ott, p.benefits) && !seen.has(p.id)) {
+        candidates.push(p);
+      }
+    }
+  }
+
   const DATA_WEIGHT = 1_000_000;
   const VECTOR_WEIGHT = 100;
   return candidates
@@ -266,8 +289,17 @@ function sanitizeRecommendations(
         currentPlanFee > 0 ? Math.max(0, currentPlanFee - plan.monthly_fee) : 0;
 
       let reason = `데이터 ${plan.data}, 월 ${plan.monthly_fee.toLocaleString()}원`;
-      if (hasOttMatch(input.ott, plan.benefits)) {
-        reason += `이며 ${input.ott?.join(', ') || ''} 혜택이 포함돼 있어요.`;
+      const matchedOtt = Array.from(
+        new Set(
+          plan.benefits.flatMap((benefit) =>
+            OTT_SERVICES.filter((service) =>
+              benefit.toLowerCase().includes(service.toLowerCase()),
+            ),
+          ),
+        ),
+      );
+      if (matchedOtt.length > 0) {
+        reason += `이며 ${matchedOtt.join(', ')} 혜택이 포함돼 있어요.`;
       } else {
         reason += '이에요.';
       }
@@ -287,6 +319,13 @@ function sanitizeRecommendations(
   return { recommendations: valid.slice(0, 3) };
 }
 
+function josa(word: string, tail: string): string {
+  const last = word[word.length - 1];
+  const code = last.charCodeAt(0) - 0xac00;
+  const hasJong = code % 28 !== 0;
+  return word + (hasJong ? tail[0] : tail[2]);
+}
+
 // 추천 전 반드시 필요한 정보가 누락되었는지 확인.
 function buildInfoRequest(input: ConsultInput): string | undefined {
   const critical: string[] = [];
@@ -296,7 +335,8 @@ function buildInfoRequest(input: ConsultInput): string | undefined {
   if (critical.length === 0) return undefined;
 
   if (input.budget === undefined) critical.push('예산');
-  return `상세 정보를 입력하시면 더 자세한 맞춤 요금제를 추천해드릴 수 있어요! (${critical.join(', ')}을 알려주세요)`;
+  const requestText = critical.map((w) => josa(w, '을/를')).join(', ');
+  return `상세 정보를 입력하시면 더 자세한 맞춤 요금제를 추천해드릴 수 있어요! (${requestText} 알려주세요)`;
 }
 
 // 상위 3개 요금제 추천 및 사유, 절감액 산출.
@@ -306,58 +346,21 @@ export async function recommendPlan(
   const missingInfo = buildInfoRequest(input);
   if (missingInfo) return { recommendations: [], notice: missingInfo };
 
-  const [plans, planEmbeds] = await Promise.all([
-    loadPlans(),
-    loadPlanEmbeddings(),
-  ]);
-  const planEmbeddingMap = new Map(planEmbeds.map((e) => [e.id, e.embedding]));
-  const userEmbedding = await getEmbedding(buildUserQueryText(input));
-  const candidates = filterRecommendPlans(
-    plans,
-    input,
-    userEmbedding,
-    planEmbeddingMap,
-  );
-  const planText = candidates
-    .map(
-      (p) =>
-        `- ${p.id}: ${p.name} (구분: ${p.category}, 대상: ${p.target_age}, 데이터: ${p.data}, 월 ${p.monthly_fee}원, 통화: ${p.voice}, 문자: ${p.message}, 혜택: ${p.benefits?.join(',') || '없음'})`,
-    )
-    .join('\n');
-
-  const currentPlanFee = findCurrentPlanFee(plans, input.currentPlan);
+  const plans = await loadPlans();
+  const candidates = filterRecommendPlans(plans, input);
   const notice = buildNotice(plans, input);
 
-  // 예산 내에서 요청한 데이터를 충족하는 요금제가 없으면 LLM을 거치지 않고
-  // 코드가 정렬한 후보 상위 3개를 직접 반환해 환각을 막습니다.
-  let parsed: RecommendOutput;
-  if (notice) {
-    parsed = {
-      recommendations: candidates.slice(0, 3).map(
-        (p) =>
-          ({
-            planId: String(p.id),
-            planName: p.name,
-            reason: '',
-            savingAmount: 0,
-          }) as RecommendedPlan,
-      ),
-    };
-  } else {
-    const raw = await recommendChain.invoke({
-      currentPlan: input.currentPlan || '미등록',
-      currentPlanFee,
-      dataUsage: input.dataUsage ?? 0,
-      voiceUsage: input.voiceUsage ?? 0,
-      smsUsage: input.smsUsage ?? 0,
-      budget: input.budget ?? 0,
-      ageGroup: input.ageGroup ?? '미제공',
-      ott: input.ott?.join(', ') || '없음',
-      priority: input.priority || 'budget',
-      plans: planText,
-    });
-    parsed = safeJsonParse<RecommendOutput>(raw);
-  }
+  const parsed: RecommendOutput = {
+    recommendations: candidates.slice(0, 3).map(
+      (p) =>
+        ({
+          planId: String(p.id),
+          planName: p.name,
+          reason: '',
+          savingAmount: 0,
+        }) as RecommendedPlan,
+    ),
+  };
 
   const sanitized = sanitizeRecommendations(parsed, plans, input);
   return { ...sanitized, notice };
@@ -482,6 +485,18 @@ function buildNotice(
       return `예산 ${budget.toLocaleString()}원 내에서는 데이터 ${dataUsage}GB 이상인 요금제가 없어, 데이터를 충족하는 요금제 중 가장 저렴한 순으로 추천해드리겠습니다.${overBudgetSuffix}`;
     }
     return `데이터 ${dataUsage}GB 이상 요금제가 없어 가장 비슷한 용량의 요금제부터 추천해드리겠습니다.`;
+  }
+  if (
+    input.ott &&
+    input.ott.length > 0 &&
+    plans.some(
+      (p) =>
+        ageMatches(ageGroup, p.target_age) &&
+        parseDataGB(p.data) >= dataUsage &&
+        hasOttMatch(input.ott, p.benefits),
+    )
+  ) {
+    return '예산 범위 내에는 없지만 OTT 혜택이 포함된 요금제를 함께 보여드릴게요.';
   }
   return '예산 범위 내에 데이터 용량을 만족하는 요금제가 없어 가격 내에서 가장 용량이 큰 순서대로 추천해드리겠습니다.';
 }
