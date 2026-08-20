@@ -1,0 +1,47 @@
+import type { HTMLAttributes } from 'react';
+
+type BorderVariant = 'none' | 'default' | 'primary';
+type GapVariant = 'none' | '8' | '12' | '16';
+type RadiusVariant = 'none' | '8' | '16' | 'rounded';
+
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  border?: BorderVariant;
+  radius?: RadiusVariant;
+  gap?: GapVariant;
+  shadow?: boolean;
+}
+
+const CardBorderVariants: Record<BorderVariant, string> = {
+  none: '',
+  default: 'border border-border',
+  primary: 'border border-border-brand',
+};
+
+const CardGapVariants: Record<GapVariant, string> = {
+  none: '',
+  8: 'gap-2',
+  12: 'gap-3',
+  16: 'gap-4',
+};
+
+export default function Card({
+  border = 'none',
+  radius = '16',
+  gap = '12',
+  shadow = false,
+  className = '',
+  ...props
+}: CardProps) {
+  return (
+    <div
+      className={`p-4 rounded-2xl flex flex-col bg-white 
+        ${border ? CardBorderVariants[border] : ''}
+        ${radius ? `rounded-[${radius}px]` : ''}
+        ${gap ? CardGapVariants[gap] : ''}
+        ${shadow ? 'shadow-shadow' : ''}
+        ${className}
+    `}
+      {...props}
+    />
+  );
+}
