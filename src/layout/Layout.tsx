@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from 'react-router';
-import { Header, Navbar } from '@/layout';
+import { Header, Navbar, Footer } from '@/layout';
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -8,12 +8,13 @@ export default function Layout() {
 
   return (
     <div
-      className={`min-h-screen ${isChatPage ? 'bg-surface-pressed' : 'bg-surface-page'}`}
+      className={`relative min-h-screen ${isChatPage ? 'bg-surface-pressed' : 'bg-surface-page'}`}
     >
       <Header />
-      <div className="px-4">
-        <Outlet />
-      </div>
+
+      <Outlet />
+      <Footer />
+
       {!notShowNavbar && <Navbar />}
     </div>
   );
