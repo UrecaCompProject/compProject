@@ -34,3 +34,9 @@ stats.html
 *.njsproj
 *.sln
 *.sw?
+
+# AI 상담 테스트 스크립트
+tmp_*.cjs
+
+# 임베딩 결과물
+supabase/functions/_shared/data/plan_embeddings.json

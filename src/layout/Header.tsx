@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronLeft, Bell, Menu } from 'lucide-react';
 
 export default function Header() {
