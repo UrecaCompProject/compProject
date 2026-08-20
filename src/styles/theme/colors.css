@@ -1,0 +1,53 @@
+@theme {
+  /* Brand */
+  --color-brand-primary: #4c8fe1;
+  --color-brand-secondary: #3572c2;
+  --color-brand-light: #a9c9f0;
+  --color-brand-soft: #eef3f9;
+
+  /* BrandPromo */
+  --color-brand-promo-primary: #3d74f0;
+  --color-brand-promo-secondary: #2952c4;
+  --color-brand-promo-light: #9cbffa;
+  --color-brand-promo-soft: #e8f0fe;
+
+  /* Border */
+  --color-border: #dbe6f3;
+  --color-border-strong: #b9cfea;
+  --color-border-brand: #9dc0ec;
+
+  /* Surface */
+  --color-surface-page: #f5f7fc;
+  --color-surface-card: #ffffff;
+  --color-surface-pressed: #ebf0fa;
+
+  /* DataTrend */
+  --color-data-trend-past: #c2ceea;
+  --color-data-trend-highlight: #d6567f;
+
+  /* Compare */
+  --color-compare-neutral: #6b7495;
+  --color-compare-selected: #5b7fe0;
+  --color-compare-trend-selected-cta: #5b7fe0;
+
+  /* Reward */
+  --color-reward-active: #3d74f0;
+  --color-reward-earned: #d6567f;
+  --color-reward-locked: #dee5f5;
+
+  /* Foreground */
+  --color-fg-primary: #1f2229;
+  --color-fg-secondary: #3b414c;
+  --color-fg-tertiary: #69717e;
+  --color-fg-disabled: #a8afb9;
+
+  /* Accent */
+  --color-accent-soft: #fbdce8;
+  --color-accent-primary: #d6567f;
+  --color-accent-strong: #9c3a5b;
+
+  /* Semantic */
+  --color-semantic-error: #c9455f;
+  --color-semantic-warning: #8c6415;
+  --color-semantic-success: #287a5b;
+}

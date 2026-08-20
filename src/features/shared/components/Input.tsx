@@ -11,14 +11,14 @@ interface InputProps extends Omit<
   size?: InputSize;
 }
 
-const variantClasses: Record<InputVariant, string> = {
+const InputColorVariants: Record<InputVariant, string> = {
   default:
     'border border-border focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled',
   error:
     'border border-error focus:border-error disabled:bg-surface-pressed disabled:text-fg-disabled',
 };
 
-const sizeClasses: Record<InputSize, string> = {
+const InputSizeVariants: Record<InputSize, string> = {
   sm: 'h-8 px-3 text-caption rounded-[6px]',
   md: 'h-[45px] px-4 text-body rounded-full',
   lg: 'h-[50px] px-5 text-body-lg rounded-[12px]',
@@ -32,7 +32,13 @@ export default function Input({
 }: InputProps) {
   return (
     <input
-      className={`w-full box-border bg-bg text-fg-primary outline-none transition-colors placeholder:text-fg-disabled disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`w-full box-border bg-bg text-fg-primary outline-none transition-colors 
+        placeholder:text-fg-disabled 
+        disabled:cursor-not-allowed 
+        ${InputColorVariants[variant]} 
+        ${InputSizeVariants[size]} 
+        ${className}
+        `}
       {...props}
     />
   );

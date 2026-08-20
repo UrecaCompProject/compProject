@@ -1,60 +1,9 @@
 @import 'pretendard/dist/web/variable/pretendardvariable.css';
 @import 'tailwindcss';
 
-@theme {
-  --font-sans: 'Pretendard Variable', 'Pretendard', sans-serif;
-
-  /* 색상 토큰 */
-  /* Foreground */
-  --color-fg-primary: #1f2229;
-  --color-fg-secondary: #3b414c;
-  --color-fg-tertiary: #69717e;
-  --color-fg-disabled: #a8afb9;
-  /* Border */
-  --color-border: #dbe6f3;
-  --color-border-strong: #b9cfea;
-  --color-border-brand: #9dc0ec;
-  /* Background */
-  --color-bg: #ffffff;
-  --color-bg-canvas: #f4f7fc;
-  --color-bg-subtle: #eaf1fa;
-  --color-bg-pressed: #dbe7f6;
-  /* Brand */
-  --color-brand-primary: #4c8fe1;
-  --color-brand-secondary: #3572c2;
-  --color-brand-light: #a9c9f0;
-  --color-brand-soft: #eef3f9;
-  /* BrandPromo */
-  --color-brand-promo-primary: #3d74f0;
-  --color-brand-promo-secondary: #2952c4;
-  --color-brand-promo-light: #9cbffa;
-  --color-brand-promo-soft: #e8f0fe;
-  /* Surface */
-  --color-surface-page: #f5f7fc;
-  --color-surface-card: #ffffff;
-  --color-surface-pressed: #ebf0fa;
-  /* Sementic */
-  --color-error: #c9455f;
-  --color-warning: #8c6415;
-  --color-success: #287a5b;
-
-  /* 타이포그래피 토큰 */
-  --text-title: 18px;
-  --text-title--line-height: 24px;
-  --text-title--font-weight: 700;
-
-  --text-body-lg: 16px;
-  --text-body-lg--line-height: 150%;
-  --text-body-lg--font-weight: 500;
-
-  --text-body: 15px;
-  --text-body--line-height: 150%;
-  --text-body--font-weight: 500;
-
-  --text-caption: 14px;
-  --text-caption--line-height: 150%;
-  --text-caption--font-weight: 500;
-}
+@import './styles/theme/colors.css';
+@import './styles/theme/typography.css';
+@import './styles/theme/shadow.css';
 
 :root {
   font-family:
