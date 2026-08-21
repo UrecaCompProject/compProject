@@ -30,7 +30,7 @@ let cachedEmbeddings: PlanEmbedding[] | null = null;
 
 export async function loadPlans(): Promise<Plan[]> {
   if (cachedPlans) return cachedPlans;
-  cachedPlans = plansJson as Plan[];
+  cachedPlans = (plansJson as { plans: Plan[] }).plans;
   return cachedPlans;
 }
 
