@@ -142,7 +142,6 @@ CREATE TABLE public.saved_plans (
   CONSTRAINT uq_saved_plans_user_plan UNIQUE (user_id, plan_id)
 );
 
-CREATE INDEX idx_saved_plans_user_id ON public.saved_plans(user_id);
 CREATE INDEX idx_saved_plans_plan_id ON public.saved_plans(plan_id);
 
 ALTER TABLE public.saved_plans ENABLE ROW LEVEL SECURITY;
@@ -155,7 +154,7 @@ CREATE POLICY "saved_plans_owner"
 
 CREATE TABLE public.current_plans (
   user_id     UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
-  plan_id     BIGINT NOT NULL REFERENCES public.plans(id),
+  plan_id     BIGINT NOT NULL REFERENCES public.plans(id) ON DELETE RESTRICT,
   started_at  DATE NOT NULL DEFAULT now(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -184,7 +183,7 @@ CREATE TABLE public.consultation_reports (
   summary_title       TEXT,
   summary             TEXT NOT NULL,
   analysis_input      JSONB DEFAULT '{}'::jsonb,
-  current_plan_id     BIGINT REFERENCES public.plans(id),
+  current_plan_id     BIGINT REFERENCES public.plans(id) ON DELETE SET NULL,
   total_savings       INT NOT NULL DEFAULT 0,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -209,14 +208,13 @@ CREATE TRIGGER trg_consultation_reports_updated
 CREATE TABLE public.report_recommendations (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   report_id     UUID NOT NULL REFERENCES public.consultation_reports(id) ON DELETE CASCADE,
-  plan_id       BIGINT NOT NULL REFERENCES public.plans(id),
+  plan_id       BIGINT NOT NULL REFERENCES public.plans(id) ON DELETE CASCADE,
   reason        TEXT,
   savings       INT NOT NULL DEFAULT 0,
   sort_order    INT NOT NULL DEFAULT 0,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_report_recommendations_report_id ON public.report_recommendations(report_id);
 CREATE INDEX idx_report_recommendations_plan_id ON public.report_recommendations(plan_id);
 CREATE INDEX idx_report_recommendations_report_sort ON public.report_recommendations(report_id, sort_order);
 
@@ -225,6 +223,22 @@ CREATE POLICY "report_recommendations_via_report"
   ON public.report_recommendations FOR SELECT
   TO authenticated
   USING (
+    EXISTS (
+      SELECT 1 FROM public.consultation_reports r
+      WHERE r.id = report_id AND r.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "report_recommendations_owner"
+  ON public.report_recommendations FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.consultation_reports r
+      WHERE r.id = report_id AND r.user_id = auth.uid()
+    )
+  )
+  WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.consultation_reports r
       WHERE r.id = report_id AND r.user_id = auth.uid()
@@ -273,10 +287,11 @@ CREATE TABLE public.usage_monthly (
   sms_used_count  INT NOT NULL DEFAULT 0,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-  CONSTRAINT uq_usage_monthly_user_month UNIQUE (user_id, year_month)
+  CONSTRAINT uq_usage_monthly_user_month UNIQUE (user_id, year_month),
+  CONSTRAINT chk_usage_monthly_year_month CHECK (year_month ~ '^\\d{4}-(0[1-9]|1[0-2])$')
 );
 
-CREATE INDEX idx_usage_monthly_user_id ON public.usage_monthly(user_id);
+
 
 ALTER TABLE public.usage_monthly ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "usage_monthly_owner"
@@ -329,7 +344,7 @@ CREATE TABLE public.attendances (
   CONSTRAINT uq_attendances_user_date UNIQUE (user_id, date)
 );
 
-CREATE INDEX idx_attendances_user_id ON public.attendances(user_id);
+
 
 ALTER TABLE public.attendances ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "attendances_owner"
@@ -390,7 +405,6 @@ CREATE TABLE public.user_badges (
   CONSTRAINT uq_user_badges_user_badge UNIQUE (user_id, badge_id)
 );
 
-CREATE INDEX idx_user_badges_user_id ON public.user_badges(user_id);
 CREATE INDEX idx_user_badges_badge_id ON public.user_badges(badge_id);
 
 ALTER TABLE public.user_badges ENABLE ROW LEVEL SECURITY;
@@ -415,7 +429,7 @@ CREATE TABLE public.missions (
   description       TEXT,
   condition_type    TEXT NOT NULL,
   condition_value   INT NOT NULL DEFAULT 0,
-  reward_badge_id   UUID NOT NULL REFERENCES public.badges(id),
+  reward_badge_id   UUID NOT NULL REFERENCES public.badges(id) ON DELETE RESTRICT,
   reward_amount     INT NOT NULL DEFAULT 0,
   is_active         BOOLEAN NOT NULL DEFAULT true,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -557,7 +571,7 @@ CREATE TRIGGER trg_products_updated
 CREATE TABLE public.exchanges (
   id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id       UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  product_id    UUID NOT NULL REFERENCES public.products(id),
+  product_id    UUID NOT NULL REFERENCES public.products(id) ON DELETE RESTRICT,
   used_badges   INT NOT NULL DEFAULT 0,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -579,9 +593,9 @@ CREATE POLICY "exchanges_owner"
 
 CREATE TABLE public.coupons (
   id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  exchange_id     UUID REFERENCES public.exchanges(id),
+  exchange_id     UUID REFERENCES public.exchanges(id) ON DELETE SET NULL,
   user_id         UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  product_id      UUID NOT NULL REFERENCES public.products(id),
+  product_id      UUID NOT NULL REFERENCES public.products(id) ON DELETE RESTRICT,
   barcode         TEXT NOT NULL,
   encrypted_code  TEXT NOT NULL,
   status          TEXT NOT NULL DEFAULT 'unused',
@@ -645,8 +659,8 @@ CREATE POLICY "coupon_usages_via_coupon"
 CREATE TABLE public.subscription_applications (
   id                  UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id             UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  target_plan_id      BIGINT NOT NULL REFERENCES public.plans(id),
-  current_plan_id     BIGINT REFERENCES public.plans(id),
+  target_plan_id      BIGINT NOT NULL REFERENCES public.plans(id) ON DELETE RESTRICT,
+  current_plan_id     BIGINT REFERENCES public.plans(id) ON DELETE SET NULL,
   status              TEXT NOT NULL DEFAULT 'submitted',
   identity_verified   BOOLEAN NOT NULL DEFAULT false,
   terms_agreed_at     TIMESTAMPTZ,
@@ -658,7 +672,6 @@ CREATE TABLE public.subscription_applications (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_subscription_applications_user_id ON public.subscription_applications(user_id);
 CREATE INDEX idx_subscription_applications_target_plan_id ON public.subscription_applications(target_plan_id);
 CREATE INDEX idx_subscription_applications_current_plan_id ON public.subscription_applications(current_plan_id);
 CREATE INDEX idx_subscription_applications_user_requested ON public.subscription_applications(user_id, requested_at DESC);
@@ -747,7 +760,6 @@ CREATE TABLE public.notifications (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
 CREATE INDEX idx_notifications_user_sent ON public.notifications(user_id, sent_at DESC);
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
