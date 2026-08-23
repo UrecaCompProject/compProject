@@ -1,5 +1,14 @@
 import { supabase } from './supabaseClient';
 
+export type ChatMode =
+  | 'menu'
+  | 'recommend'
+  | 'compare'
+  | 'subscribe'
+  | 'general'
+  | 'game'
+  | 'attendance';
+
 export interface ConsultInput {
   currentPlan?: string;
   dataUsage?: number;
@@ -10,6 +19,7 @@ export interface ConsultInput {
   ott?: string[];
   priority?: 'budget' | 'data' | 'max_data';
   userMessage?: string;
+  mode?: ChatMode;
 }
 
 export interface RecommendedPlan {
@@ -23,6 +33,7 @@ export interface ConsultResponse {
   recommendations: RecommendedPlan[];
   notice?: string;
   quickReplies?: string[];
+  mode?: ChatMode;
 }
 
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.

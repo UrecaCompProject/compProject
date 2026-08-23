@@ -1,10 +1,11 @@
 // @ts-nocheck
-// LangChain 없이 Ollama /api/chat을 직접 호출하는 요금제 추천 로직.
+// LangChain 없이 OpenAI /v1/chat/completions를 직접 호출하는 요금제 추천 로직.
 import { loadPlans } from './data.ts';
 import type { Plan } from './data.ts';
 import { noticePromptText } from './prompts/index.ts';
-import { chatOllama } from './ollamaFetch.ts';
+import { chatOpenAI } from './ollamaFetch.ts';
 import type {
+  ChatMode,
   ConsultInput,
   RecommendOutput,
   RecommendedPlan,
@@ -319,6 +320,105 @@ function buildNotice(plans: Plan[], input: ConsultInput): string | undefined {
   return '예산 범위 내에 데이터 용량을 만족하는 요금제가 없어 가격 내에서 가장 용량이 큰 순서대로 추천해드리겠습니다.';
 }
 
+// 사용자 메시지와 이전 모드에서 다음 단계 모드를 결정합니다.
+function resolveNextMode(input: ConsultInput): ChatMode {
+  const t = (input.userMessage || '').trim();
+  const current = input.mode ?? 'menu';
+
+  if (/^메뉴|^처음|^처음으로|^돌아가기|^안녕|^시작/.test(t)) return 'menu';
+  if (/요금제\s*추천|추천받기|맞춤\s*추천/.test(t)) return 'recommend';
+  if (/요금제\s*비교|비교\s*하기|비교해/.test(t)) return 'compare';
+  if (/요금제\s*가입|가입\s*하기|신청/.test(t)) return 'subscribe';
+  if (/상담|문의|질문|도움/.test(t)) return 'general';
+  if (/게임|미니게임/.test(t)) return 'game';
+  if (/출석|출첵|출석체크/.test(t)) return 'attendance';
+
+  // 이전 모드를 유지하며, 메뉴라면 추천으로 전진시킵니다.
+  if (current === 'menu' && t.length > 0) return 'recommend';
+  return current;
+}
+
+// 초기 메뉴 응답.
+function buildMenuResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice: '원하시는 메뉴를 선택해 주세요.',
+    quickReplies: [
+      '요금제 추천받기',
+      '요금제 비교하기',
+      '요금제 가입하기',
+      '게임 하기',
+      '출석체크',
+      '기타 상담',
+    ],
+    mode: 'menu',
+  };
+}
+
+// 요금제 비교 기초 응답.
+function buildCompareResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '비교할 요금제를 알려주세요. 현재 요금제와 추천 요금제를 비교하거나, 두 요금제 이름을 직접 입력할 수 있어요.',
+    quickReplies: [
+      '현재 요금제와 비교',
+      '요금제 이름 직접 입력',
+      '메뉴로 돌아가기',
+    ],
+    mode: 'compare',
+  };
+}
+
+// 요금제 가입 기초 응답.
+function buildSubscribeResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '가입하실 요금제나 가입 경로를 알려주세요. 온라인 가입과 영업점 방문 중 편한 방법을 안내해드릴게요.',
+    quickReplies: ['온라인 가입', '영업점 방문', '메뉴로 돌아가기'],
+    mode: 'subscribe',
+  };
+}
+
+// 일반 상담 기초 응답.
+function buildGeneralResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '어떤 도움이 필요하신가요? 요금제, 가입, 혜택 등 궁금한 내용을 자유롭게 입력해 주세요.',
+    quickReplies: [
+      '요금제 추천받기',
+      '요금제 비교하기',
+      '요금제 가입하기',
+      '메뉴로 돌아가기',
+    ],
+    mode: 'general',
+  };
+}
+
+// 게임 기초 응답.
+function buildGameResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '게임을 시작할까요? 간단한 이벤트 게임이나 레크리에이션을 즐길 수 있어요.',
+    quickReplies: ['게임 설명 보기', '게임 시작', '메뉴로 돌아가기'],
+    mode: 'game',
+  };
+}
+
+// 출석체크 기초 응답.
+function buildAttendanceResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '출석체크를 도와드릴게요. 오늘 출석을 등록하거나 누적 현황을 확인할 수 있어요.',
+    quickReplies: ['오늘 출석 등록', '출석 현황 보기', '메뉴로 돌아가기'],
+    mode: 'attendance',
+  };
+}
+
 function fillTemplate(
   template: string,
   values: Record<string, string>,
@@ -337,8 +437,17 @@ function formatPlanForPrompt(p: Plan): string {
 export async function recommendPlan(
   input: ConsultInput,
 ): Promise<RecommendOutput> {
+  const mode = resolveNextMode(input);
+  if (mode === 'menu') return buildMenuResponse();
+  if (mode === 'compare') return buildCompareResponse();
+  if (mode === 'subscribe') return buildSubscribeResponse();
+  if (mode === 'general') return buildGeneralResponse();
+  if (mode === 'game') return buildGameResponse();
+  if (mode === 'attendance') return buildAttendanceResponse();
+
   const missingInfo = buildInfoRequest(input);
-  if (missingInfo) return { recommendations: [], notice: missingInfo };
+  if (missingInfo)
+    return { recommendations: [], notice: missingInfo, mode: 'recommend' };
 
   const plans = await loadPlans();
   const candidates = filterRecommendPlans(plans, input);
@@ -357,10 +466,10 @@ export async function recommendPlan(
   };
   const sanitized = sanitizeRecommendations(codeRecs, plans, input);
 
-  if (!notice) return sanitized;
+  if (!notice) return { ...sanitized, mode: 'recommend' };
 
   if (candidates.length === 0) {
-    return { recommendations: [], notice };
+    return { recommendations: [], notice, mode: 'recommend' };
   }
 
   const plansText = candidates.slice(0, 3).map(formatPlanForPrompt).join('\n');
@@ -376,20 +485,54 @@ export async function recommendPlan(
   });
 
   try {
-    const raw = await chatOllama(noticeSystemPrompt, filledPrompt);
+    const raw = await chatOpenAI(noticeSystemPrompt, filledPrompt);
     const parsed = safeJsonParse<{ notice: string }>(raw);
     const finalNotice = parsed?.notice?.trim() || notice;
-    return { ...sanitized, notice: finalNotice };
+    return { ...sanitized, notice: finalNotice, mode: 'recommend' };
   } catch {
-    return { ...sanitized, notice };
+    return { ...sanitized, notice, mode: 'recommend' };
   }
 }
 
-// 추천 결과에 맞는 사전 정의된 후속 질문(Quick Reply)을 생성.
+// 모드에 맞는 Quick Reply 목록을 생성합니다.
 export async function generateQuickReplies(
   input: ConsultInput,
   result: RecommendOutput,
 ): Promise<string[]> {
+  const mode = result.mode ?? input.mode ?? 'menu';
+
+  if (mode === 'menu') {
+    return [
+      '요금제 추천받기',
+      '요금제 비교하기',
+      '요금제 가입하기',
+      '게임 하기',
+      '출석체크',
+      '기타 상담',
+    ];
+  }
+  if (mode === 'compare') {
+    return ['현재 요금제와 비교', '요금제 이름 직접 입력', '메뉴로 돌아가기'];
+  }
+  if (mode === 'subscribe') {
+    return ['온라인 가입', '영업점 방문', '메뉴로 돌아가기'];
+  }
+  if (mode === 'general') {
+    return [
+      '요금제 추천받기',
+      '요금제 비교하기',
+      '요금제 가입하기',
+      '메뉴로 돌아가기',
+    ];
+  }
+  if (mode === 'game') {
+    return ['게임 설명 보기', '게임 시작', '메뉴로 돌아가기'];
+  }
+  if (mode === 'attendance') {
+    return ['오늘 출석 등록', '출석 현황 보기', '메뉴로 돌아가기'];
+  }
+
+  // recommend 모드: 기존 추천 후속 질문 로직
   const qs: string[] = [];
   const hasNotice = !!result.notice;
   const isBudget = input.priority === 'budget';

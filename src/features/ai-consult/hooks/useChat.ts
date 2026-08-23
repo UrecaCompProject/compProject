@@ -7,15 +7,29 @@ import type { ConsultInput } from '@/lib/aiConsult';
 import type { ChatMessage } from '../types';
 
 const WELCOME_MESSAGE =
-  '안녕하세요! AI 요금제 도우미 해리에오.🪼\n\n고객님의 평소 사용량과 소비 성향을 분석해서 딱 맞는 최고의 요금제를 맞춤 설계해 드릴게요.\n\n연령대, 월 데이터 사용량, 예산을 알려주시면 추천을 시작합니다.';
+  '안녕하세요! AI 요금제 도우미 해리에요.🪼\n\n아래 메뉴에서 원하는 항목을 선택해 주세요.';
+
+const MENU_QUICK_REPLIES = [
+  '요금제 추천받기',
+  '요금제 비교하기',
+  '요금제 가입하기',
+  '게임 하기',
+  '출석체크',
+  '기타 상담',
+];
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 0, type: 'ai', sentence: WELCOME_MESSAGE },
+    {
+      id: 0,
+      type: 'ai',
+      sentence: WELCOME_MESSAGE,
+      quickReplies: MENU_QUICK_REPLIES,
+    },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [profile, setProfile] = useState<ConsultInput>({});
+  const [profile, setProfile] = useState<ConsultInput>({ mode: 'menu' });
 
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
@@ -33,7 +47,11 @@ export function useChat() {
         trimmed,
         profile,
       );
-      setProfile(nextProfile);
+      const mergedProfile: ConsultInput = {
+        ...nextProfile,
+        mode: response.mode ?? nextProfile.mode,
+      };
+      setProfile(mergedProfile);
       setMessages((prev) => [
         ...prev,
         {
