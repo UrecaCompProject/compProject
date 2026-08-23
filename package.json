@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,api,ollama \"npm run dev:web\" \"npm run dev:api\" \"npm run dev:ollama\"",
+    "dev": "concurrently -n web,api \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "vite",
     "dev:api": "npx supabase functions serve --env-file .env.local --no-verify-jwt",
     "dev:ollama": "node scripts/dev-ollama.js",
+    "deploy:api": "npx supabase functions deploy ai-consult",
+    "deploy:web": "npx vercel --prod",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

@@ -1,4 +1,13 @@
 // AI 상담 관련 타입 정의.
+export type ChatMode =
+  | 'menu'
+  | 'recommend'
+  | 'compare'
+  | 'subscribe'
+  | 'general'
+  | 'game'
+  | 'attendance';
+
 export interface ConsultInput {
   currentPlan?: string;
   dataUsage?: number;
@@ -8,6 +17,8 @@ export interface ConsultInput {
   ageGroup?: string;
   ott?: string[];
   priority?: 'budget' | 'data' | 'max_data';
+  userMessage?: string;
+  mode?: ChatMode;
 }
 
 export interface RecommendedPlan {
@@ -21,6 +32,7 @@ export interface RecommendOutput {
   recommendations: RecommendedPlan[];
   notice?: string;
   quickReplies?: string[];
+  mode?: ChatMode;
 }
 
 export interface UsageAnalysisOutput {
