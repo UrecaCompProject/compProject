@@ -24,6 +24,13 @@ const CardGapVariants: Record<GapVariant, string> = {
   16: 'gap-4',
 };
 
+const CardRadiusVariants: Record<RadiusVariant, string> = {
+  none: '',
+  8: 'rounded-[8px]',
+  16: 'rounded-[16px]',
+  rounded: 'rounded-full',
+};
+
 export default function Card({
   border = 'none',
   radius = '16',
@@ -36,7 +43,7 @@ export default function Card({
     <div
       className={`p-4 rounded-2xl flex flex-col bg-white 
         ${border ? CardBorderVariants[border] : ''}
-        ${radius ? `rounded-[${radius}px]` : ''}
+        ${radius ? CardRadiusVariants[radius] : ''}
         ${gap ? CardGapVariants[gap] : ''}
         ${shadow ? 'shadow-shadow' : ''}
         ${className}

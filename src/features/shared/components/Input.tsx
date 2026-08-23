@@ -13,7 +13,7 @@ interface InputProps extends Omit<
 
 const InputColorVariants: Record<InputVariant, string> = {
   default:
-    'border border-border focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled',
+    'border border-border bg-surface-page focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled',
   error:
     'border border-error focus:border-error disabled:bg-surface-pressed disabled:text-fg-disabled',
 };

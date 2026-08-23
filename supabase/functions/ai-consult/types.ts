@@ -1,4 +1,13 @@
 // ai-consult Edge Function의 공개 요청/응답 타입.
+export type ChatMode =
+  | 'menu'
+  | 'recommend'
+  | 'compare'
+  | 'subscribe'
+  | 'general'
+  | 'game'
+  | 'attendance';
+
 export interface ConsultRequest {
   currentPlan?: string;
   dataUsage?: number;
@@ -9,6 +18,7 @@ export interface ConsultRequest {
   ott?: string[];
   priority?: 'budget' | 'data' | 'max_data';
   userMessage?: string;
+  mode?: ChatMode;
 }
 
 export interface ConsultResponse {
@@ -20,4 +30,5 @@ export interface ConsultResponse {
   }[];
   notice?: string;
   quickReplies?: string[];
+  mode?: ChatMode;
 }
