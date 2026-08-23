@@ -13,7 +13,7 @@ export default function ChatPage() {
     lastMessage?.type === 'ai' ? lastMessage.quickReplies : undefined;
 
   return (
-    <div className="flex h-[calc(100vh-49px-45px-16px)] flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <ChatMessageList messages={messages} isLoading={isLoading} />
       <QuickReplies
         replies={quickReplies}
