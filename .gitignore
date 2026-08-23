@@ -40,3 +40,6 @@ tmp_*.cjs
 
 # 임베딩 결과물
 supabase/functions/_shared/data/plan_embeddings.json
+
+*storybook.log
+storybook-static
