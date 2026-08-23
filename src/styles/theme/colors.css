@@ -46,6 +46,10 @@
   --color-accent-primary: #d6567f;
   --color-accent-strong: #9c3a5b;
 
+  /* Accent Purple */
+  --color-accent-purple-soft: #f1e9fb;
+  --color-accent-purple-primary: #955be0;
+
   /* Semantic */
   --color-semantic-error: #c9455f;
   --color-semantic-warning: #8c6415;
