@@ -3,7 +3,7 @@
 import { loadPlans } from './data.ts';
 import type { Plan } from './data.ts';
 import { noticePromptText } from './prompts/index.ts';
-import { chatOpenAI } from './ollamaFetch.ts';
+import { chatOpenAI } from './openaiFetch.ts';
 import type {
   ChatMode,
   ConsultInput,
