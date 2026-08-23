@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
-type IconBadgeColor = 'brand' | 'purple' | 'pink' | 'disabled';
+type IconBadgeColor = 'brand' | 'accent-purple' | 'pink' | 'disabled';
 
 interface IconBadgeProps {
   /** lucide-react 아이콘 컴포넌트 (예: Phone, MessageCircle) */
@@ -21,7 +21,10 @@ interface IconBadgeProps {
 
 const colorClasses: Record<IconBadgeColor, { bg: string; icon: string }> = {
   brand: { bg: 'bg-brand-promo-soft', icon: 'text-brand-promo-primary' },
-  purple: { bg: 'bg-[#955be0]/20', icon: 'text-[#955be0]' },
+  'accent-purple': {
+    bg: 'bg-accent-purple-soft',
+    icon: 'text-accent-purple-primary',
+  },
   pink: { bg: 'bg-accent-pink-soft', icon: 'text-accent-pink' },
   disabled: { bg: 'bg-surface-page', icon: 'text-fg-disabled' },
 };
