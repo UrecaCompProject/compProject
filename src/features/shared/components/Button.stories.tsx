@@ -25,6 +25,9 @@ export const Outline: Story = {
   args: { variant: 'outline' },
 };
 
+export const Chip: Story = {
+  args: { variant: 'chip' },
+};
 export const Disabled: Story = {
   args: { variant: 'primary', disabled: true },
 };
