@@ -13,10 +13,9 @@ import {
 import { BottomSheet, Button, Card } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
-import PlanSubscriptionSheet from './PlanSubscriptionSheet';
-
 interface RecommendationCardsProps {
   plans: RecommendedPlan[];
+  onPlanSubscribe?: (plan: RecommendedPlan) => void;
 }
 
 const BenefitIcon = ({ label }: { label: string }) => {
@@ -30,11 +29,10 @@ const BenefitIcon = ({ label }: { label: string }) => {
 
 export default function RecommendationCards({
   plans,
+  onPlanSubscribe,
 }: RecommendationCardsProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
-  const [subscribeOpen, setSubscribeOpen] = useState(false);
-  const [subscriptionKey, setSubscriptionKey] = useState(0);
   const [emblaRef] = useEmblaCarousel({
     align: 'start',
     containScroll: 'trimSnaps',
@@ -47,10 +45,10 @@ export default function RecommendationCards({
   };
 
   const handleSubscribe = (plan?: RecommendedPlan) => {
+    if (!onPlanSubscribe) return;
     if (plan) setSelected(plan);
     setOpen(false);
-    setSubscriptionKey((k) => k + 1);
-    setSubscribeOpen(true);
+    onPlanSubscribe(plan ?? selected!);
   };
 
   if (plans.length === 0) return null;
@@ -235,13 +233,6 @@ export default function RecommendationCards({
           </div>
         </BottomSheet>
       )}
-
-      <PlanSubscriptionSheet
-        key={subscriptionKey}
-        open={subscribeOpen}
-        onOpenChange={setSubscribeOpen}
-        plan={selected}
-      />
     </div>
   );
 }

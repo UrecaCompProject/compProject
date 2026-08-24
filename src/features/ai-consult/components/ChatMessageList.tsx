@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 import { SignupChat } from '@/features/auth';
-import type { ConsultInput } from '@/lib/aiConsult';
+import type { ConsultInput, RecommendedPlan } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
 import MyChat from './MyChat';
+import PlanSubscriptionSheet from './PlanSubscriptionSheet';
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
 
@@ -16,6 +17,10 @@ interface ChatMessageListProps {
   onSignupFinished?: () => void;
   onFormSubmit?: (values: Partial<ConsultInput>) => void;
   formDefaults?: Partial<ConsultInput>;
+  onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  subscriptionOpen?: boolean;
+  subscriptionPlan?: RecommendedPlan | null;
+  onSubscriptionClose?: () => void;
 }
 
 export default function ChatMessageList({
@@ -24,6 +29,10 @@ export default function ChatMessageList({
   onSignupFinished,
   onFormSubmit,
   formDefaults,
+  onPlanSubscribe,
+  subscriptionOpen = false,
+  subscriptionPlan,
+  onSubscriptionClose,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -78,7 +87,10 @@ export default function ChatMessageList({
               message.recommendations &&
               message.recommendations.length > 0 &&
               index === lastIndex && (
-                <RecommendationCards plans={message.recommendations} />
+                <RecommendationCards
+                  plans={message.recommendations}
+                  onPlanSubscribe={onPlanSubscribe}
+                />
               )}
 
             {message.type === 'ai' &&
@@ -102,6 +114,12 @@ export default function ChatMessageList({
           </div>
         )}
       </div>
+
+      <PlanSubscriptionSheet
+        open={subscriptionOpen}
+        onOpenChange={onSubscriptionClose ?? (() => {})}
+        plan={subscriptionPlan ?? null}
+      />
     </div>
   );
 }
