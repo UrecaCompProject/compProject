@@ -53,7 +53,7 @@
 
 에피라는 통신사 요금제 가입을 위한 **AI 채팅 상담 서비스**입니다.
 
-사용자가 데이터 사용량 · 통화량 · 예산 · 부가서비스 선호도를 채팅으로 입력하면, 개인 노트북에서 실행되는 **로컬 LLM(Ollama)** 이 이를 분석해 최적의 요금제를 추천 사유·예상 절감액과 함께 제시합니다. 여기에 출석·미션·게임 등 참여형 리워드와 제휴 쿠폰 서비스를 더해, 단순 추천을 넘어 지속적으로 이용하고 싶은 통신 생활 플랫폼을 지향합니다.
+사용자가 데이터 사용량 · 통화량 · 예산 · 부가서비스 선호도를 채팅으로 입력하면, **OpenAI API**가 이를 분석해 최적의 요금제를 추천 사유·예상 절감액과 함께 제시합니다. 여기에 출석·미션·게임 등 참여형 리워드와 제휴 쿠폰 서비스를 더해, 단순 추천을 넘어 지속적으로 이용하고 싶은 통신 생활 플랫폼을 지향합니다.
 
 <br/>
 
@@ -65,7 +65,7 @@
 
 **Our Solution**
 
-대화형 채팅 인터페이스로 사용 패턴을 자연어로 입력하면 로컬 LLM이 분석해 개인화된 추천 사유와 예상 절감액을 제시하고, 게임·출석·미션으로 적립한 배지를 상품·쿠폰으로 교환할 수 있도록 하여 상담 서비스를 통신 생활 플랫폼으로 확장했습니다.
+대화형 채팅 인터페이스로 사용 패턴을 자연어로 입력하면 AI가 분석해 개인화된 추천 사유와 예상 절감액을 제시하고, 게임·출석·미션으로 적립한 배지를 상품·쿠폰으로 교환할 수 있도록 하여 상담 서비스를 통신 생활 플랫폼으로 확장했습니다.
 
 <br/>
 
@@ -235,7 +235,7 @@
   - Supabase PostgREST — 요금제 · 사용자 · 리워드 등 대부분의 CRUD (자동 REST API)
   - Supabase Auth — 회원가입/로그인/세션, JWT 자동 발급
   - Edge Functions (Deno) — 회원 탈퇴, AI 상담(`ai-consult`) 등 service role이 필요한 로직만 서버리스로 처리
-  - Ollama API — Edge Function을 통해 로컬 LLM과 연동, 상담 응답 스트리밍
+  - OpenAI API — Edge Function에서 호출해 요금제 추천·비교·상담 레포트 생성
 
 ### ERD / DB 설계
 
@@ -289,7 +289,7 @@ compProject/
 
 ## 🧩 기술적 핵심 구현 사항
 
-- **로컬 LLM 연동**: Ollama로 구성한 로컬 LLM API를 Supabase Edge Function(`ai-consult`)을 통해 프론트엔드 채팅 화면과 연동해, 인터넷 환경 없이도 상담이 가능하도록 구성
+- **OpenAI API 연동**: Supabase Edge Function(`ai-consult`)에서 OpenAI `/v1/chat/completions`를 호출해 요금제 추천·비교·상담 레포트를 생성
 - **채팅 흐름 내 조건 수집**: 데이터 사용량 · 통화량 · 예산 · 부가서비스 선호도를 채팅 흐름 안에서 입력 · 선택할 수 있는 UI/상태 관리
 - **응답 상태 UI 처리**: LLM 응답 생성 중 / 완료 / 실패 / 재시도 상황에 따른 화면 상태 분기 처리
 - **추천 카드 렌더링**: 분석 결과를 추천 요금제 카드(추천 사유 · 예상 절감액 포함)로 채팅 메시지 내에 렌더링
@@ -322,17 +322,13 @@ compProject/
 
 `.env.example`을 복사해 `.env.local`을 만들고 실제 값을 채워 넣습니다. `.env.local`은 Git에 커밋하지 않습니다.
 
-| 변수                        | 설명                                     | 예시/출처                                   |
-| --------------------------- | ---------------------------------------- | ------------------------------------------- |
-| `VITE_SUPABASE_URL`         | Supabase REST API URL                    | `npx supabase status`의 `API URL`           |
-| `VITE_SUPABASE_ANON_KEY`    | 프론트엔드용 anon key                    | `npx supabase status`의 `anon key`          |
-| `SUPABASE_SERVICE_ROLE_KEY` | 관리용 service role key                  | `npx supabase status`의 `service_role key`  |
-| `VITE_KAKAO_REST_API_KEY`   | 카카오 로그인 REST API 키                | 카카오 디벨로퍼스 콘솔                      |
-| `VITE_KAKAO_REDIRECT_URI`   | 카카오 로그인 Redirect URI               | `http://localhost:5173/auth/kakao/callback` |
-| `OLLAMA_BASE_URL`           | 프론트/개발 스크립트용 Ollama 주소       | `http://localhost:11434`                    |
-| `OLLAMA_TUNNEL_URL`         | Edge Function에서 Ollama를 호출하는 주소 | `http://localhost:11434`                    |
-| `OLLAMA_MODEL`              | 상담에 사용할 모델                       | `qwen2.5:3b-instruct-q4_K_M`                |
-| `OLLAMA_EMBED_MODEL`        | 임베딩 모델 (선택)                       | `nomic-embed-text:latest`                   |
+| 변수                        | 설명                       | 예시/출처                                   |
+| --------------------------- | -------------------------- | ------------------------------------------- |
+| `VITE_SUPABASE_URL`         | Supabase REST API URL      | `npx supabase status`의 `API URL`           |
+| `VITE_SUPABASE_ANON_KEY`    | 프론트엔드용 anon key      | `npx supabase status`의 `anon key`          |
+| `SUPABASE_SERVICE_ROLE_KEY` | 관리용 service role key    | `npx supabase status`의 `service_role key`  |
+| `VITE_KAKAO_REST_API_KEY`   | 카카오 로그인 REST API 키  | 카카오 디벨로퍼스 콘솔                      |
+| `VITE_KAKAO_REDIRECT_URI`   | 카카오 로그인 Redirect URI | `http://localhost:5173/auth/kakao/callback` |
 
 > 카카오 로그인을 사용하려면 카카오 디벨로퍼스 콘솔의 **Redirect URI**에 `VITE_KAKAO_REDIRECT_URI` 값을 동일하게 등록해야 합니다.
 
