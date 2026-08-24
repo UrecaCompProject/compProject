@@ -12,6 +12,7 @@ export default function ChatPage() {
     setInput,
     isLoading,
     handleSend,
+    handleSignupFinished,
     handleFormSubmit,
     profile,
   } = useChat();
@@ -25,6 +26,7 @@ export default function ChatPage() {
       <ChatMessageList
         messages={messages}
         isLoading={isLoading}
+        onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
       />

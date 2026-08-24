@@ -11,6 +11,7 @@ const WELCOME_MESSAGE =
   '안녕하세요! AI 요금제 도우미 해리에요.\n\n아래 메뉴에서 원하는 항목을 선택해 주세요.';
 
 const MENU_QUICK_REPLIES = [
+  '회원 가입하기',
   '요금제 추천받기',
   '요금제 비교하기',
   '요금제 가입하기',
@@ -44,6 +45,18 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<ConsultInput>({ mode: 'menu' });
 
+  const handleSignupFinished = () => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'ai',
+        sentence: '다른 도움이 필요하시면 아래에서 선택해주세요.',
+        quickReplies: MENU_QUICK_REPLIES,
+      },
+    ]);
+  };
+
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -53,6 +66,12 @@ export function useChat() {
       { id: Date.now(), type: 'user', sentence: trimmed },
     ]);
     setInput('');
+
+    if (trimmed === '온라인 가입') {
+      setMessages((prev) => [...prev, { id: Date.now() + 1, type: 'signup' }]);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -88,6 +107,7 @@ export function useChat() {
       setIsLoading(false);
     }
   };
+
 
   const handleFormSubmit = async (values: Partial<ConsultInput>) => {
     if (isLoading) return;
@@ -140,13 +160,16 @@ export function useChat() {
     }
   };
 
+
   return {
     messages,
     input,
     setInput,
     isLoading,
     handleSend,
+    handleSignupFinished,
     handleFormSubmit,
     profile,
+
   };
 }
