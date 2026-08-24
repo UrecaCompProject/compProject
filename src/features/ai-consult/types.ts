@@ -1,3 +1,5 @@
+import type { ConsultForm } from '@/lib/aiConsult';
+
 export type MessageType = 'ai' | 'user';
 
 export interface ChatMessage {
@@ -5,4 +7,5 @@ export interface ChatMessage {
   type: MessageType;
   sentence: string;
   quickReplies?: string[];
+  form?: ConsultForm;
 }

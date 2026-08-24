@@ -6,6 +6,7 @@ import { noticePromptText, reasonPromptText } from './prompts/index.ts';
 import { chatOpenAI } from './openai.ts';
 import type {
   ChatMode,
+  ConsultForm,
   ConsultInput,
   RecommendOutput,
   RecommendedPlan,
@@ -53,9 +54,12 @@ function ageMatches(ageGroup: string | undefined, targetAge: string): boolean {
 }
 
 // OTT 혜택 문자열과 사용자 OTT 선호 목록이 겹치는지 확인.
-function hasOttMatch(ott: string[] | undefined, benefits: string[]): boolean {
+function hasOttMatch(
+  ott: string[] | undefined,
+  benefits: string[] | undefined,
+): boolean {
   if (!ott || ott.length === 0) return false;
-  const benefitText = benefits.join(' ').toLowerCase();
+  const benefitText = (benefits ?? []).join(' ').toLowerCase();
   return ott.some((o) => benefitText.includes(o.toLowerCase()));
 }
 
@@ -70,6 +74,68 @@ function buildInfoRequest(input: ConsultInput): string | undefined {
   if (input.budget === undefined) critical.push('예산');
   const requestText = critical.map((w) => josa(w, '을/를')).join(', ');
   return `상세 정보를 입력하시면 더 자세한 맞춤 요금제를 추천해드릴 수 있어요! (${requestText} 알려주세요)`;
+}
+
+// 누락된 추천 조건을 form으로 입력받을 수 있도록 구성합니다.
+function buildInfoForm(input: ConsultInput): ConsultForm {
+  const fields: ConsultForm['fields'] = [];
+
+  if (!input.ageGroup || input.ageGroup === '미제공') {
+    fields.push({
+      name: 'ageGroup',
+      label: '나이',
+      type: 'select',
+      options: ['청소년', '20대', '30대', '40대', '50대 이상'],
+      required: true,
+    });
+  }
+
+  if (input.dataUsage === undefined) {
+    fields.push({
+      name: 'dataUsage',
+      label: '월 데이터 사용량',
+      type: 'number',
+      required: true,
+    });
+  }
+
+  if (input.budget === undefined) {
+    fields.push({
+      name: 'budget',
+      label: '예산 (원)',
+      type: 'number',
+      required: true,
+    });
+  }
+
+  fields.push({
+    name: 'priority',
+    label: '우선순위',
+    type: 'select',
+    options: ['budget', 'data', 'max_data'],
+    required: false,
+  });
+
+  const ottOptions = [
+    '넷플릭스',
+    '유튜브 프리미엄',
+    '디즈니+',
+    '왓챠',
+    '웨이브',
+    '쿠팡플레이',
+    '애플 뮤직',
+    '멜론',
+    '스포티파이',
+  ];
+  fields.push({
+    name: 'ott',
+    label: 'OTT 혜택',
+    type: 'multi-select',
+    options: ottOptions,
+    required: false,
+  });
+
+  return { title: '추천을 위해 필요한 정보', fields };
 }
 
 // 받침 유무에 따른 조사 선택.
@@ -453,7 +519,8 @@ function fillTemplate(
 }
 
 function formatPlanForPrompt(p: Plan): string {
-  return `id: ${p.id}, name: ${p.name}, data: ${p.data}, fee: ${p.monthly_fee}, benefits: [${p.benefits.join(', ')}]`;
+  const benefits = (p.benefits ?? []).join(', ');
+  return `id: ${p.id}, name: ${p.name}, data: ${p.data}, fee: ${p.monthly_fee}, benefits: [${benefits}]`;
 }
 
 // 상위 3개 요금제 추천 및 사유, 절감액 산출.
@@ -470,7 +537,13 @@ export async function recommendPlan(
 
   const missingInfo = buildInfoRequest(input);
   if (missingInfo)
-    return { recommendations: [], notice: missingInfo, mode: 'recommend' };
+    return {
+      recommendations: [],
+      notice: missingInfo,
+      mode: 'recommend',
+      quickReplies: [],
+      form: buildInfoForm(input),
+    };
 
   const plans = await loadPlans();
   const candidates = filterRecommendPlans(plans, input);
@@ -522,6 +595,8 @@ export async function generateQuickReplies(
   input: ConsultInput,
   result: RecommendOutput,
 ): Promise<string[]> {
+  if (result.form) return [];
+
   const mode = result.mode ?? input.mode ?? 'menu';
 
   if (mode === 'menu') {
