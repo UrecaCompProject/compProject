@@ -11,7 +11,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>(() => ({
-  user: null,
+  user: '기매진' as unknown as User,
   session: null,
   isLoading: false,
 }));

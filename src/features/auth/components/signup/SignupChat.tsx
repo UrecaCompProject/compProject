@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react';
 
 import { CheckCircle2 } from 'lucide-react';
 
-import { AIChat } from '@/features/ai-consult';
+import AIChat from '@/features/ai-consult/components/AIChat';
 import { Button, Input } from '@/features/shared';
 
 type SignupStep = 'basic-info' | 'verify-code' | 'review' | 'completed';
