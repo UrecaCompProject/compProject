@@ -4,10 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,api \"npm run dev:web\" \"npm run dev:api\"",
-    "dev:web": "vite",
-    "dev:api": "npx supabase functions serve --env-file .env.local --no-verify-jwt",
-    "dev:ollama": "node scripts/dev-ollama.js",
+    "dev": "vite",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "deploy:api": "npx supabase functions deploy ai-consult",
     "deploy:web": "npx vercel --prod",
     "build": "tsc -b && vite build",
@@ -16,9 +15,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "preview": "vite preview",
-    "prepare": "husky",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
@@ -45,7 +42,6 @@
     "@vitejs/plugin-react": "^6.0.4",
     "@vitest/browser-playwright": "4.1.10",
     "@vitest/coverage-v8": "4.1.10",
-    "concurrently": "^8.2.2",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.5",

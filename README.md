@@ -3,7 +3,7 @@
 > ### AI 기반 통신 요금제 상담 · 가입 플랫폼
 >
 > 복잡한 통신 요금제, 대화만으로 비교하고 추천받고 가입까지 —
-> 로컬 LLM 기반 AI 상담으로 완성하는 통신 생활 플랫폼
+> AI 상담으로 완성하는 통신 생활 플랫폼
 
 **에피라**는 사용자의 데이터 사용 패턴, 통화량, 문자 사용량, 예산, OTT 이용 성향 등을 AI 챗봇이 분석하여
 **나에게 맞는 통신 요금제를 추천하고, 비교 · 저장 · 관리할 수 있도록 돕는 서비스**입니다.
@@ -223,7 +223,7 @@
 | BaaS         | Supabase (Auth, PostgreSQL + RLS, Storage, Edge Functions)  |
 | DB           | PostgreSQL (Supabase), 마이그레이션/시드 관리               |
 | 서버리스     | Supabase Edge Functions (Deno)                              |
-| AI           | Ollama (로컬 LLM), LangChain                                |
+| AI           | OpenAI API                                                  |
 | 협업 / 배포  | Figma, GitHub, Notion, Jira, Vercel                         |
 
 ---
@@ -253,7 +253,6 @@
 compProject/
 ├── public/                     # 정적 자산
 ├── scripts/                    # 개발 보조 및 시드 생성 스크립트
-│   ├── dev-ollama.js
 │   └── generate-seed.cjs
 ├── src/                         # 프론트엔드 소스
 │   ├── assets/                  # 이미지, 아이콘
@@ -311,9 +310,7 @@ compProject/
 
 - [Node.js](https://nodejs.org/) 20+
 - [npm](https://www.npmjs.com/)
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (Supabase 로컬 스택 실행용)
-- [Ollama](https://ollama.com/)
+- [Supabase CLI](https://supabase.com/docs/guides/cli) (Edge Functions 배포용)
 - [Git](https://git-scm.com/)
 - 카카오 디벨로퍼스에 등록된 REST API 키 (카카오 로그인 사용 시)
 
@@ -343,6 +340,15 @@ compProject/
 
 ---
 
+| 변수                        | 설명                          | 예시/출처                                   |
+| --------------------------- | ----------------------------- | ------------------------------------------- |
+| `VITE_SUPABASE_URL`         | Supabase REST API URL         | Supabase Dashboard > Project Settings > API |
+| `VITE_SUPABASE_ANON_KEY`    | 프론트엔드용 anon key         | Supabase Dashboard > Project Settings > API |
+| `SUPABASE_SERVICE_ROLE_KEY` | 관리용 service role key       | Supabase Dashboard > Project Settings > API |
+| `OPENAI_API_KEY`            | OpenAI API 키                 | OpenAI Platform                             |
+| `OPENAI_BASE_URL`           | OpenAI 호환 엔드포인트 (선택) | `https://api.openai.com/v1`                 |
+| `OPENAI_MODEL`              | 상담에 사용할 모델 (선택)     | `gpt-4o-mini`                               |
+
 ## 🏁 로컬 개발 시작
 
 1. **의존성 설치**
@@ -351,31 +357,13 @@ compProject/
    npm install
    ```
 
-2. **Ollama 모델 다운로드**
-
-   ```bash
-   ollama pull qwen2.5:3b-instruct-q4_K_M
-   ollama pull nomic-embed-text:latest
-   ```
-
-3. **Supabase 로컬 스택 시작**
-
-   ```bash
-   npx supabase start
-   ```
-
-   명령어 출력에서 API URL, anon key, service_role key를 확인해 `.env.local`에 입력합니다.
-
-4. **개발 서버 실행**
+2. 개발 서버 실행
 
    ```bash
    npm run dev
    ```
 
-   아래 3개 프로세스가 동시에 실행됩니다.
-   - `vite` (프론트엔드 개발 서버, 기본 `http://localhost:5173`)
-   - `npx supabase functions serve` (Edge Functions)
-   - `node scripts/dev-ollama.js` (Ollama 미구동 시 자동 실행 시도)
+   Vite 프론트엔드 개발 서버가 `http://localhost:5173`에서 실행됩니다.
 
 <br/>
 
@@ -383,40 +371,22 @@ compProject/
 
 ## 📜 사용 가능한 스크립트
 
-| 명령어                 | 설명                                           |
-| ---------------------- | ---------------------------------------------- |
-| `npm run dev`          | 프론트엔드 + Edge Functions + Ollama 동시 실행 |
-| `npm run dev:web`      | Vite 프론트엔드만 실행                         |
-| `npm run dev:api`      | Supabase Edge Functions만 실행                 |
-| `npm run dev:ollama`   | Ollama 자동 시작 스크립트                      |
-| `npm run build`        | 타입 검사 및 Vite 빌드                         |
-| `npm run preview`      | 빌드 결과 미리보기                             |
-| `npm run lint`         | ESLint 검사                                    |
-| `npm run lint:fix`     | ESLint 자동 수정                               |
-| `npm run format`       | Prettier 포맷팅                                |
-| `npm run format:check` | Prettier 포맷 검사                             |
+| 명령어                 | 설명                           |
+| ---------------------- | ------------------------------ |
+| `npm run dev`          | Vite 프론트엔드 개발 서버 실행 |
+| `npm run build`        | 타입 검사 및 Vite 빌드         |
+| `npm run preview`      | 빌드 결과 미리보기             |
+| `npm run lint`         | ESLint 검사                    |
+| `npm run lint:fix`     | ESLint 자동 수정               |
+| `npm run format`       | Prettier 포맷팅                |
+| `npm run format:check` | Prettier 포맷 검사             |
+| `npm run deploy:api`   | Supabase Edge Functions 배포   |
 
----
+## DB 마이그레이션 및 시드
 
-## 🗄 DB 마이그레이션 및 시드
-
-- `supabase/migrations/`: `npx supabase start` 또는 `npx supabase db reset` 시 자동 적용됩니다.
-- `supabase/seed.sql`: 초기 요금제 및 더미 데이터를 포함합니다.
+- `supabase/migrations/`: DB 마이그레이션 파일
+- `supabase/seed.sql`: 초기 요금제 및 더미 데이터
 - `data/plans_*.json`: 요금제 원천 데이터입니다. 필요 시 `scripts/generate-seed.cjs`로 `seed.sql` 형태로 변환할 수 있습니다.
-
-<br/>
-
----
-
-## 🔌 주요 포트
-
-| 서비스          | 포트        |
-| --------------- | ----------- |
-| Vite 프론트엔드 | 5173 (기본) |
-| Supabase API    | 54321       |
-| Supabase DB     | 54322       |
-| Supabase Studio | 54323       |
-| Ollama          | 11434       |
 
 <br/>
 
@@ -425,23 +395,10 @@ compProject/
 ## 🚢 배포
 
 - **프론트엔드**: [Vercel](https://vercel.com/) 배포 예정
-- **BaaS/DB**: [Supabase](https://supabase.com/) 호스팅 또는 [Docker](https://www.docker.com/) 기반 자체 호스팅
-- **AI**: Ollama를 별도 호스트 또는 터널링하여 Edge Function에서 호출
-- 배포는 Vercel 기준으로 진행하며, 프로젝트 연결 후 위 환경 변수를 Vercel 대시보드의 **Environment Variables**에 동일하게 등록
-- Supabase 프로젝트의 RLS 정책이 활성화되어 있는지 배포 전에 확인
+- **BaaS/DB**: [Supabase](https://supabase.com/) 호스팅
+- **AI**: OpenAI API
 
-> `.env.local`은 `.gitignore`에 포함되어 있어야 하며, 실제 키를 Git에 커밋하지 않습니다. AI 추천 관련 프롬프트와 도메인 로직은 `supabase/functions/_shared/ai/`에 있습니다.
+## 참고
 
-<br/>
-
----
-
-## 📅 개발 일정
-
-|      기간       | 진행 내용                 |
-| :-------------: | ------------------------- |
-| **8/14 ~ 8/18** | 📝 주제 선정              |
-| **8/19 ~ 8/25** | 🎨 UI/UX 설계 및 MVP 개발 |
-| **8/26 ~ 8/31** | 💻 세부 기능 개발         |
-|  **9/1 ~ 9/3**  | 🧪 통합 및 테스트         |
-|     **9/4**     | 🎤 최종 발표              |
+- `.env.local`은 `.gitignore`에 포함되어 있어야 합니다. 실제 키를 Git에 커밋하지 마세요.
+- AI 추천 관련 프롬프트와 도메인 로직은 `supabase/functions/_shared/ai/`에 있습니다.
