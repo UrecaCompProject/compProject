@@ -15,6 +15,10 @@ export default function ChatPage() {
     handleSignupFinished,
     handleFormSubmit,
     profile,
+    subscriptionOpen,
+    subscriptionPlan,
+    openSubscription,
+    closeSubscription,
   } = useChat();
 
   const lastMessage = messages[messages.length - 1];
@@ -29,6 +33,10 @@ export default function ChatPage() {
         onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
+        onPlanSubscribe={openSubscription}
+        subscriptionOpen={subscriptionOpen}
+        subscriptionPlan={subscriptionPlan}
+        onSubscriptionClose={closeSubscription}
       />
       <QuickReplies
         replies={quickReplies}

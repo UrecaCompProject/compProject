@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { formatResponse } from '@/features/ai-consult/utils/formatResponse';
 import { requestConsult } from '@/lib/aiConsult';
-import type { ConsultInput } from '@/lib/aiConsult';
+import type { ConsultInput, RecommendedPlan } from '@/lib/aiConsult';
 
 import type { ChatMessage } from '../types';
 
@@ -32,6 +32,22 @@ function formatFormSummary(values: Partial<ConsultInput>): string {
   return parts.join(' / ');
 }
 
+function findLastRecommendedPlan(
+  messages: ChatMessage[],
+): RecommendedPlan | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (
+      message.type === 'ai' &&
+      message.recommendations &&
+      message.recommendations.length > 0
+    ) {
+      return message.recommendations[0];
+    }
+  }
+  return null;
+}
+
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -44,6 +60,18 @@ export function useChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<ConsultInput>({ mode: 'menu' });
+  const [subscriptionOpen, setSubscriptionOpen] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] =
+    useState<RecommendedPlan | null>(null);
+
+  const openSubscription = (plan: RecommendedPlan) => {
+    setSubscriptionPlan(plan);
+    setSubscriptionOpen(true);
+  };
+
+  const closeSubscription = () => {
+    setSubscriptionOpen(false);
+  };
 
   const handleSignupFinished = () => {
     setMessages((prev) => [
@@ -67,8 +95,23 @@ export function useChat() {
     ]);
     setInput('');
 
-    if (trimmed === '온라인 가입') {
-      setMessages((prev) => [...prev, { id: Date.now() + 1, type: 'signup' }]);
+    if (trimmed === '온라인 가입' || trimmed === '요금제 가입하기') {
+      const lastPlan = findLastRecommendedPlan(messages);
+      if (lastPlan) {
+        openSubscription(lastPlan);
+        return;
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          type: 'ai',
+          sentence:
+            '가입할 요금제가 아직 추천되지 않았어요. 먼저 요금제 추천을 받아보세요.',
+          quickReplies: ['요금제 추천받기', '기타 상담'],
+        },
+      ]);
       return;
     }
 
@@ -92,6 +135,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
+          recommendations: response.recommendations,
         },
       ]);
     } catch (error) {
@@ -107,7 +151,6 @@ export function useChat() {
       setIsLoading(false);
     }
   };
-
 
   const handleFormSubmit = async (values: Partial<ConsultInput>) => {
     if (isLoading) return;
@@ -144,6 +187,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
+          recommendations: response.recommendations,
         },
       ]);
     } catch (error) {
@@ -160,7 +204,6 @@ export function useChat() {
     }
   };
 
-
   return {
     messages,
     input,
@@ -170,6 +213,9 @@ export function useChat() {
     handleSignupFinished,
     handleFormSubmit,
     profile,
-
+    subscriptionOpen,
+    subscriptionPlan,
+    openSubscription,
+    closeSubscription,
   };
 }

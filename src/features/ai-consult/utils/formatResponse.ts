@@ -5,14 +5,7 @@ export function formatResponse(response: ConsultResponse): string {
   const parts: string[] = [];
   if (response.notice) parts.push(response.notice);
   if (response.recommendations.length > 0) {
-    parts.push('추천 요금제를 알려드릴게요:');
-    response.recommendations.forEach((plan, index) => {
-      const saving =
-        plan.savingAmount > 0
-          ? ` (월 ${plan.savingAmount.toLocaleString()}원 절감)`
-          : '';
-      parts.push(`${index + 1}. ${plan.planName}${saving}\n${plan.reason}`);
-    });
+    parts.push('입력하신 정보를 바탕으로 다음과 같은 요금제를 추천드립니다.');
   }
   if (parts.length === 0) {
     parts.push(

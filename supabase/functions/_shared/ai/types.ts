@@ -26,6 +26,17 @@ export interface RecommendedPlan {
   planName: string;
   reason: string;
   savingAmount: number;
+  monthlyFee?: number;
+  data?: string;
+  benefits?: string[];
+  category?: string;
+  targetAge?: string;
+  dataSpeedAfter?: string;
+  voice?: string;
+  message?: string;
+  shareData?: string;
+  tethering?: string;
+  notes?: string;
 }
 
 export interface ConsultFormField {
