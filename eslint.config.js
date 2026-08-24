@@ -1,3 +1,6 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+import storybook from 'eslint-plugin-storybook';
+
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -110,6 +113,30 @@ export default defineConfig([
     },
   },
 
+  // Storybook 설정(Node 런타임)
+  // vite.config.ts 와 동일하게 tsconfig.node.json 을 resolver 대상으로 지정한다.
+  {
+    files: ['.storybook/**/*.{ts,tsx}'],
+    extends: [js.configs.recommended, tseslint.configs.recommended],
+    plugins: {
+      'unused-imports': unusedImports,
+    },
+    languageOptions: {
+      globals: globals.node,
+    },
+    settings: {
+      'import-x/resolver': {
+        typescript: {
+          project: './tsconfig.node.json',
+        },
+      },
+    },
+    rules: {
+      ...importOrderRules,
+      ...unusedImportsRules,
+    },
+  },
+
   // Supabase Edge Functions(Deno 런타임)
   // 브라우저 글로벌이 아닌 Deno/EdgeRuntime 글로벌을 사용한다.
   // supabase/tsconfig.json 을 resolver 대상으로 지정하여 .ts 확장자 import 를 해석한다.
@@ -137,4 +164,5 @@ export default defineConfig([
 
   // Prettier와 충돌하는 ESLint 스타일 규칙 비활성화 (항상 마지막)
   prettierConfig,
+  ...storybook.configs['flat/recommended'],
 ]);
