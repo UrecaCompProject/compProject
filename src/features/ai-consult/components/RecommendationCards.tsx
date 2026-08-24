@@ -62,10 +62,7 @@ export default function RecommendationCards({
       >
         <div className="flex">
           {plans.map((plan) => (
-            <div
-              key={plan.planId}
-              className="w-[280px] shrink-0 pr-3 last:pr-0"
-            >
+            <div key={plan.planId} className="w-70 shrink-0 pr-3 last:pr-0">
               <Card border="default" radius="16" gap="12" className="h-full">
                 <div className="flex items-start justify-between">
                   <h4 className="text-body font-semibold text-fg-primary leading-tight">
