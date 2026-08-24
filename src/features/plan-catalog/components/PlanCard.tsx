@@ -5,19 +5,15 @@ import { Button, Card, IconListItem, Line } from '@/features/shared';
 
 import type { LucideIcon } from 'lucide-react';
 
-// 임시 타입 — 나중에 shared/types/plan.ts 기준으로 수정할 예정
 export interface PlanCardBenefit {
   icon: LucideIcon;
   label: string;
 }
 
-type PlanCardStatus = 'default' | 'report';
-
 export interface PlanCardProps {
   title: string;
   price: number;
   benefits: PlanCardBenefit[];
-  status?: PlanCardStatus;
   reason?: string;
   couponText?: string;
   saved?: boolean;
@@ -30,7 +26,6 @@ export default function PlanCard({
   title,
   price,
   benefits,
-  status = 'default',
   reason,
   couponText,
   saved = false,
@@ -39,12 +34,7 @@ export default function PlanCard({
   onSelect,
 }: PlanCardProps) {
   return (
-    <Card
-      border="default"
-      shadow
-      gap="16"
-      className={status === 'report' ? 'w-full' : ''}
-    >
+    <Card border="default" shadow gap="16">
       <div className="flex items-start justify-between">
         <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
         <button
