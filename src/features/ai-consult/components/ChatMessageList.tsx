@@ -24,18 +24,30 @@ export default function ChatMessageList({
   onFormSubmit,
   formDefaults,
 }: ChatMessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const lastMessageRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    const container = scrollContainerRef.current;
     const content = contentRef.current;
-    if (!content) return;
+    if (!container || !content) return;
 
-    // messages 배열 변화가 아니라 실제 콘텐츠 높이 변화를 감지해야
-    // SignupChat처럼 메시지 내부에서 자체 상태로 UI가 늘어나는 경우도 따라 내려간다.
-    const scrollToBottom = () =>
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    const observer = new ResizeObserver(scrollToBottom);
+    // 새 메시지가 끝까지 안 보이더라도, 맨 아래로 붙이기보다는
+    // 새로 추가된(또는 SignupChat처럼 내부 상태로 늘어난) 마지막 메시지의
+    // 시작 지점이 화면 위쪽에 오도록 스크롤해 처음부터 읽을 수 있게 한다.
+    // scrollIntoView는 overflow-hidden인 상위 Layout까지 스크롤시켜 레이아웃이 깨지므로
+    // 스크롤 컨테이너에만 직접 scrollTo를 호출한다.
+    const scrollToLastMessageTop = () => {
+      const target = lastMessageRef.current;
+      if (!target) return;
+      const offset =
+        target.getBoundingClientRect().top -
+        container.getBoundingClientRect().top +
+        container.scrollTop;
+      container.scrollTo({ top: offset, behavior: 'smooth' });
+    };
+    const observer = new ResizeObserver(scrollToLastMessageTop);
     observer.observe(content);
     return () => observer.disconnect();
   }, []);
@@ -43,15 +55,13 @@ export default function ChatMessageList({
   const lastIndex = messages.length - 1;
 
   return (
-    <div className="flex-1 overflow-y-auto py-4">
-
+    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-4">
       <div ref={contentRef} className="flex flex-col gap-4 px-4">
-
-
-
         {messages.map((message, index) => (
-
-          <div key={message.id}>
+          <div
+            key={message.id}
+            ref={index === lastIndex ? lastMessageRef : undefined}
+          >
             {message.type === 'ai' && <AIChat sentence={message.sentence} />}
             {message.type === 'user' && (
               <div className="flex justify-end">
@@ -76,7 +86,6 @@ export default function ChatMessageList({
                   />
                 </div>
               )}
-
           </div>
         ))}
         {isLoading && (
@@ -84,7 +93,6 @@ export default function ChatMessageList({
             해리가 생각 중이에요...
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
