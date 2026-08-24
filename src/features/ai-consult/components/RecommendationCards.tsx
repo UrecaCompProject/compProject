@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import useEmblaCarousel from 'embla-carousel-react';
 import {
   Anchor,
   Check,
@@ -30,6 +31,11 @@ export default function RecommendationCards({
 }: RecommendationCardsProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
+  const [emblaRef] = useEmblaCarousel({
+    align: 'start',
+    containScroll: 'trimSnaps',
+    loop: false,
+  });
 
   const handleOpen = (plan: RecommendedPlan) => {
     setSelected(plan);
@@ -41,78 +47,80 @@ export default function RecommendationCards({
   return (
     <div className="mt-3">
       <div
-        className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        ref={emblaRef}
+        className="overflow-hidden select-none"
         aria-label="추천 요금제 목록"
       >
-        {plans.map((plan) => (
-          <Card
-            key={plan.planId}
-            border="default"
-            radius="16"
-            gap="12"
-            className="min-w-[280px] max-w-[280px] flex-shrink-0 snap-start"
-          >
-            <div className="flex items-start justify-between">
-              <h4 className="text-body font-semibold text-fg-primary leading-tight">
-                {plan.planName}
-              </h4>
-              <Anchor size={18} className="text-brand-promo-primary" />
-            </div>
-
-            <p className="text-body-lg font-bold text-brand-promo-primary">
-              월{' '}
-              {plan.monthlyFee !== undefined
-                ? plan.monthlyFee.toLocaleString()
-                : '-'}
-              원
-            </p>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-caption text-fg-secondary">
-                <Database size={14} className="text-fg-tertiary" />
-                <span>
-                  {plan.data ?? '-'}
-                  {plan.dataSpeedAfter
-                    ? ` (소진 후 ${plan.dataSpeedAfter})`
-                    : ''}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-caption text-fg-secondary">
-                <Phone size={14} className="text-fg-tertiary" />
-                <span>{plan.voice ?? '-'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-caption text-fg-secondary">
-                <MessageSquare size={14} className="text-fg-tertiary" />
-                <span>{plan.message ?? '-'}</span>
-              </div>
-              {(plan.benefits ?? []).slice(0, 2).map((benefit, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 text-caption text-fg-secondary"
-                >
-                  <span className="text-fg-tertiary">
-                    <BenefitIcon label={benefit} />
-                  </span>
-                  <span>{benefit}</span>
+        <div className="flex">
+          {plans.map((plan) => (
+            <div
+              key={plan.planId}
+              className="w-[280px] flex-shrink-0 pr-3 last:pr-0"
+            >
+              <Card border="default" radius="16" gap="12" className="h-full">
+                <div className="flex items-start justify-between">
+                  <h4 className="text-body font-semibold text-fg-primary leading-tight">
+                    {plan.planName}
+                  </h4>
+                  <Anchor size={18} className="text-brand-promo-primary" />
                 </div>
-              ))}
-            </div>
 
-            <div className="flex gap-2 pt-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => handleOpen(plan)}
-              >
-                자세히 보기
-              </Button>
-              <Button variant="primary" size="sm" className="flex-1">
-                가입 하기
-              </Button>
+                <p className="text-body-lg font-bold text-brand-promo-primary">
+                  월{' '}
+                  {plan.monthlyFee !== undefined
+                    ? plan.monthlyFee.toLocaleString()
+                    : '-'}
+                  원
+                </p>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-caption text-fg-secondary">
+                    <Database size={14} className="text-fg-tertiary" />
+                    <span>
+                      {plan.data ?? '-'}
+                      {plan.dataSpeedAfter
+                        ? ` (소진 후 ${plan.dataSpeedAfter})`
+                        : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-caption text-fg-secondary">
+                    <Phone size={14} className="text-fg-tertiary" />
+                    <span>{plan.voice ?? '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-caption text-fg-secondary">
+                    <MessageSquare size={14} className="text-fg-tertiary" />
+                    <span>{plan.message ?? '-'}</span>
+                  </div>
+                  {(plan.benefits ?? []).slice(0, 2).map((benefit, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-caption text-fg-secondary"
+                    >
+                      <span className="text-fg-tertiary">
+                        <BenefitIcon label={benefit} />
+                      </span>
+                      <span>{benefit}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2 pt-1 mt-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleOpen(plan)}
+                  >
+                    자세히 보기
+                  </Button>
+                  <Button variant="primary" size="sm" className="flex-1">
+                    가입 하기
+                  </Button>
+                </div>
+              </Card>
             </div>
-          </Card>
-        ))}
+          ))}
+        </div>
       </div>
 
       {selected && (
