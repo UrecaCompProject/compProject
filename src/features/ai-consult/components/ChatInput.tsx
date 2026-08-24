@@ -16,7 +16,7 @@ export default function ChatInput({
   onSend,
   disabled = false,
 }: ChatInputProps) {
-  const { isLogin } = useIsLoggedIn();
+  const isLogin = useIsLoggedIn();
   const handleSend = () => {
     onSend(value);
   };
