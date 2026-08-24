@@ -2,12 +2,13 @@ import { useState } from 'react';
 
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { formatResponse } from '@/features/ai-consult/utils/formatResponse';
+import { requestConsult } from '@/lib/aiConsult';
 import type { ConsultInput } from '@/lib/aiConsult';
 
 import type { ChatMessage } from '../types';
 
 const WELCOME_MESSAGE =
-  '안녕하세요! AI 요금제 도우미 해리에요.🪼\n\n아래 메뉴에서 원하는 항목을 선택해 주세요.';
+  '안녕하세요! AI 요금제 도우미 해리에요.\n\n아래 메뉴에서 원하는 항목을 선택해 주세요.';
 
 const MENU_QUICK_REPLIES = [
   '요금제 추천받기',
@@ -17,6 +18,18 @@ const MENU_QUICK_REPLIES = [
   '출석체크',
   '기타 상담',
 ];
+
+function formatFormSummary(values: Partial<ConsultInput>): string {
+  const parts: string[] = [];
+  if (values.ageGroup) parts.push(`연령대: ${values.ageGroup}`);
+  if (values.dataUsage !== undefined)
+    parts.push(`데이터: ${values.dataUsage}GB`);
+  if (values.budget !== undefined)
+    parts.push(`예산: ${values.budget.toLocaleString()}원`);
+  if (values.ott && values.ott.length > 0)
+    parts.push(`OTT: ${values.ott.join(', ')}`);
+  return parts.join(' / ');
+}
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -59,6 +72,7 @@ export function useChat() {
           type: 'ai',
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
+          form: response.form,
         },
       ]);
     } catch (error) {
@@ -75,5 +89,64 @@ export function useChat() {
     }
   };
 
-  return { messages, input, setInput, isLoading, handleSend };
+  const handleFormSubmit = async (values: Partial<ConsultInput>) => {
+    if (isLoading) return;
+
+    const summary = formatFormSummary(values);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'user',
+        sentence: summary || '정보를 입력했습니다.',
+      },
+    ]);
+    setIsLoading(true);
+
+    try {
+      const merged: ConsultInput = {
+        ...profile,
+        ...values,
+        userMessage: '정보 입력 완료',
+        mode: 'recommend',
+      };
+      const response = await requestConsult(merged);
+      const mergedProfile: ConsultInput = {
+        ...merged,
+        mode: response.mode ?? merged.mode,
+      };
+      setProfile(mergedProfile);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence: formatResponse(response),
+          quickReplies: response.quickReplies,
+          form: response.form,
+        },
+      ]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: 'ai', sentence: message },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    messages,
+    input,
+    setInput,
+    isLoading,
+    handleSend,
+    handleFormSubmit,
+    profile,
+  };
 }
