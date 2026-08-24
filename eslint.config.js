@@ -69,8 +69,6 @@ export default defineConfig([
     'build',
     'node_modules',
     'stats.html',
-    'supabase/.branches',
-    'supabase/.temp',
     // Supabase Edge Functions(Deno 런타임)는 npm: specifier 를 사용하므로
     // import-x resolver 가 해석할 수 없어 별도 런타임 검사로 분리한다.
     'supabase/functions/**/*.{ts,tsx}',
