@@ -1,8 +1,6 @@
-export type MessageType = 'ai' | 'user';
+export type MessageType = 'ai' | 'user' | 'signup';
 
-export interface ChatMessage {
-  id: number;
-  type: MessageType;
-  sentence: string;
-  quickReplies?: string[];
-}
+export type ChatMessage =
+  | { id: number; type: 'ai'; sentence: string; quickReplies?: string[] }
+  | { id: number; type: 'user'; sentence: string }
+  | { id: number; type: 'signup' };
