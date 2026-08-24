@@ -1,0 +1,103 @@
+import type { ReactNode } from 'react';
+
+import { Drawer } from 'vaul';
+
+type BottomSheetSize = 'content' | 'large' | 'full';
+
+type BottomSheetProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description?: string;
+  children: ReactNode;
+  footer?: ReactNode;
+  size?: BottomSheetSize;
+  dismissible?: boolean;
+  className?: string;
+};
+
+const sizeClasses: Record<BottomSheetSize, string> = {
+  content: 'max-h-[60dvh]',
+  large: 'h-[85dvh]',
+  full: 'h-[calc(100dvh-24px)]',
+};
+
+export default function BottomSheet({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  footer,
+  size = 'large',
+  dismissible = true,
+  className = '',
+}: BottomSheetProps) {
+  return (
+    <Drawer.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      direction="bottom"
+      dismissible={dismissible}
+    >
+      <Drawer.Portal>
+        <Drawer.Overlay
+          className="
+            fixed inset-0 z-40
+            bg-fg-primary/50
+          "
+        />
+
+        <Drawer.Content
+          className={`
+            fixed bottom-0 left-1/2 z-50
+            flex w-full max-w-[768px]
+            -translate-x-1/2 flex-col
+            rounded-t-3xl bg-surface-card
+            outline-none
+            ${sizeClasses[size]}
+            ${className}
+          `}
+        >
+          <Drawer.Handle
+            className="
+              mx-auto mt-3 h-1.5 w-12
+              shrink-0 rounded-full
+              bg-border-strong
+            "
+          />
+
+          <div className="flex min-h-0 flex-1 flex-col">
+            <header className="shrink-0 px-5 pb-3 pt-4">
+              <Drawer.Title className="text-title text-fg-primary">
+                {title}
+              </Drawer.Title>
+
+              {description && (
+                <Drawer.Description className="mt-1 text-caption text-fg-tertiary">
+                  {description}
+                </Drawer.Description>
+              )}
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5">
+              {children}
+            </div>
+
+            {footer && (
+              <footer
+                className="
+                  shrink-0 border-t border-border
+                  px-5 pt-4
+                  pb-[calc(20px+env(safe-area-inset-bottom))]
+                "
+              >
+                {footer}
+              </footer>
+            )}
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
