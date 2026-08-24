@@ -1,11 +1,11 @@
 import {
-  CircleDot,
-  Grid2X2,
-  LockKeyhole,
-  Phone,
+  AlarmClock,
+  Blocks,
+  Clover,
+  Lock,
+  SatelliteDish,
   Share2,
-  Sparkles,
-  Timer,
+  Target,
 } from 'lucide-react';
 
 import badgeImage from '../../assets/badge.png';
@@ -14,12 +14,12 @@ import type { Mission, MissionIcon } from '../types/mission';
 import type { LucideIcon } from 'lucide-react';
 
 const missionIcons: Record<MissionIcon, LucideIcon> = {
-  card: Grid2X2,
-  timer: Timer,
-  roulette: CircleDot,
-  scratch: Sparkles,
-  security: LockKeyhole,
-  telecom: Phone,
+  card: Blocks,
+  timer: AlarmClock,
+  roulette: Target,
+  scratch: Clover,
+  security: Lock,
+  telecom: SatelliteDish,
   share: Share2,
 };
 
