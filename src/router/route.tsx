@@ -6,8 +6,6 @@ import {
   EventCouponPage,
   EventPage,
   EventStorePage,
-  MainDetailPage,
-  MainPage,
   PlanChangePage,
   PlanDetailPage,
   PlanPage,
@@ -19,10 +17,7 @@ export default function AppRouter() {
     <Router>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/main/:id" element={<MainDetailPage />} />
-
-          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/" element={<ChatPage />} />
 
           <Route path="/plan" element={<PlanPage />} />
           <Route path="/plan/:id" element={<PlanDetailPage />} />
