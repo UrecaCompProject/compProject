@@ -13,6 +13,8 @@ import {
 import { BottomSheet, Button, Card } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
+import PlanSubscriptionSheet from './PlanSubscriptionSheet';
+
 interface RecommendationCardsProps {
   plans: RecommendedPlan[];
 }
@@ -31,6 +33,8 @@ export default function RecommendationCards({
 }: RecommendationCardsProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const [subscriptionKey, setSubscriptionKey] = useState(0);
   const [emblaRef] = useEmblaCarousel({
     align: 'start',
     containScroll: 'trimSnaps',
@@ -40,6 +44,13 @@ export default function RecommendationCards({
   const handleOpen = (plan: RecommendedPlan) => {
     setSelected(plan);
     setOpen(true);
+  };
+
+  const handleSubscribe = (plan?: RecommendedPlan) => {
+    if (plan) setSelected(plan);
+    setOpen(false);
+    setSubscriptionKey((k) => k + 1);
+    setSubscribeOpen(true);
   };
 
   if (plans.length === 0) return null;
@@ -113,7 +124,12 @@ export default function RecommendationCards({
                   >
                     자세히 보기
                   </Button>
-                  <Button variant="primary" size="sm" className="flex-1">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleSubscribe(plan)}
+                  >
                     가입 하기
                   </Button>
                 </div>
@@ -138,7 +154,12 @@ export default function RecommendationCards({
               <Button variant="outline" size="md" className="flex-1">
                 비교 하기
               </Button>
-              <Button variant="primary" size="md" className="flex-1">
+              <Button
+                variant="primary"
+                size="md"
+                className="flex-1"
+                onClick={() => handleSubscribe()}
+              >
                 신청 하기
               </Button>
             </div>
@@ -214,6 +235,13 @@ export default function RecommendationCards({
           </div>
         </BottomSheet>
       )}
+
+      <PlanSubscriptionSheet
+        key={subscriptionKey}
+        open={subscribeOpen}
+        onOpenChange={setSubscribeOpen}
+        plan={selected}
+      />
     </div>
   );
 }
