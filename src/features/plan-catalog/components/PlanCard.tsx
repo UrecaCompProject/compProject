@@ -1,4 +1,3 @@
-// features/plan-catalog/components/PlanCard.tsx
 import { Anchor, BadgePercent } from 'lucide-react';
 
 import { Button, Card, IconListItem, Line } from '@/features/shared';
@@ -10,31 +9,48 @@ export interface PlanCardBenefit {
   label: string;
 }
 
+type PlanCardContext = 'chat' | 'report';
+
+const contextWidth: Record<PlanCardContext, string> = {
+  chat: 'w-[230px]',
+  report: 'w-[350px]',
+};
+
 export interface PlanCardProps {
   title: string;
   price: number;
   benefits: PlanCardBenefit[];
+  context?: PlanCardContext;
   reason?: string;
   couponText?: string;
   saved?: boolean;
   onSaveToggle?: () => void;
   onDetail?: () => void;
   onSelect?: () => void;
+  className?: string;
 }
 
 export default function PlanCard({
   title,
   price,
   benefits,
+  context = 'report',
   reason,
   couponText,
   saved = false,
   onSaveToggle,
   onDetail,
   onSelect,
+  className = '',
 }: PlanCardProps) {
   return (
-    <Card border="default" shadow gap="16">
+    <Card
+      border="primary"
+      shadow
+      gap="16"
+      style={{ borderWidth: '1.5px' }}
+      className={`${contextWidth[context]} ${className}`}
+    >
       <div className="flex items-start justify-between">
         <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
         <button
@@ -92,7 +108,7 @@ export default function PlanCard({
       <div className="flex gap-2 pt-1">
         <Button
           variant="secondary"
-          size="md"
+          size="sm"
           className="flex-1"
           onClick={onDetail}
         >
@@ -100,11 +116,11 @@ export default function PlanCard({
         </Button>
         <Button
           variant="primary"
-          size="md"
+          size="sm"
           className="flex-1"
           onClick={onSelect}
         >
-          선택하기
+          가입 하기
         </Button>
       </div>
     </Card>

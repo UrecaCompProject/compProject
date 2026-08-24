@@ -21,29 +21,24 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 기본 상태: 쿠폰/사유 없음
 export const Default: Story = {};
 
-// 북마크
 export const Saved: Story = {
   args: { saved: true },
 };
 
-// 추천 사유만
 export const WithReason: Story = {
   args: {
     reason: '통화 위주로 사용하시고 데이터는 가끔 쓰신다면 합리적이에요.',
   },
 };
 
-// 쿠폰 안내만
 export const WithCoupon: Story = {
   args: {
     couponText: '보유 쿠폰 적용 예정: 데이터 100MB 쿠폰',
   },
 };
 
-// 사유 + 쿠폰
 export const Full: Story = {
   args: {
     reason: '통화 위주로 사용하시고 데이터는 가끔 쓰신다면 합리적이에요.',
@@ -51,7 +46,6 @@ export const Full: Story = {
   },
 };
 
-// 혜택 항목이 많은 경우
 export const ManyBenefits: Story = {
   args: {
     benefits: [
@@ -62,4 +56,12 @@ export const ManyBenefits: Story = {
       { icon: Phone, label: '해외 로밍 데이터 무제한' },
     ],
   },
+};
+
+export const Chat: Story = {
+  args: { context: 'chat' },
+};
+
+export const Report: Story = {
+  args: { context: 'report' },
 };
