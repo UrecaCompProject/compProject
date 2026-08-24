@@ -92,6 +92,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
+          recommendations: response.recommendations,
         },
       ]);
     } catch (error) {
@@ -107,7 +108,6 @@ export function useChat() {
       setIsLoading(false);
     }
   };
-
 
   const handleFormSubmit = async (values: Partial<ConsultInput>) => {
     if (isLoading) return;
@@ -144,6 +144,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
+          recommendations: response.recommendations,
         },
       ]);
     } catch (error) {
@@ -160,7 +161,6 @@ export function useChat() {
     }
   };
 
-
   return {
     messages,
     input,
@@ -170,6 +170,5 @@ export function useChat() {
     handleSignupFinished,
     handleFormSubmit,
     profile,
-
   };
 }
