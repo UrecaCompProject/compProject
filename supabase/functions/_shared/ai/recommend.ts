@@ -2,7 +2,7 @@
 // LangChain 없이 OpenAI /v1/chat/completions를 직접 호출하는 요금제 추천 로직.
 import { loadPlans } from './data.ts';
 import type { Plan } from './data.ts';
-import { noticePromptText } from './prompts/index.ts';
+import { noticePromptText, reasonPromptText } from './prompts/index.ts';
 import { chatOpenAI } from './openai.ts';
 import type {
   ChatMode,
@@ -10,19 +10,6 @@ import type {
   RecommendOutput,
   RecommendedPlan,
 } from './types.ts';
-
-const OTT_SERVICES = [
-  '넷플릭스',
-  '유튜브 프리미엄',
-  '디즈니+',
-  '왓챠',
-  '웨이브',
-  '쿠팡플레이',
-  '티빙',
-  '애플 뮤직',
-  '멜론',
-  '스포티파이',
-];
 
 const noticeSystemPrompt =
   '당신은 통신 요금제 안내 문구 작성 AI입니다. 제공된 조건과 추천 후보를 바탕으로 1-2문장의 안내 문구를 JSON 형식으로 작성하세요.';
@@ -93,93 +80,60 @@ function josa(word: string, tail: string): string {
   return word + (hasJong ? tail[0] : tail[2]);
 }
 
-// 사용자 조건에 맞는 상위 후보 요금제만 추려 prompt 길이를 줄임.
-function filterRecommendPlans(plans: Plan[], input: ConsultInput): Plan[] {
+// 우선순위별 후보 필터 단계를 정의합니다.
+type PlanFilter = (p: Plan) => boolean;
+
+function buildCandidateFilters(input: ConsultInput): PlanFilter[] {
   const dataUsage = input.dataUsage ?? 0;
   const budget = input.budget ?? Number.MAX_SAFE_INTEGER;
   const ageGroup = input.ageGroup;
   const ott = input.ott;
-  const isDataPriority = input.priority === 'data';
-  const isMaxDataPriority = input.priority === 'max_data';
 
   const ageOk = (p: Plan) => ageMatches(ageGroup, p.target_age);
 
-  let candidates: Plan[];
-  if (isMaxDataPriority) {
-    candidates = plans.filter((p) => ageOk(p) && p.monthly_fee <= budget);
-    if (candidates.length === 0) {
-      candidates = plans.filter((p) => ageOk(p));
-    }
-  } else if (isDataPriority) {
-    candidates = plans.filter(
+  const filtersByPriority: Record<
+    NonNullable<ConsultInput['priority']>,
+    PlanFilter[]
+  > = {
+    max_data: [(p) => ageOk(p) && p.monthly_fee <= budget, (p) => ageOk(p)],
+    data: [
       (p) =>
         ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
-    );
-    if (candidates.length < 3) {
-      candidates = plans.filter(
-        (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage,
-      );
-    }
-    if (candidates.length < 3) {
-      candidates = plans.filter(
-        (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage * 0.7,
-      );
-    }
-    if (candidates.length < 3) {
-      candidates = plans.filter((p) => ageOk(p) && p.monthly_fee <= budget);
-    }
-  } else {
-    candidates = plans.filter(
+      (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage,
+      (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage * 0.7,
+      (p) => ageOk(p) && p.monthly_fee <= budget,
+    ],
+    budget: [
       (p) =>
         ageOk(p) &&
         p.monthly_fee <= budget &&
         parseDataGB(p.data) >= dataUsage &&
         hasOttMatch(ott, p.benefits),
-    );
-    if (candidates.length < 3) {
-      candidates = plans.filter(
-        (p) =>
-          ageOk(p) &&
-          p.monthly_fee <= budget &&
-          parseDataGB(p.data) >= dataUsage * 0.7 &&
-          hasOttMatch(ott, p.benefits),
-      );
-    }
-    if (candidates.length < 3) {
-      candidates = plans.filter(
-        (p) =>
-          ageOk(p) &&
-          p.monthly_fee <= budget &&
-          parseDataGB(p.data) >= dataUsage,
-      );
-    }
-    if (candidates.length < 3) {
-      candidates = plans.filter(
-        (p) =>
-          ageOk(p) &&
-          p.monthly_fee <= budget &&
-          parseDataGB(p.data) >= dataUsage * 0.7,
-      );
-    }
-    if (candidates.length < 3) {
-      candidates = plans.filter((p) => ageOk(p) && p.monthly_fee <= budget);
-    }
-  }
+      (p) =>
+        ageOk(p) &&
+        p.monthly_fee <= budget &&
+        parseDataGB(p.data) >= dataUsage * 0.7 &&
+        hasOttMatch(ott, p.benefits),
+      (p) =>
+        ageOk(p) && p.monthly_fee <= budget && parseDataGB(p.data) >= dataUsage,
+      (p) =>
+        ageOk(p) &&
+        p.monthly_fee <= budget &&
+        parseDataGB(p.data) >= dataUsage * 0.7,
+      (p) => ageOk(p) && p.monthly_fee <= budget,
+    ],
+  };
 
-  if (candidates.length === 0) {
-    candidates = plans.filter((p) => ageOk(p));
-  }
+  return filtersByPriority[input.priority ?? 'budget'];
+}
 
-  if (ott && ott.length > 0) {
-    const seen = new Set(candidates.map((p) => p.id));
-    for (const p of plans) {
-      if (ageOk(p) && hasOttMatch(ott, p.benefits) && !seen.has(p.id)) {
-        candidates.push(p);
-      }
-    }
-  }
-
+// 후보 요금제를 점수로 정렬하고 상위 5개를 반환합니다.
+function scoreCandidates(candidates: Plan[], input: ConsultInput): Plan[] {
+  const dataUsage = input.dataUsage ?? 0;
+  const priority = input.priority ?? 'budget';
+  const ott = input.ott;
   const DATA_WEIGHT = 1_000_000;
+
   return candidates
     .map((p) => {
       const dataValue = parseDataGB(p.data);
@@ -187,9 +141,9 @@ function filterRecommendPlans(plans: Plan[], input: ConsultInput): Plan[] {
       const ottBonus = hasOttMatch(ott, p.benefits) ? 1_000 : 0;
 
       let score: number;
-      if (isMaxDataPriority) {
+      if (priority === 'max_data') {
         score = -dataValue * DATA_WEIGHT + p.monthly_fee - ottBonus;
-      } else if (isDataPriority) {
+      } else if (priority === 'data') {
         score = p.monthly_fee - ottBonus;
       } else {
         const EXACT_BONUS = 2_000 * DATA_WEIGHT;
@@ -204,6 +158,37 @@ function filterRecommendPlans(plans: Plan[], input: ConsultInput): Plan[] {
     .slice(0, 5);
 }
 
+// 사용자 조건에 맞는 상위 후보 요금제만 추려 prompt 길이를 줄임.
+function filterRecommendPlans(plans: Plan[], input: ConsultInput): Plan[] {
+  const filters = buildCandidateFilters(input);
+  let candidates: Plan[] = [];
+
+  for (const filter of filters) {
+    candidates = plans.filter(filter);
+    if (candidates.length >= 3) break;
+  }
+
+  if (candidates.length === 0) {
+    candidates = plans.filter((p) => ageMatches(input.ageGroup, p.target_age));
+  }
+
+  const ott = input.ott;
+  if (ott && ott.length > 0) {
+    const seen = new Set(candidates.map((p) => p.id));
+    for (const p of plans) {
+      if (
+        ageMatches(input.ageGroup, p.target_age) &&
+        hasOttMatch(ott, p.benefits) &&
+        !seen.has(p.id)
+      ) {
+        candidates.push(p);
+      }
+    }
+  }
+
+  return scoreCandidates(candidates, input);
+}
+
 // 현재 요금제의 월 요금을 찾음. 없으면 0.
 function findCurrentPlanFee(
   plans: Plan[],
@@ -214,12 +199,27 @@ function findCurrentPlanFee(
   return found?.monthly_fee ?? 0;
 }
 
-// LLM 출력을 실제 데이터로 보정하고, 이유와 절감액은 코드에서 재생성해 환각을 차단.
-function sanitizeRecommendations(
+const reasonSystemPrompt = `
+당신은 통신 요금제 추천 사유 작성 AI입니다.
+제공된 사용자 조건과 요금제 데이터만 사용해 각 후보의 추천 사유를 JSON 형식으로 작성하세요.
+존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
+`;
+
+// 코드 기반 fallback 사유 생성.
+function buildCodeReason(plan: Plan, saving: number): string {
+  let reason = `데이터 ${plan.data}, 월 ${plan.monthly_fee.toLocaleString()}원이에요.`;
+  if (saving > 0) {
+    reason += ` 현재 요금제보다 월 ${saving.toLocaleString()}원 절감돼요.`;
+  }
+  return reason;
+}
+
+// LLM 출력을 실제 데이터로 보정하고, 이유는 OpenAI로 생성하되 실패 시 코드 fallback.
+async function sanitizeRecommendations(
   output: RecommendOutput,
   plans: Plan[],
   input: ConsultInput,
-): RecommendOutput {
+): Promise<RecommendOutput> {
   const currentPlanFee = findCurrentPlanFee(plans, input.currentPlan);
 
   const valid = output.recommendations
@@ -228,36 +228,59 @@ function sanitizeRecommendations(
       if (!plan) return null;
       const saving =
         currentPlanFee > 0 ? Math.max(0, currentPlanFee - plan.monthly_fee) : 0;
-
-      let reason = `데이터 ${plan.data}, 월 ${plan.monthly_fee.toLocaleString()}원`;
-      const matchedOtt = Array.from(
-        new Set(
-          plan.benefits.flatMap((benefit) =>
-            OTT_SERVICES.filter((service) =>
-              benefit.toLowerCase().includes(service.toLowerCase()),
-            ),
-          ),
-        ),
-      );
-      if (matchedOtt.length > 0) {
-        reason += `이며 ${matchedOtt.join(', ')} 혜택이 포함돼 있어요.`;
-      } else {
-        reason += '이에요.';
-      }
-      if (saving > 0) {
-        reason += ` 현재 요금제보다 월 ${saving.toLocaleString()}원 절감돼요.`;
-      }
-
       return {
         planId: String(plan.id),
         planName: plan.name,
-        reason,
+        plan,
         savingAmount: saving,
       };
     })
-    .filter((r): r is RecommendedPlan => r !== null);
+    .filter(
+      (
+        r,
+      ): r is {
+        planId: string;
+        planName: string;
+        plan: Plan;
+        savingAmount: number;
+      } => r !== null,
+    );
 
-  return { recommendations: valid.slice(0, 3) };
+  const plansText = valid.slice(0, 3).map(formatPlanForPrompt).join('\n');
+  const filledPrompt = fillTemplate(reasonPromptText, {
+    ageGroup: input.ageGroup ?? '미제공',
+    dataUsage: String(input.dataUsage ?? 0),
+    budget: input.budget ? String(input.budget) : '제한 없음',
+    currentPlan: input.currentPlan ?? '미등록',
+    priority: input.priority ?? 'budget',
+    ott: input.ott?.join(', ') || '없음',
+    plans: plansText,
+  });
+
+  let reasonByPlanId: Record<string, string> | undefined;
+  try {
+    const raw = await chatOpenAI(reasonSystemPrompt, filledPrompt);
+    const parsed = safeJsonParse<{
+      reasons: { planId: string; reason: string }[];
+    }>(raw);
+    if (parsed?.reasons) {
+      reasonByPlanId = Object.fromEntries(
+        parsed.reasons.map((r) => [String(r.planId), r.reason]),
+      );
+    }
+  } catch {
+    reasonByPlanId = undefined;
+  }
+
+  const recommendations: RecommendedPlan[] = valid.slice(0, 3).map((r) => ({
+    planId: r.planId,
+    planName: r.planName,
+    reason:
+      reasonByPlanId?.[r.planId] || buildCodeReason(r.plan, r.savingAmount),
+    savingAmount: r.savingAmount,
+  }));
+
+  return { recommendations };
 }
 
 // 예산 내에서 요청한 데이터 용량을 충족하는 요금제가 없을 때 안내 문구 생성.
@@ -464,7 +487,7 @@ export async function recommendPlan(
         }) as RecommendedPlan,
     ),
   };
-  const sanitized = sanitizeRecommendations(codeRecs, plans, input);
+  const sanitized = await sanitizeRecommendations(codeRecs, plans, input);
 
   if (!notice) return { ...sanitized, mode: 'recommend' };
 
