@@ -1,5 +1,4 @@
-// import React from 'react';
-
+// features/plan-catalog/components/PlanCard.tsx
 import { Anchor, BadgePercent } from 'lucide-react';
 
 import { Button, Card, IconListItem, Line } from '@/features/shared';
@@ -47,7 +46,7 @@ export default function PlanCard({
       className={status === 'report' ? 'w-full' : ''}
     >
       <div className="flex items-start justify-between">
-        <h3 className="text-lg font-bold text-fg-primary">{title}</h3>
+        <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
         <button
           type="button"
           onClick={onSaveToggle}
@@ -61,7 +60,7 @@ export default function PlanCard({
         </button>
       </div>
 
-      <p className="text-2xl font-bold text-brand-promo-primary">
+      <p className="text-[16px] font-bold text-brand-promo-secondary">
         월 {price.toLocaleString()}원
       </p>
 
@@ -73,6 +72,9 @@ export default function PlanCard({
             key={benefit.label}
             icon={benefit.icon}
             label={benefit.label}
+            iconSize={14}
+            iconColor="text-compare-selected"
+            textClassName="text-[12px] font-normal text-fg-tertiary"
           />
         ))}
       </div>
@@ -80,7 +82,7 @@ export default function PlanCard({
       {(reason || couponText) && <Line />}
 
       {reason && (
-        <p className="px-4 py-3 text-sm rounded-lg bg-surface-page text-fg-secondary">
+        <p className="rounded-lg bg-surface-page px-4 py-3 text-[12px] font-normal text-fg-secondary">
           {reason}
         </p>
       )}
@@ -90,8 +92,10 @@ export default function PlanCard({
           icon={BadgePercent}
           label={couponText}
           variant="bordered"
-          className="border-[#f5b31f] bg-[#fff8e9]"
-          iconColor="text-[f5b31f]"
+          iconSize={16}
+          iconColor="text-[#f5b31f]"
+          textClassName="text-[12px] font-semibold text-[#f5b31f]"
+          className="rounded-lg border-[#f5b31f] bg-[#fff8e9]"
         />
       )}
 

@@ -1,4 +1,3 @@
-// features/shared/types/plan.ts
 export interface Plan {
   id: string;
   name: string;
