@@ -13,7 +13,7 @@ const ButtonColorVariants: Record<ButtonVariant, string> = {
     'bg-brand-promo-primary text-white hover:bg-brand-promo-secondary disabled:bg-surface-pressed disabled:text-brand-light',
   secondary:
     'bg-surface-page text-brand-primary hover:bg-bg-pressed disabled:text-fg-disabled',
-  chip: 'bg-white text-fg-tertiary border border-border focus:bg-surface-pressed focus:text-brand-primary focus:border-border-brand',
+  chip: 'bg-white text-fg-tertiary border border-border hover:bg-surface-pressed hover:text-brand-primary hover:border-border-brand',
   outline:
     'border border-brand-promo-primary text-brand-promo-secondary hover:bg-bg-subtle disabled:text-fg-disabled disabled:border-border',
 };

@@ -5,3 +5,4 @@ export { default as Line } from './components/Line';
 export { default as IconBadge } from './components/IconBadge';
 export { default as IconListItem } from './components/IconListItem';
 export type { IconBadgeColor } from './components/IconBadge';
+export { default as BottomSheet } from './components/BottomSheet';

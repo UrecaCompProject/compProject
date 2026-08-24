@@ -1,5 +1,5 @@
-import { ChevronLeft, Bell, Menu } from 'lucide-react';
-import { matchPath, useLocation, useNavigate } from 'react-router';
+import { Bell, Menu } from 'lucide-react';
+import { matchPath, useLocation } from 'react-router';
 
 const pageTitles: { path: string; title: string }[] = [
   { path: '/', title: 'MY' },
@@ -16,20 +16,20 @@ const pageTitles: { path: string; title: string }[] = [
 
 export default function Header() {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const title =
     pageTitles.find(({ path }) => matchPath(path, pathname))?.title ?? '';
-  const showBack = pathname !== '/';
+  // const showBack = pathname !== '/';
 
   return (
     <div className="sticky top-0 w-full bg-surface-card flex gap-3 px-4 py-3 items-center border-b border-border">
-      {showBack && (
+      {/* {showBack && (
         <ChevronLeft
           className="shrink-0 cursor-pointer"
           onClick={() => navigate(-1)}
         />
-      )}
+      )} */}
       <div className="w-full text-title">{title}</div>
       <Bell size={22} className="shrink-0" />
       <Menu size={22} className="shrink-0" />

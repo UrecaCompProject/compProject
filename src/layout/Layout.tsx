@@ -1,12 +1,11 @@
 import { Outlet, useLocation } from 'react-router';
 
 import Header from './Header';
-import Navbar from './Navbar';
 
 export default function Layout() {
   const { pathname } = useLocation();
-  const isChatPage = pathname.startsWith('/chat');
-  const notShowNavbar = pathname.startsWith('/chat');
+  const isChatPage = pathname === '/';
+  // const notShowNavbar = pathname.startsWith('/chat');
 
   return (
     <div
@@ -20,7 +19,7 @@ export default function Layout() {
 
       <Outlet />
 
-      {!notShowNavbar && <Navbar />}
+      {/* {!notShowNavbar && <Navbar />} */}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { ArrowUp, Menu } from 'lucide-react';
 
+import { useIsLoggedIn } from '@/features/auth';
 import { Input } from '@/features/shared';
 
 interface ChatInputProps {
@@ -15,13 +16,13 @@ export default function ChatInput({
   onSend,
   disabled = false,
 }: ChatInputProps) {
-  const isLogin = true;
+  const isLogin = useIsLoggedIn();
   const handleSend = () => {
     onSend(value);
   };
 
   return (
-    <div className="flex items-center gap-2 p-4 bg-white border-t border-border">
+    <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border">
       {isLogin && (
         <button
           type="button"
