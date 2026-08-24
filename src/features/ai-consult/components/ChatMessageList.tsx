@@ -5,6 +5,7 @@ import type { ConsultInput } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
 import MyChat from './MyChat';
+import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
 
 import type { ChatMessage } from '../types';
@@ -72,6 +73,13 @@ export default function ChatMessageList({
             {message.type === 'signup' && (
               <SignupChat onFinish={onSignupFinished} />
             )}
+
+            {message.type === 'ai' &&
+              message.recommendations &&
+              message.recommendations.length > 0 &&
+              index === lastIndex && (
+                <RecommendationCards plans={message.recommendations} />
+              )}
 
             {message.type === 'ai' &&
               message.form &&

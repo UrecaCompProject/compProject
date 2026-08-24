@@ -344,6 +344,17 @@ async function sanitizeRecommendations(
     reason:
       reasonByPlanId?.[r.planId] || buildCodeReason(r.plan, r.savingAmount),
     savingAmount: r.savingAmount,
+    monthlyFee: r.plan.monthly_fee,
+    data: r.plan.data,
+    benefits: r.plan.benefits,
+    category: r.plan.category,
+    targetAge: r.plan.target_age,
+    dataSpeedAfter: r.plan.data_speed_after,
+    voice: r.plan.voice,
+    message: r.plan.message,
+    shareData: r.plan.share_data,
+    tethering: r.plan.tethering,
+    notes: r.plan.notes,
   }));
 
   return { recommendations };
