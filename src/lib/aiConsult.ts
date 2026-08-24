@@ -27,6 +27,9 @@ export interface RecommendedPlan {
   planName: string;
   reason: string;
   savingAmount: number;
+  monthlyFee?: number;
+  data?: string;
+  benefits?: string[];
 }
 
 export interface ConsultFormField {

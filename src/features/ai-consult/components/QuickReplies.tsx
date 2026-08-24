@@ -1,5 +1,3 @@
-import { Button } from '@/features/shared';
-
 interface QuickRepliesProps {
   replies?: string[];
   onReply: (reply: string) => void;
@@ -14,21 +12,21 @@ export default function QuickReplies({
   if (!replies || replies.length === 0) return null;
 
   return (
-    <div>
-      <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary px-5 pt-4 pb-2">
-        자주 물어보는 질문
+    <div className="px-4 pb-4 pt-2">
+      <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary px-1 pb-2">
+        자주 묻는 질문
       </div>
-      <div className="flex flex-wrap gap-2 px-4 pb-4">
+      <div className="flex flex-wrap gap-2">
         {replies.map((reply) => (
-          <Button
+          <button
             key={reply}
-            variant="chip"
-            size="chip"
+            type="button"
             onClick={() => onReply(reply)}
             disabled={disabled}
+            className="inline-flex items-center px-3 py-2 rounded-full text-caption text-fg-secondary bg-color-border hover:bg-border-strong disabled:bg-surface-pressed disabled:text-fg-disabled transition-colors cursor-pointer"
           >
             {reply}
-          </Button>
+          </button>
         ))}
       </div>
     </div>

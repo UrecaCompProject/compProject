@@ -73,6 +73,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
+          recommendations: response.recommendations,
         },
       ]);
     } catch (error) {
@@ -124,6 +125,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
+          recommendations: response.recommendations,
         },
       ]);
     } catch (error) {

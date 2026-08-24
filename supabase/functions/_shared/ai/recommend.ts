@@ -344,6 +344,9 @@ async function sanitizeRecommendations(
     reason:
       reasonByPlanId?.[r.planId] || buildCodeReason(r.plan, r.savingAmount),
     savingAmount: r.savingAmount,
+    monthlyFee: r.plan.monthly_fee,
+    data: r.plan.data,
+    benefits: r.plan.benefits,
   }));
 
   return { recommendations };

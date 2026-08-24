@@ -1,4 +1,4 @@
-import type { ConsultForm } from '@/lib/aiConsult';
+import type { ConsultForm, RecommendedPlan } from '@/lib/aiConsult';
 
 export type MessageType = 'ai' | 'user';
 
@@ -8,4 +8,5 @@ export interface ChatMessage {
   sentence: string;
   quickReplies?: string[];
   form?: ConsultForm;
+  recommendations?: RecommendedPlan[];
 }

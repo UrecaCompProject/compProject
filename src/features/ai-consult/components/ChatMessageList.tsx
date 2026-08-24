@@ -4,6 +4,7 @@ import type { ConsultInput } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
 import MyChat from './MyChat';
+import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
 
 import type { ChatMessage } from '../types';
@@ -41,6 +42,12 @@ export default function ChatMessageList({
                 <MyChat sentence={message.sentence} />
               </div>
             )}
+            {message.type === 'ai' &&
+              index === lastIndex &&
+              message.recommendations &&
+              message.recommendations.length > 0 && (
+                <RecommendationCards plans={message.recommendations} />
+              )}
             {message.type === 'ai' &&
               message.form &&
               index === lastIndex &&
