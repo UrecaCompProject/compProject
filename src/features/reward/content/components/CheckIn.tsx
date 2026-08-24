@@ -1,4 +1,6 @@
-import { Check, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+
+import badgeImage from '../../assets/badge.png';
 
 const days = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -24,16 +26,18 @@ export default function CheckIn() {
           const checked = index === 0;
 
           return (
-            <li key={day} className="flex flex-col items-center gap-1.5">
-              <span
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${
-                  checked
-                    ? 'bg-brand-promo-soft text-brand-promo-primary'
-                    : 'bg-surface-page text-fg-disabled'
+            <li
+              key={day}
+              aria-label={`${day}요일 ${checked ? '출석 완료' : '미출석'}`}
+              className="flex flex-col items-center gap-1.5"
+            >
+              <img
+                src={badgeImage}
+                alt=""
+                className={`h-7 w-7 object-contain ${
+                  checked ? 'opacity-100' : 'grayscale opacity-30'
                 }`}
-              >
-                {checked ? <Check size={15} strokeWidth={2.5} /> : null}
-              </span>
+              />
               <span
                 className={`text-[10px] ${
                   checked ? 'text-brand-promo-primary' : 'text-fg-tertiary'
