@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 import { SignupChat } from '@/features/auth';
+import type { ConsultInput } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
 import MyChat from './MyChat';
+import RecommendationForm from './RecommendationForm';
 
 import type { ChatMessage } from '../types';
 
@@ -11,12 +13,16 @@ interface ChatMessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
   onSignupFinished?: () => void;
+  onFormSubmit?: (values: Partial<ConsultInput>) => void;
+  formDefaults?: Partial<ConsultInput>;
 }
 
 export default function ChatMessageList({
   messages,
   isLoading = false,
   onSignupFinished,
+  onFormSubmit,
+  formDefaults,
 }: ChatMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -34,10 +40,17 @@ export default function ChatMessageList({
     return () => observer.disconnect();
   }, []);
 
+  const lastIndex = messages.length - 1;
+
   return (
     <div className="flex-1 overflow-y-auto py-4">
+
       <div ref={contentRef} className="flex flex-col gap-4 px-4">
-        {messages.map((message) => (
+
+
+
+        {messages.map((message, index) => (
+
           <div key={message.id}>
             {message.type === 'ai' && <AIChat sentence={message.sentence} />}
             {message.type === 'user' && (
@@ -45,9 +58,25 @@ export default function ChatMessageList({
                 <MyChat sentence={message.sentence} />
               </div>
             )}
+
             {message.type === 'signup' && (
               <SignupChat onFinish={onSignupFinished} />
             )}
+
+            {message.type === 'ai' &&
+              message.form &&
+              index === lastIndex &&
+              onFormSubmit && (
+                <div className="mt-3">
+                  <RecommendationForm
+                    form={message.form}
+                    onSubmit={onFormSubmit}
+                    defaultValues={formDefaults}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+
           </div>
         ))}
         {isLoading && (

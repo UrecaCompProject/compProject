@@ -1,17 +1,23 @@
 import { requestConsult } from '@/lib/aiConsult';
 import type { ConsultInput, ConsultResponse } from '@/lib/aiConsult';
 
-const OTT_KEYWORDS = [
-  '넷플릭스',
-  '유튜브 프리미엄',
-  '디즈니+',
-  '왓챠',
-  '웨이브',
-  '쿠팡플레이',
-  '애플 뮤직',
-  '멜론',
-  '스포티파이',
-];
+// OTT 키워드 정규화 맵: 사용자가 입력한 별칭을 canonical 키워드로 변환
+const OTT_ALIASES: Record<string, string> = {
+  넷플릭스: '넷플릭스',
+  넷플: '넷플릭스',
+  '유튜브 프리미엄': '유튜브 프리미엄',
+  유튜브: '유튜브 프리미엄',
+  '디즈니+': '디즈니+',
+  디즈니: '디즈니+',
+  왓챠: '왓챠',
+  웨이브: '웨이브',
+  쿠팡플레이: '쿠팡플레이',
+  쿠팡: '쿠팡플레이',
+  '애플 뮤직': '애플 뮤직',
+  애플: '애플 뮤직',
+  멜론: '멜론',
+  스포티파이: '스포티파이',
+};
 
 // 사용자 메시지에서 상담 조건(연령/데이터/예산/OTT 등)을 추출해 ConsultInput으로 누적합니다.
 export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
@@ -37,28 +43,35 @@ export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
   else if (/40대/.test(t)) next.ageGroup = '40대';
   else if (/50대|60대|어르신|시니어/.test(t)) next.ageGroup = '50대 이상';
 
-  const gbMatch =
-    t.match(/(\d+(?:\.\d+)?)\s*GB/i) ??
-    t.match(/(\d+(?:\.\d+)?)\s*기가/i) ??
-    t.match(/월\s*(\d+(?:\.\d+)?)\s*기가/i);
+  const gbMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:GB|G|기가)(?![a-zA-Z])/i);
   if (gbMatch) {
     next.dataUsage = parseFloat(gbMatch[1]);
-  } else if (/데이터\s*(?:많|큰)|많이\s*써|월\s*많게|용량\s*큰/.test(t)) {
+  } else if (
+    /데이터\s*(?:많|큰)|많이\s*써|월\s*많게|용량\s*큰|데이터\s*부족/.test(t)
+  ) {
     next.dataUsage = (next.dataUsage ?? 0) + 5;
     next.priority = 'data';
+  } else if (/무제한|완전\s*무제한|데이터\s*많이/.test(t)) {
+    next.dataUsage = 100;
+    next.priority = 'max_data';
   }
 
-  const budgetMatch = t.match(/(?:예산\s*)?(\d+)\s*만원/);
-  if (budgetMatch) {
-    next.budget = parseInt(budgetMatch[1], 10) * 10000;
+  const manMatch = t.match(/(\d+(?:\.\d+)?)\s*만(?:원)?/);
+  const wonMatch = t.match(/(\d{4,7})\s*원/);
+  if (manMatch) {
+    next.budget = Math.round(parseFloat(manMatch[1]) * 10000);
+  } else if (wonMatch) {
+    next.budget = parseInt(wonMatch[1], 10);
   }
 
-  if (/가장\s*저렴|싼|최저|절감/.test(t)) {
+  if (/가장\s*저렴|싼|최저|절감|가격\s*우선|예산\s*안|저렴한/.test(t)) {
     next.priority = 'budget';
     if (next.budget === undefined) next.budget = 0;
-  } else if (/데이터.*(?:많|큰)|용량.*큰|데이터\s*우선/.test(t)) {
+  } else if (/데이터.*(?:많|큰)|용량.*큰|데이터\s*우선|데이터\s*중심/.test(t)) {
     next.priority = 'data';
-  } else if (/최대\s*데이터|완전\s*무제한/.test(t)) {
+  } else if (
+    /최대\s*데이터|완전\s*무제한|많은\s*데이터|데이터\s*최대/.test(t)
+  ) {
     next.priority = 'max_data';
   }
 
@@ -78,12 +91,17 @@ export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
     next.ageGroup = '청소년';
   }
 
-  const explicitNoOtt = /OTT\s*없|혜택\s*없/.test(t);
-  for (const ott of OTT_KEYWORDS) {
-    if (t.includes(ott)) {
+  const explicitNoOtt = /OTT\s*없|혜택\s*없|OTT\s*안/.test(t);
+  // 긴 별칭을 먼저 매칭해 '유튜브 프리미엄'이 '유튜브'로 잘몤 매칭되는 것을 방지
+  const sortedAliases = Object.keys(OTT_ALIASES).sort(
+    (a, b) => b.length - a.length,
+  );
+  for (const alias of sortedAliases) {
+    if (t.includes(alias)) {
       if (explicitNoOtt) continue;
+      const canonical = OTT_ALIASES[alias];
       const current = next.ott ?? [];
-      if (!current.includes(ott)) next.ott = [...current, ott];
+      if (!current.includes(canonical)) next.ott = [...current, canonical];
     }
   }
 

@@ -13,6 +13,8 @@ export default function ChatPage() {
     isLoading,
     handleSend,
     handleSignupFinished,
+    handleFormSubmit,
+    profile,
   } = useChat();
 
   const lastMessage = messages[messages.length - 1];
@@ -25,6 +27,8 @@ export default function ChatPage() {
         messages={messages}
         isLoading={isLoading}
         onSignupFinished={handleSignupFinished}
+        onFormSubmit={handleFormSubmit}
+        formDefaults={profile}
       />
       <QuickReplies
         replies={quickReplies}
