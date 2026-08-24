@@ -6,7 +6,15 @@ import {
 import { useChat } from '@/features/ai-consult/hooks/useChat';
 
 export default function ChatPage() {
-  const { messages, input, setInput, isLoading, handleSend } = useChat();
+  const {
+    messages,
+    input,
+    setInput,
+    isLoading,
+    handleSend,
+    handleFormSubmit,
+    profile,
+  } = useChat();
 
   const lastMessage = messages[messages.length - 1];
   const quickReplies =
@@ -14,7 +22,12 @@ export default function ChatPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ChatMessageList messages={messages} isLoading={isLoading} />
+      <ChatMessageList
+        messages={messages}
+        isLoading={isLoading}
+        onFormSubmit={handleFormSubmit}
+        formDefaults={profile}
+      />
       <QuickReplies
         replies={quickReplies}
         onReply={handleSend}

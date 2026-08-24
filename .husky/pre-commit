@@ -1,1 +1,10 @@
-npx lint-staged
+#!/bin/sh
+# Windows Git Bash(MINGW/MSYS)에서는 npx 쉘 스크립트가 누락될 수 있으므로 npx.cmd를 사용합니다.
+case "$(uname -s)" in
+  MINGW* | MSYS* | CYGWIN*)
+    npx.cmd lint-staged
+    ;;
+  *)
+    npx lint-staged
+    ;;
+esac

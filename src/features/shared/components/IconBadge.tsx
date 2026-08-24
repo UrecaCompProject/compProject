@@ -1,20 +1,16 @@
 import type { LucideIcon } from 'lucide-react';
 
-type IconBadgeColor = 'brand' | 'accent-purple' | 'pink' | 'disabled';
+export type IconBadgeColor =
+  'brand' | 'accent-purple' | 'accent-primary' | 'disabled';
 
 interface IconBadgeProps {
-  /** lucide-react 아이콘 컴포넌트 (예: Phone, MessageCircle) */
   icon: LucideIcon;
   color?: IconBadgeColor;
-  /** 배지 한 변의 길이(px). 화면마다 값이 달라서 프리셋 대신 실측 px를 직접 받음. */
   size?: number;
-  /** 모서리 radius(px). 원형이 필요하면 'full'. */
   radius?: number | 'full';
   /** 아이콘 크기(px) 직접 지정. 생략 시 size의 약 55%로 자동 계산. */
   iconSize?: number;
-  /** 프리셋에 없는 배경색이 필요할 때 직접 지정 (Tailwind 클래스, 예: 'bg-teal-100') */
   bgColor?: string;
-  /** 프리셋에 없는 아이콘 색이 필요할 때 직접 지정 (예: 'text-teal-600') */
   iconColor?: string;
   className?: string;
 }
@@ -25,7 +21,7 @@ const colorClasses: Record<IconBadgeColor, { bg: string; icon: string }> = {
     bg: 'bg-accent-purple-soft',
     icon: 'text-accent-purple-primary',
   },
-  pink: { bg: 'bg-accent-pink-soft', icon: 'text-accent-pink' },
+  'accent-primary': { bg: 'bg-accent-soft', icon: 'text-accent-primary' },
   disabled: { bg: 'bg-surface-page', icon: 'text-fg-disabled' },
 };
 

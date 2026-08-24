@@ -29,11 +29,25 @@ export interface RecommendedPlan {
   savingAmount: number;
 }
 
+export interface ConsultFormField {
+  name: string;
+  label: string;
+  type: 'select' | 'number' | 'text' | 'multi-select';
+  options?: string[];
+  required?: boolean;
+}
+
+export interface ConsultForm {
+  title?: string;
+  fields: ConsultFormField[];
+}
+
 export interface ConsultResponse {
   recommendations: RecommendedPlan[];
   notice?: string;
   quickReplies?: string[];
   mode?: ChatMode;
+  form?: ConsultForm;
 }
 
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.
