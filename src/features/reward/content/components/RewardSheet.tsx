@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { BottomSheet } from '@/features/shared';
 
 import RewardContent from './RewardContent';
@@ -5,27 +7,49 @@ import RewardContent from './RewardContent';
 type RewardSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onStoreClick: () => void;
-  onCouponClick: () => void;
 };
 
-export default function RewardSheet({
-  open,
-  onOpenChange,
-  onStoreClick,
-  onCouponClick,
-}: RewardSheetProps) {
+type RewardView = 'reward' | 'store' | 'coupon';
+
+const titles: Record<RewardView, string> = {
+  reward: '게임 혜택',
+  store: '배지 상점',
+  coupon: '나의 쿠폰함',
+};
+
+export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
+  const [activeView, setActiveView] = useState<RewardView>('reward');
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setActiveView('reward');
+    }
+
+    onOpenChange(nextOpen);
+  };
+
+  const handleBack = () => {
+    setActiveView('reward');
+  };
+
   return (
     <BottomSheet
       open={open}
-      onOpenChange={onOpenChange}
-      title="게임 혜택"
+      onOpenChange={handleOpenChange}
+      title={titles[activeView]}
+      onBack={activeView === 'reward' ? undefined : handleBack}
       size="full"
+      bodyClassName={activeView === 'reward' ? 'px-0' : 'px-5'}
     >
-      <RewardContent
-        onStoreClick={onStoreClick}
-        onCouponClick={onCouponClick}
-      />
+      {activeView === 'reward' && (
+        <RewardContent
+          onStoreClick={() => setActiveView('store')}
+          onCouponClick={() => setActiveView('coupon')}
+        />
+      )}
+
+      {activeView === 'store' && <div />}
+
+      {activeView === 'coupon' && <div />}
     </BottomSheet>
   );
 }
