@@ -64,7 +64,7 @@ export default function RecommendationCards({
           {plans.map((plan) => (
             <div
               key={plan.planId}
-              className="w-[280px] flex-shrink-0 pr-3 last:pr-0"
+              className="w-[280px] shrink-0 pr-3 last:pr-0"
             >
               <Card border="default" radius="16" gap="12" className="h-full">
                 <div className="flex items-start justify-between">
