@@ -234,6 +234,7 @@ export default function PlanSubscriptionSheet({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [planList, setPlanList] = useState<RecommendedPlan[]>([]);
   const [isPlanListLoading, setIsPlanListLoading] = useState(true);
+  const [planListError, setPlanListError] = useState<string | null>(null);
   const subscribe = useSubscriptionStore((state) => state.subscribe);
   const changePlan = useSubscriptionStore((state) => state.changePlan);
 
@@ -242,10 +243,20 @@ export default function PlanSubscriptionSheet({
     let cancelled = false;
     getPlanCatalog()
       .then((plans) => {
-        if (!cancelled) setPlanList(plans);
+        if (!cancelled) {
+          setPlanList(plans);
+          setPlanListError(null);
+        }
       })
-      .catch(() => {
-        if (!cancelled) setPlanList([]);
+      .catch((error) => {
+        if (!cancelled) {
+          setPlanList([]);
+          setPlanListError(
+            error instanceof Error
+              ? error.message
+              : '요금제 목록을 불러오지 못했습니다.',
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setIsPlanListLoading(false);
@@ -445,7 +456,12 @@ export default function PlanSubscriptionSheet({
                 요금제를 불러오는 중...
               </p>
             )}
-            {!isPlanListLoading && planList.length === 0 && (
+            {!isPlanListLoading && planListError && (
+              <p className="text-center text-caption text-semantic-error py-8">
+                {planListError}
+              </p>
+            )}
+            {!isPlanListLoading && !planListError && planList.length === 0 && (
               <p className="text-center text-caption text-fg-tertiary py-8">
                 등록된 요금제가 없습니다.
               </p>

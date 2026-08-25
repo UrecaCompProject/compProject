@@ -53,7 +53,10 @@ export default function Modal() {
   } = renderedOptions;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-auto"
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* 검은 배경 */}
       <div
         className={`fixed inset-0 bg-fg-primary/50 animation-fade-in
