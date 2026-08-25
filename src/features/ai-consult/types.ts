@@ -6,6 +6,18 @@ import type {
 
 export type MessageType = 'ai' | 'user' | 'signup';
 
+export interface SubscriptionForm {
+  type: 'new' | 'portability' | 'device' | 'change';
+  name: string;
+  birth: string;
+  phone: string;
+  address: string;
+  simType: 'usim' | 'esim' | '';
+  agreedPrivacy: boolean;
+  agreedService: boolean;
+  agreedMarketing: boolean;
+}
+
 export type ChatMessage =
   | {
       id: number;
