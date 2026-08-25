@@ -1,14 +1,15 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 import { Check, CheckCircle2, Smartphone } from 'lucide-react';
 
+import { getPlanCatalog } from '@/features/plan-catalog/api/getPlanCatalog';
 import { BottomSheet, Button, Input } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 
 type SubscriptionStep =
-  'confirm' | 'identity' | 'delivery' | 'agreement' | 'complete';
+  'planSelect' | 'confirm' | 'identity' | 'delivery' | 'agreement' | 'complete';
 type SubscriptionType = 'new' | 'portability' | 'device' | 'change';
 
 interface FormState {
@@ -56,15 +57,40 @@ function isValidPhone(phone: string) {
   return /^\d{10,11}$/.test(digits);
 }
 
-const STEP_TITLES: Record<SubscriptionStep, string> = {
-  confirm: '요금제 가입',
-  identity: '본인 정보 입력',
-  delivery: '배송 및 USIM 선택',
-  agreement: '약관 동의',
-  complete: '신청 완료',
+const STEP_TITLES: Record<
+  SubscriptionStep,
+  { title: string; label: string; desc: string }
+> = {
+  planSelect: {
+    title: '요금제 선택',
+    label: '요금',
+    desc: '가입할 요금제를 선택해주세요',
+  },
+  confirm: {
+    title: '가입 유형',
+    label: '유형',
+    desc: '가입 방법을 선택해주세요',
+  },
+  identity: {
+    title: '본인 정보',
+    label: '본인',
+    desc: '가입자 정보를 입력해주세요',
+  },
+  delivery: {
+    title: '배송/유심',
+    label: '배송',
+    desc: 'USIM 받으실 주소를 입력해주세요',
+  },
+  agreement: {
+    title: '약관 동의',
+    label: '약관',
+    desc: '필수 약관에 동의해주세요',
+  },
+  complete: { title: '신청 완료', label: '완료', desc: '' },
 };
 
 const STEPS: SubscriptionStep[] = [
+  'planSelect',
   'confirm',
   'identity',
   'delivery',
@@ -89,33 +115,106 @@ function StepIndicator({
         const clickable = index <= currentIndex;
 
         return (
-          <button
-            key={step}
-            type="button"
-            disabled={!clickable}
-            onClick={() => clickable && onChange(step)}
-            className={`flex flex-col items-center gap-1 ${
-              clickable ? 'cursor-pointer' : 'cursor-default opacity-40'
-            }`}
-          >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-caption font-semibold ${
-                isActive
-                  ? 'bg-brand-promo-primary text-surface-card'
-                  : isPast
-                    ? 'bg-brand-promo-primary/20 text-brand-promo-primary'
-                    : 'bg-surface-pressed text-fg-disabled'
+          <Fragment key={step}>
+            <button
+              type="button"
+              disabled={!clickable}
+              onClick={() => clickable && onChange(step)}
+              className={`flex shrink-0 flex-col items-center gap-1 ${
+                clickable ? 'cursor-pointer' : 'cursor-default opacity-40'
               }`}
             >
-              {index + 1}
-            </div>
-            <span className="text-[10px] text-fg-secondary whitespace-nowrap">
-              {STEP_TITLES[step].split(' ')[0]}
-            </span>
-          </button>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-caption font-semibold ${
+                  isActive
+                    ? 'bg-brand-promo-primary text-surface-card'
+                    : isPast
+                      ? 'bg-brand-promo-primary/20 text-brand-promo-primary'
+                      : 'bg-surface-pressed text-fg-disabled'
+                }`}
+              >
+                {index + 1}
+              </div>
+              <span className="text-[10px] text-fg-secondary whitespace-nowrap">
+                {STEP_TITLES[step].label}
+              </span>
+            </button>
+            {index < STEPS.length - 1 && (
+              <div
+                className={`h-0.5 flex-1 mx-1 rounded-full transition-colors ${
+                  index < currentIndex ? 'bg-brand-promo-primary' : 'bg-border'
+                }`}
+              />
+            )}
+          </Fragment>
         );
       })}
     </div>
+  );
+}
+
+function PlanSummary({ plan }: { plan: RecommendedPlan }) {
+  return (
+    <div className="rounded-2xl border border-border-brand bg-brand-promo-primary/5 p-4 space-y-3">
+      <div className="flex items-baseline justify-between">
+        <h6 className="text-body font-bold text-fg-primary">{plan.planName}</h6>
+        <span className="text-body font-bold text-brand-promo-secondary">
+          월 {plan.monthlyFee?.toLocaleString()}원
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-fg-secondary">
+        {plan.data && <span>데이터 {plan.data}</span>}
+        {plan.voice && <span>음성 {plan.voice}</span>}
+        {plan.message && <span>메시지 {plan.message}</span>}
+      </div>
+      {plan.reason && (
+        <p className="rounded-xl bg-surface-card p-3 text-caption text-fg-tertiary">
+          {plan.reason}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function PlanSelectItem({
+  plan,
+  selected,
+  onClick,
+}: {
+  plan: RecommendedPlan;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left rounded-2xl border p-4 transition-colors cursor-pointer ${
+        selected
+          ? 'border-brand-promo-primary bg-brand-promo-primary/5'
+          : 'border-border bg-white hover:bg-surface-page'
+      }`}
+    >
+      <div className="flex items-baseline justify-between">
+        <span className="text-body font-semibold text-fg-primary">
+          {plan.planName}
+        </span>
+        <span className="text-body font-bold text-brand-promo-secondary">
+          월 {plan.monthlyFee?.toLocaleString()}원
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-caption text-fg-secondary">
+        {plan.data && <span>데이터 {plan.data}</span>}
+        {plan.voice && <span>음성 {plan.voice}</span>}
+        {plan.message && <span>메시지 {plan.message}</span>}
+      </div>
+      {selected && (
+        <div className="mt-2 flex items-center gap-1 text-caption text-brand-promo-primary">
+          <Check size={14} />
+          선택됨
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -125,18 +224,66 @@ export default function PlanSubscriptionSheet({
   plan,
   onComplete,
 }: PlanSubscriptionSheetProps) {
-  const [step, setStep] = useState<SubscriptionStep>('confirm');
+  const [step, setStep] = useState<SubscriptionStep>(
+    plan ? 'confirm' : 'planSelect',
+  );
+  const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
+    plan,
+  );
   const [form, setForm] = useState<FormState>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [planList, setPlanList] = useState<RecommendedPlan[]>([]);
+  const [isPlanListLoading, setIsPlanListLoading] = useState(true);
+  const [planListError, setPlanListError] = useState<string | null>(null);
   const subscribe = useSubscriptionStore((state) => state.subscribe);
   const changePlan = useSubscriptionStore((state) => state.changePlan);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    getPlanCatalog()
+      .then((plans) => {
+        if (!cancelled) {
+          setPlanList(plans);
+          setPlanListError(null);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPlanList([]);
+          setPlanListError(
+            error instanceof Error
+              ? error.message
+              : '요금제 목록을 불러오지 못했습니다.',
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsPlanListLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const fieldErrors = useMemo(
+    () => ({
+      name: form.name.length > 0 && form.name.trim().length < 2,
+      birth: form.birth.length > 0 && !isValidBirth(form.birth),
+      phone: form.phone.length > 0 && !isValidPhone(form.phone),
+      address: form.address.length > 0 && form.address.trim().length < 5,
+    }),
+    [form],
+  );
+
   const canProceed = useMemo(() => {
     switch (step) {
+      case 'planSelect':
+        return selectedPlan !== null;
       case 'confirm':
         return true;
       case 'identity':
@@ -152,7 +299,26 @@ export default function PlanSubscriptionSheet({
       default:
         return false;
     }
-  }, [step, form]);
+  }, [step, selectedPlan, form]);
+
+  const helperText = useMemo(() => {
+    switch (step) {
+      case 'planSelect':
+        return '가입할 요금제를 선택해주세요';
+      case 'confirm':
+        return '가입 유형을 선택해주세요';
+      case 'identity':
+        return '이름, 생년월일, 휴대폰 번호를 모두 입력해주세요';
+      case 'delivery':
+        return '배송 주소와 USIM 유형을 선택해주세요';
+      case 'agreement':
+        return '필수 약관에 모두 동의해주세요';
+      default:
+        return '';
+    }
+  }, [step]);
+
+  const showHelper = !canProceed && step !== 'complete';
 
   const handleNext = () => {
     if (!canProceed || isSubmitting) return;
@@ -160,11 +326,11 @@ export default function PlanSubscriptionSheet({
     if (step === 'agreement') {
       setIsSubmitting(true);
       window.setTimeout(() => {
-        if (plan) {
+        if (selectedPlan) {
           if (form.type === 'change') {
-            changePlan(plan);
+            changePlan(selectedPlan);
           } else {
-            subscribe(plan);
+            subscribe(selectedPlan);
           }
         }
         setIsSubmitting(false);
@@ -174,6 +340,7 @@ export default function PlanSubscriptionSheet({
     }
 
     const order: SubscriptionStep[] = [
+      'planSelect',
       'confirm',
       'identity',
       'delivery',
@@ -185,23 +352,23 @@ export default function PlanSubscriptionSheet({
 
   const handlePrev = () => {
     const order: SubscriptionStep[] = [
+      'planSelect',
       'confirm',
       'identity',
       'delivery',
       'agreement',
     ];
     const index = order.indexOf(step);
-    setStep(order[Math.max(0, index - 1)] ?? 'confirm');
+    setStep(order[Math.max(0, index - 1)] ?? 'planSelect');
   };
 
-  const description =
-    step === 'confirm' && plan
-      ? `${plan.planName} · 월 ${
-          plan.monthlyFee !== undefined ? plan.monthlyFee.toLocaleString() : '-'
-        }원`
-      : undefined;
-
-  if (!plan) return null;
+  const allAgreed =
+    form.agreedPrivacy && form.agreedService && form.agreedMarketing;
+  const handleAllAgree = (checked: boolean) => {
+    update('agreedPrivacy', checked);
+    update('agreedService', checked);
+    update('agreedMarketing', checked);
+  };
 
   const typeOptions: { value: SubscriptionType; label: string }[] = [
     { value: 'new', label: '신규 가입' },
@@ -210,40 +377,57 @@ export default function PlanSubscriptionSheet({
     { value: 'change', label: '요금제 변경' },
   ];
 
+  const title = STEP_TITLES[step].title;
+  const description = useMemo(() => {
+    if (step === 'confirm' && selectedPlan) {
+      return `${selectedPlan.planName} · 월 ${selectedPlan.monthlyFee !== undefined ? selectedPlan.monthlyFee.toLocaleString() : '-'}원`;
+    }
+    return STEP_TITLES[step].desc || undefined;
+  }, [step, selectedPlan]);
+
   const footer = (
-    <div className="flex gap-2 w-full">
-      {step !== 'confirm' && step !== 'complete' && (
-        <Button
-          variant="outline"
-          size="md"
-          className="flex-1"
-          onClick={handlePrev}
-          disabled={isSubmitting}
-        >
-          이전
-        </Button>
+    <div className="flex flex-col gap-2 w-full">
+      {showHelper && (
+        <p className="text-center text-caption text-error">{helperText}</p>
       )}
-      {step === 'complete' ? (
-        <Button
-          size="md"
-          className="flex-1"
-          onClick={() => {
-            onComplete?.();
-            onOpenChange(false);
-          }}
-        >
-          확인
-        </Button>
-      ) : (
-        <Button
-          size="md"
-          className="flex-1"
-          disabled={!canProceed || isSubmitting}
-          onClick={handleNext}
-        >
-          {step === 'agreement' ? '신청 완료' : '다음'}
-        </Button>
-      )}
+      <div className="flex gap-2 w-full">
+        {step !== 'planSelect' && step !== 'complete' && (
+          <Button
+            variant="outline"
+            size="md"
+            className="flex-1"
+            onClick={handlePrev}
+            disabled={isSubmitting}
+          >
+            이전
+          </Button>
+        )}
+        {step === 'complete' ? (
+          <Button
+            size="md"
+            className="flex-1"
+            onClick={() => {
+              onComplete?.();
+              onOpenChange(false);
+            }}
+          >
+            확인
+          </Button>
+        ) : (
+          <Button
+            size="md"
+            className="flex-1"
+            disabled={!canProceed || isSubmitting}
+            onClick={handleNext}
+          >
+            {isSubmitting
+              ? '처리 중...'
+              : step === 'agreement'
+                ? '신청 완료'
+                : '다음'}
+          </Button>
+        )}
+      </div>
     </div>
   );
 
@@ -251,41 +435,82 @@ export default function PlanSubscriptionSheet({
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={STEP_TITLES[step]}
+      title={title}
       description={description}
       footer={footer}
+      onBack={
+        step !== 'planSelect' && step !== 'complete' ? handlePrev : undefined
+      }
+      size={step === 'complete' ? 'content' : 'large'}
     >
       <div className="space-y-5 pb-2">
         <StepIndicator current={step} onChange={setStep} />
-        {step === 'confirm' && (
-          <section>
-            <h5 className="text-body font-semibold text-fg-primary mb-3">
-              가입 유형을 선택해주세요
-            </h5>
-            <div className="grid grid-cols-2 gap-3">
-              {typeOptions.map((option) => {
-                const selected = form.type === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => update('type', option.value)}
-                    className={`flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 transition-colors cursor-pointer ${
-                      selected
-                        ? 'border-brand-promo-primary bg-brand-promo-primary/5 text-brand-promo-primary'
-                        : 'border-border bg-white text-fg-secondary hover:bg-surface-page'
-                    }`}
-                  >
-                    <Smartphone size={20} />
-                    <span className="text-body-sm font-medium">
-                      {option.label}
-                    </span>
-                    {selected && (
-                      <Check size={14} className="text-brand-promo-primary" />
-                    )}
-                  </button>
-                );
-              })}
+
+        {step === 'planSelect' && (
+          <section className="space-y-4">
+            <p className="text-body-sm text-fg-secondary">
+              가입하실 요금제를 아래에서 선택해주세요.
+            </p>
+            {isPlanListLoading && (
+              <p className="text-center text-caption text-fg-tertiary py-8">
+                요금제를 불러오는 중...
+              </p>
+            )}
+            {!isPlanListLoading && planListError && (
+              <p className="text-center text-caption text-semantic-error py-8">
+                {planListError}
+              </p>
+            )}
+            {!isPlanListLoading && !planListError && planList.length === 0 && (
+              <p className="text-center text-caption text-fg-tertiary py-8">
+                등록된 요금제가 없습니다.
+              </p>
+            )}
+            <div className="space-y-3">
+              {planList.map((p) => (
+                <PlanSelectItem
+                  key={p.planId}
+                  plan={p}
+                  selected={p.planId === selectedPlan?.planId}
+                  onClick={() => setSelectedPlan(p)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {step === 'confirm' && selectedPlan && (
+          <section className="space-y-5">
+            <PlanSummary plan={selectedPlan} />
+            <div>
+              <h5 className="text-body font-semibold text-fg-primary mb-3">
+                가입 유형을 선택해주세요
+              </h5>
+              <div className="grid grid-cols-2 gap-3">
+                {typeOptions.map((option) => {
+                  const selected = form.type === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => update('type', option.value)}
+                      className={`flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 transition-colors cursor-pointer ${
+                        selected
+                          ? 'border-brand-promo-primary bg-brand-promo-primary/5 text-brand-promo-primary'
+                          : 'border-border bg-white text-fg-secondary hover:bg-surface-page'
+                      }`}
+                    >
+                      <Smartphone size={20} />
+                      <span className="text-body-sm font-medium">
+                        {option.label}
+                      </span>
+                      {selected && (
+                        <Check size={14} className="text-brand-promo-primary" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
         )}
@@ -300,7 +525,13 @@ export default function PlanSubscriptionSheet({
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}
                 placeholder="이름을 입력해주세요"
+                variant={fieldErrors.name ? 'error' : 'default'}
               />
+              {fieldErrors.name && (
+                <p className="mt-1 text-caption text-error">
+                  2자 이상 입력해주세요
+                </p>
+              )}
             </div>
             <div>
               <label className="text-caption text-fg-secondary mb-1.5 block">
@@ -312,7 +543,13 @@ export default function PlanSubscriptionSheet({
                 placeholder="YYMMDD"
                 inputMode="numeric"
                 maxLength={6}
+                variant={fieldErrors.birth ? 'error' : 'default'}
               />
+              {fieldErrors.birth && (
+                <p className="mt-1 text-caption text-error">
+                  6자리 생년월일을 정확히 입력해주세요
+                </p>
+              )}
             </div>
             <div>
               <label className="text-caption text-fg-secondary mb-1.5 block">
@@ -323,7 +560,13 @@ export default function PlanSubscriptionSheet({
                 onChange={(e) => update('phone', e.target.value)}
                 placeholder="- 없이 입력"
                 inputMode="tel"
+                variant={fieldErrors.phone ? 'error' : 'default'}
               />
+              {fieldErrors.phone && (
+                <p className="mt-1 text-caption text-error">
+                  10~11자리 휴대폰 번호를 입력해주세요
+                </p>
+              )}
             </div>
           </section>
         )}
@@ -334,11 +577,29 @@ export default function PlanSubscriptionSheet({
               <label className="text-caption text-fg-secondary mb-1.5 block">
                 배송 주소
               </label>
-              <Input
-                value={form.address}
-                onChange={(e) => update('address', e.target.value)}
-                placeholder="도로명 주소를 입력해주세요"
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={form.address}
+                  onChange={(e) => update('address', e.target.value)}
+                  placeholder="도로명 주소를 입력해주세요"
+                  variant={fieldErrors.address ? 'error' : 'default'}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="md"
+                  type="button"
+                  disabled
+                  className="shrink-0"
+                >
+                  도로명 검색
+                </Button>
+              </div>
+              {fieldErrors.address && (
+                <p className="mt-1 text-caption text-error">
+                  주소를 5자 이상 입력해주세요
+                </p>
+              )}
             </div>
             <div>
               <label className="text-caption text-fg-secondary mb-1.5 block">
@@ -377,6 +638,18 @@ export default function PlanSubscriptionSheet({
             <p className="text-body-sm text-fg-secondary">
               아래 약관에 동의해 주세요.
             </p>
+            <label className="flex items-start gap-3 rounded-2xl border border-border-brand bg-brand-promo-primary/5 p-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allAgreed}
+                onChange={(e) => handleAllAgree(e.target.checked)}
+                className="mt-1 accent-brand-promo-primary"
+              />
+              <span className="text-body-sm font-semibold text-fg-primary">
+                모두 동의합니다
+              </span>
+            </label>
+            <div className="h-px bg-border" />
             <label className="flex items-start gap-3 rounded-2xl border border-border bg-white p-4 cursor-pointer">
               <input
                 type="checkbox"
@@ -416,7 +689,7 @@ export default function PlanSubscriptionSheet({
           </section>
         )}
 
-        {step === 'complete' && (
+        {step === 'complete' && selectedPlan && (
           <section className="flex flex-col items-center gap-4 py-4 text-center">
             <CheckCircle2 size={48} className="text-semantic-success" />
             <div>
@@ -425,16 +698,18 @@ export default function PlanSubscriptionSheet({
                 완료되었어요
               </h5>
               <p className="text-body-sm text-fg-secondary mt-1">
-                {plan.planName} · 월{' '}
-                {plan.monthlyFee !== undefined
-                  ? plan.monthlyFee.toLocaleString()
+                {selectedPlan.planName} · 월{' '}
+                {selectedPlan.monthlyFee !== undefined
+                  ? selectedPlan.monthlyFee.toLocaleString()
                   : '-'}
                 원
               </p>
             </div>
             <div className="w-full rounded-2xl bg-surface-page p-4 text-body-sm text-fg-secondary space-y-2 text-left">
               <InfoRow label="이름" value={form.name} />
+              <InfoRow label="생년월일" value={form.birth} />
               <InfoRow label="휴대폰" value={form.phone} />
+              <InfoRow label="주소" value={form.address} />
               <InfoRow
                 label="가입 유형"
                 value={

@@ -105,7 +105,7 @@ export function useChat() {
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
 
-  const openSubscription = (plan: RecommendedPlan) => {
+  const openSubscription = (plan: RecommendedPlan | null) => {
     setSubscriptionPlan(plan);
     setSubscriptionOpen(true);
   };
@@ -169,21 +169,7 @@ export function useChat() {
       }
 
       const lastPlan = findLastRecommendedPlan(messages);
-      if (lastPlan) {
-        openSubscription(lastPlan);
-        return;
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          type: 'ai',
-          sentence:
-            '가입할 요금제가 아직 추천되지 않았어요. 먼저 요금제 추천을 받아보세요.',
-          quickReplies: ['요금제 추천받기', '기타 상담'],
-        },
-      ]);
+      openSubscription(lastPlan ?? null);
       return;
     }
 

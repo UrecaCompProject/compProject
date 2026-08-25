@@ -97,11 +97,11 @@ export default function RecommendationCards({
         className="overflow-hidden select-none"
         aria-label="추천 요금제 목록"
       >
-        <div className="flex h-full">
+        <div className="flex items-stretch">
           {plans.map((plan) => (
             <div
               key={plan.planId}
-              className="w-fit shrink-0 h-full pr-1 last:pr-0"
+              className="w-fit shrink-0 pr-1 last:pr-0 flex"
             >
               <PlanCard
                 title={plan.planName}
