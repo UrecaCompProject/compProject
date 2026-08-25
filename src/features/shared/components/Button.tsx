@@ -1,12 +1,13 @@
 import type { ButtonHTMLAttributes } from 'react';
 
 type ButtonVariant = 'primary' | 'secondary' | 'chip' | 'outline';
-type ButtonSize = 'chip' | 'sm' | 'md' | 'lg';
+type ButtonSize = 'chip' | 'icon' | 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   active?: boolean;
+  round?: boolean;
 }
 
 const ButtonColorVariants: Record<ButtonVariant, string> = {
@@ -21,6 +22,7 @@ const ButtonColorVariants: Record<ButtonVariant, string> = {
 
 const ButtonSizeVariants: Record<ButtonSize, string> = {
   chip: 'px-3 py-2 text-caption rounded-full text-chip',
+  icon: 'p-3',
   sm: 'h-8 px-3 text-caption',
   md: 'h-[45px] px-5 py-3 text-body rounded-[8px]',
   lg: 'h-[50px] px-6 py-4 text-body-lg rounded-[12px]',
@@ -30,13 +32,14 @@ export default function Button({
   variant = 'primary',
   size = 'md',
   active = false,
+  round = false,
   className = '',
   ...props
 }: ButtonProps) {
   return (
     <button
       aria-pressed={active}
-      className={`inline-flex box-border items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed ${ButtonColorVariants[variant]} ${ButtonSizeVariants[size]} ${className}`}
+      className={`inline-flex box-border items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed ${ButtonColorVariants[variant]} ${ButtonSizeVariants[size]} ${round ? 'rounded-full' : ''} ${className}`}
       {...props}
     />
   );
