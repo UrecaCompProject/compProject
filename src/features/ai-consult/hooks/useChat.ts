@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { saveReport } from '@/features/ai-consult/api/saveReport';
@@ -104,6 +104,30 @@ export function useChat() {
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
+
+  const wasLoggedInRef = useRef(isLoggedIn);
+
+  const resetChat = () => {
+    setMessages([
+      {
+        id: 0,
+        type: 'ai',
+        sentence: WELCOME_MESSAGE,
+        quickReplies: getWelcomeQuickReplies(isLoggedIn),
+      },
+    ]);
+    setInput('');
+    setProfile({ mode: 'menu', isLoggedIn });
+    setSubscriptionOpen(false);
+    setSubscriptionPlan(null);
+  };
+
+  useEffect(() => {
+    if (wasLoggedInRef.current && !isLoggedIn) {
+      resetChat();
+    }
+    wasLoggedInRef.current = isLoggedIn;
+  }, [isLoggedIn]);
 
   const openSubscription = (plan: RecommendedPlan | null) => {
     setSubscriptionPlan(plan);
