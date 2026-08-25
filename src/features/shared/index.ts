@@ -6,3 +6,5 @@ export { default as IconBadge } from './components/IconBadge';
 export { default as IconListItem } from './components/IconListItem';
 export type { IconBadgeColor } from './components/IconBadge';
 export { default as BottomSheet } from './components/BottomSheet';
+export { default as Modal } from './components/Modal';
+export { useModalStore } from './store/useModalStore';

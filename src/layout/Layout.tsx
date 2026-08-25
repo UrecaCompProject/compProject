@@ -1,5 +1,7 @@
 import { Outlet, useLocation } from 'react-router';
 
+import { Modal } from '@/features/shared';
+
 import Header from './Header';
 
 export default function Layout() {
@@ -20,6 +22,8 @@ export default function Layout() {
       <Outlet />
 
       {/* {!notShowNavbar && <Navbar />} */}
+
+      <Modal />
     </div>
   );
 }
