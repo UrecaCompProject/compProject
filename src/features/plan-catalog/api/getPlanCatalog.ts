@@ -48,6 +48,10 @@ function toRecommendedPlan(row: PlanRow): RecommendedPlan {
 }
 
 export async function getPlanCatalog(): Promise<RecommendedPlan[]> {
+  // 로그인 세션이 만료된 localStorage token 등으로 403이 나오지 않도록
+  // 실제 요청 전에 현재 세션을 갱신/확인한다.
+  await supabase.auth.getSession();
+
   const { data, error } = await supabase
     .from('plans')
     .select('*')
