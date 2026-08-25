@@ -21,7 +21,7 @@ type CardItem = {
   matched: boolean;
 };
 
-// TODO: 난이도별 쌍 개수/시간 나중에 추가 (지금은 6쌍 고정)
+// TODO: 난이도별 쌍 개수/시간 나중에 추가 (지금은 무난하게 6쌍 고정)
 const FACE_IMAGES = [
   faceImage01,
   faceImage02,
@@ -72,6 +72,7 @@ function createDeck(): CardItem[] {
   }));
 }
 
+// 1열(0번 인덱스 기준 짝수 행+열 합)은 파란 뒷면부터, 2열은 보라 뒷면부터 시작하는 체크보드 패턴
 function getBackImage(id: number) {
   const row = Math.floor(id / COLUMN_COUNT);
   const col = id % COLUMN_COUNT;
@@ -101,6 +102,7 @@ export default function CardMatchGame({
     [deck],
   );
   const isCleared = matchedCount === PAIR_COUNT;
+  // 백점만점으로 환산한 점수
   const score = Math.round((matchedCount / PAIR_COUNT) * 100);
 
   useEffect(() => {
@@ -119,6 +121,9 @@ export default function CardMatchGame({
     return () => clearTimeout(timer);
   }, [phase, timeLeft]);
 
+  // 헤더 뒤로가기 동작을 phase에 맞게 등록/해제.
+  // intro: 등록 안 함 -> 헤더 기본값(closeGame)이 적용돼 미션 목록으로 완전히 나감
+  // playing/result: intro로만 돌아가도록 등록
   const setBackOverride = useGameStore((state) => state.setBackOverride);
 
   useEffect(() => {
@@ -129,6 +134,7 @@ export default function CardMatchGame({
     }
   }, [phase, setBackOverride]);
 
+  // 게임 컴포넌트 자체가 사라질 때(=닫힘)는 등록해둔 게 남지 않도록 정리
   useEffect(() => {
     return () => setBackOverride(null);
   }, [setBackOverride]);
@@ -156,6 +162,7 @@ export default function CardMatchGame({
       const [firstId, secondId] = nextFlipped;
 
       if (deck[firstId].faceIndex === deck[secondId].faceIndex) {
+        // 이 매칭으로 몇 쌍째 맞추는 건지 미리 계산해둠 (effect 대신 여기서 바로 승리 처리)
         const nextMatchedCount = matchedCount + 1;
 
         setTimeout(() => {
@@ -185,7 +192,7 @@ export default function CardMatchGame({
 
   if (phase === 'intro') {
     return (
-      <div className="flex flex-col items-center h-full px-10 pt-10 pb-6 text-center">
+      <div className="flex flex-col items-center h-full px-10 py-5 text-center">
         <div className="relative flex h-[200px] w-[200px] shrink-0 items-center justify-center">
           <div
             className="absolute left-1/2 top-1/2 h-[160px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
@@ -229,7 +236,7 @@ export default function CardMatchGame({
           ))}
         </ol>
 
-        <Button className="w-full mt-auto" size="lg" onClick={handleStart}>
+        <Button className="mt-[60px] w-full" size="lg" onClick={handleStart}>
           게임 시작
         </Button>
       </div>
