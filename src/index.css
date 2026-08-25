@@ -4,6 +4,7 @@
 @import './styles/theme/colors.css';
 @import './styles/theme/typography.css';
 @import './styles/theme/shadow.css';
+@import './styles/theme/animation.css';
 
 :root {
   font-family:

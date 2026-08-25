@@ -13,6 +13,14 @@ export function isValidPhone(phone: string) {
   return /^\d{10,11}$/.test(digits);
 }
 
+export function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+export function isValidPassword(password: string) {
+  return password.length >= 8;
+}
+
 export function maskName(name: string) {
   return `${name[0]}***`;
 }

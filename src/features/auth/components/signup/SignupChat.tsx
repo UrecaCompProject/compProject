@@ -16,8 +16,15 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     step,
     info,
     errors,
+    isSendingOtp,
     code,
+    isVerifyingCode,
+    verifyError,
+    credentials,
+    credentialsErrors,
     agreedToPrivacy,
+    isCompletingSignup,
+    completeError,
     remainingSeconds,
     isCancelled,
     setCode,
@@ -25,6 +32,8 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     handleChange,
     handleSubmitBasicInfo,
     handleVerifyCode,
+    handleCredentialsChange,
+    handleSubmitCredentials,
     handleCompleteSignup,
   } = useSignupFlow(onFinish);
 
@@ -79,31 +88,37 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   </p>
                 )}
               </div>
-              <Button onClick={handleSubmitBasicInfo} className="mt-2 w-full">
-                다음 &gt;
+              <Button
+                onClick={handleSubmitBasicInfo}
+                disabled={isSendingOtp}
+                className="mt-2 w-full"
+              >
+                {isSendingOtp ? '인증번호 발송 중...' : '다음 >'}
               </Button>
             </div>
           }
         />
       )}
 
-      {step !== 'basic-info' && step !== 'completed' && (
-        <AIChat
-          variant="success"
-          sentence={
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1 font-medium">
-                <CheckCircle2 size={16} />
-                <span>입력 완료</span>
+      {step !== 'basic-info' &&
+        step !== 'completed' &&
+        step !== 'already-member' && (
+          <AIChat
+            variant="success"
+            sentence={
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 font-medium">
+                  <CheckCircle2 size={16} />
+                  <span>입력 완료</span>
+                </div>
+                <div className="text-fg-secondary">
+                  {maskName(info.name)} · {maskBirth(info.birth)} ·{' '}
+                  {maskPhone(info.phone)}
+                </div>
               </div>
-              <div className="text-fg-secondary">
-                {maskName(info.name)} · {maskBirth(info.birth)} ·{' '}
-                {maskPhone(info.phone)}
-              </div>
-            </div>
-          }
-        />
-      )}
+            }
+          />
+        )}
 
       {step === 'verify-code' && !isCancelled && (
         <>
@@ -123,13 +138,19 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   placeholder="인증번호 6자리"
                   inputMode="numeric"
                   maxLength={6}
+                  variant={verifyError ? 'error' : 'default'}
                 />
+                {verifyError && (
+                  <p className="text-caption text-semantic-error">
+                    {verifyError}
+                  </p>
+                )}
                 <Button
                   onClick={handleVerifyCode}
-                  disabled={code.trim().length !== 6}
+                  disabled={code.trim().length !== 6 || isVerifyingCode}
                   className="mt-2 w-full"
                 >
-                  확인
+                  {isVerifyingCode ? '확인 중...' : '확인'}
                 </Button>
               </div>
             }
@@ -139,6 +160,68 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
 
       {isCancelled && (
         <AIChat variant="error" sentence="회원가입이 취소되었습니다." />
+      )}
+
+      {step === 'credentials' && (
+        <>
+          <AIChat sentence="로그인에 사용할 이메일과 비밀번호를 입력해주세요." />
+          <AIChat
+            sentence={
+              <div className="flex flex-col gap-2 w-full">
+                <div>
+                  <Input
+                    type="email"
+                    value={credentials.email}
+                    onChange={handleCredentialsChange('email')}
+                    placeholder="이메일"
+                    variant={credentialsErrors.email ? 'error' : 'default'}
+                  />
+                  {credentialsErrors.email && (
+                    <p className="text-caption text-semantic-error mt-1">
+                      {credentialsErrors.email}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    type="password"
+                    value={credentials.password}
+                    onChange={handleCredentialsChange('password')}
+                    placeholder="비밀번호 (8자 이상)"
+                    variant={credentialsErrors.password ? 'error' : 'default'}
+                  />
+                  {credentialsErrors.password && (
+                    <p className="text-caption text-semantic-error mt-1">
+                      {credentialsErrors.password}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <Input
+                    type="password"
+                    value={credentials.passwordConfirm}
+                    onChange={handleCredentialsChange('passwordConfirm')}
+                    placeholder="비밀번호 확인"
+                    variant={
+                      credentialsErrors.passwordConfirm ? 'error' : 'default'
+                    }
+                  />
+                  {credentialsErrors.passwordConfirm && (
+                    <p className="text-caption text-semantic-error mt-1">
+                      {credentialsErrors.passwordConfirm}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={handleSubmitCredentials}
+                  className="mt-2 w-full"
+                >
+                  다음 &gt;
+                </Button>
+              </div>
+            }
+          />
+        </>
       )}
 
       {step === 'review' && (
@@ -159,6 +242,10 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                     <span className="text-fg-tertiary">휴대폰</span>
                     <span className="font-medium">{maskPhone(info.phone)}</span>
                   </div>
+                  <div className="flex items-center justify-between text-body">
+                    <span className="text-fg-tertiary">이메일</span>
+                    <span className="font-medium">{credentials.email}</span>
+                  </div>
                 </div>
                 <label className="flex items-start gap-2 text-caption text-fg-secondary border-t border-border pt-3">
                   <input
@@ -176,12 +263,17 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                     및 본인 확인 · 보유 기간: 회원 탈퇴 시까지
                   </span>
                 </label>
+                {completeError && (
+                  <p className="text-caption text-semantic-error">
+                    {completeError}
+                  </p>
+                )}
                 <Button
                   onClick={handleCompleteSignup}
-                  disabled={!agreedToPrivacy}
+                  disabled={!agreedToPrivacy || isCompletingSignup}
                   className="w-full"
                 >
-                  가입 완료하기
+                  {isCompletingSignup ? '처리 중...' : '가입 완료하기'}
                 </Button>
               </div>
             }
@@ -194,6 +286,13 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
           variant="success"
           sentence="회원가입이 완료되었어요! 🎉
           자동 로그인이 진행되었고, 이전 채팅과 이어서 대화할 수 있습니다"
+        />
+      )}
+
+      {step === 'already-member' && (
+        <AIChat
+          variant="success"
+          sentence="이미 가입되어 있는 번호예요! 자동으로 로그인했어요 🎉"
         />
       )}
     </div>
