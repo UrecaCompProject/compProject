@@ -1,4 +1,4 @@
-import bannerImage from '../../assets/banner1.png';
+import bannerImage from '../assets/banner1.png';
 
 export default function PromoBanner() {
   return (
