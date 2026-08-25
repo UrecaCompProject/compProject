@@ -97,9 +97,12 @@ export default function RecommendationCards({
         className="overflow-hidden select-none"
         aria-label="추천 요금제 목록"
       >
-        <div className="flex">
+        <div className="flex h-full">
           {plans.map((plan) => (
-            <div key={plan.planId} className="w-80 shrink-0 pr-2 last:pr-0">
+            <div
+              key={plan.planId}
+              className="w-fit shrink-0 h-full pr-1 last:pr-0"
+            >
               <PlanCard
                 title={plan.planName}
                 price={plan.monthlyFee ?? 0}

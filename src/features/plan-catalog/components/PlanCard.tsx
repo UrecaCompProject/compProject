@@ -12,7 +12,7 @@ export interface PlanCardBenefit {
 type PlanCardContext = 'chat' | 'report';
 
 const contextWidth: Record<PlanCardContext, string> = {
-  chat: 'w-80',
+  chat: 'w-fit',
   report: 'w-[350px]',
 };
 
@@ -109,7 +109,7 @@ export default function PlanCard({
         />
       )}
 
-      <div className="flex gap-2 pt-1">
+      <div className="flex gap-2 pt-1 mt-auto">
         <Button
           variant="secondary"
           size="sm"
