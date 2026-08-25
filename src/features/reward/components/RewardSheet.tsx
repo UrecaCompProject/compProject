@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { GameLayer, useActiveGameMeta, useGameStore } from '@/features/games';
 import { BottomSheet } from '@/features/shared';
 
 import RewardHome from './RewardHome';
@@ -19,9 +20,12 @@ const titles: Record<RewardView, string> = {
 
 export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
   const [activeView, setActiveView] = useState<RewardView>('reward');
+  const activeGame = useActiveGameMeta();
+  const closeGame = useGameStore((state) => state.closeGame);
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setActiveView('reward');
+      closeGame();
     }
 
     onOpenChange(nextOpen);
@@ -35,21 +39,25 @@ export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
     <BottomSheet
       open={open}
       onOpenChange={handleOpenChange}
-      title={titles[activeView]}
-      onBack={activeView === 'reward' ? undefined : handleBack}
+      title={activeGame?.title ?? titles[activeView]}
+      onBack={
+        activeGame?.onBack ?? (activeView === 'reward' ? undefined : handleBack)
+      }
       size="full"
-      bodyClassName={activeView === 'reward' ? 'px-0' : 'px-5'}
+      bodyClassName={activeGame || activeView === 'reward' ? 'px-0' : 'px-5'}
     >
-      {activeView === 'reward' && (
-        <RewardHome
-          onStoreClick={() => setActiveView('store')}
-          onCouponClick={() => setActiveView('coupon')}
-        />
-      )}
+      <GameLayer>
+        {activeView === 'reward' && (
+          <RewardHome
+            onStoreClick={() => setActiveView('store')}
+            onCouponClick={() => setActiveView('coupon')}
+          />
+        )}
 
-      {activeView === 'store' && <div />}
+        {activeView === 'store' && <div />}
 
-      {activeView === 'coupon' && <div />}
+        {activeView === 'coupon' && <div />}
+      </GameLayer>
     </BottomSheet>
   );
 }

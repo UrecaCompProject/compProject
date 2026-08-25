@@ -1,13 +1,17 @@
+import { useState } from 'react';
+
 import { Outlet, useLocation } from 'react-router';
 
+import { RewardSheet } from '@/features/reward';
 import { Modal } from '@/features/shared';
 
 import Header from './Header';
+import Navbar from './Navbar';
 
 export default function Layout() {
+  const [rewardOpen, setRewardOpen] = useState(false);
   const { pathname } = useLocation();
   const isChatPage = pathname === '/';
-  // const notShowNavbar = pathname.startsWith('/chat');
 
   return (
     <div
@@ -21,7 +25,12 @@ export default function Layout() {
 
       <Outlet />
 
-      {/* {!notShowNavbar && <Navbar />} */}
+      <Navbar
+        rewardOpen={rewardOpen}
+        onRewardClick={() => setRewardOpen(true)}
+      />
+
+      <RewardSheet open={rewardOpen} onOpenChange={setRewardOpen} />
 
       <Modal />
     </div>

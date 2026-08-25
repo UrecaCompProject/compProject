@@ -1,19 +1,37 @@
 import { Home, ClipboardList, Award, BotMessageSquare } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 
+type MenuItem = {
+  name: string;
+  icon: string;
+  navigation?: string;
+  onClick?: () => void;
+};
+
 const NavIcon = ({
   menu,
   active = false,
 }: {
-  menu: { name: string; icon: string; navigation: string };
+  menu: MenuItem;
   active?: boolean;
 }) => {
   const navigate = useNavigate();
+  const handleClick = () => {
+    if (menu.onClick) {
+      menu.onClick();
+      return;
+    }
+
+    if (menu.navigation) {
+      navigate(menu.navigation);
+    }
+  };
 
   return (
-    <div
+    <button
+      type="button"
       className={`w-17.5 flex cursor-pointer flex-col items-center gap-1 ${active ? 'text-brand-primary' : 'text-fg-disabled'}`}
-      onClick={() => navigate(menu.navigation)}
+      onClick={handleClick}
     >
       {menu.icon === 'Home' && <Home size={22} />}
       {menu.icon === 'ClipboardList' && <ClipboardList size={22} />}
@@ -24,22 +42,27 @@ const NavIcon = ({
       >
         {menu.name}
       </div>
-    </div>
+    </button>
   );
 };
 
 const isActive = (navigation: string, pathname: string) =>
   navigation === '/' ? pathname === '/' : pathname.startsWith(navigation);
 
-export default function Navbar() {
+type NavbarProps = {
+  rewardOpen: boolean;
+  onRewardClick: () => void;
+};
+
+export default function Navbar({ rewardOpen, onRewardClick }: NavbarProps) {
   const { pathname } = useLocation();
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { name: '홈', icon: 'Home', navigation: '/' },
     { name: '요금제', icon: 'ClipboardList', navigation: '/plan' },
-    { name: '혜택/이벤트', icon: 'Award', navigation: '/event' },
+    { name: '혜택/이벤트', icon: 'Award', onClick: onRewardClick },
   ];
-  const chatMenu = {
+  const chatMenu: MenuItem = {
     name: '챗봇',
     icon: 'BotMessageSquare',
     navigation: '/chat',
@@ -52,14 +75,18 @@ export default function Navbar() {
           <NavIcon
             key={menu.name}
             menu={menu}
-            active={isActive(menu.navigation, pathname)}
+            active={
+              menu.name === '혜택/이벤트'
+                ? rewardOpen
+                : isActive(menu.navigation ?? '', pathname)
+            }
           />
         ))}
       </div>
       <div className="w-16 bg-white rounded-full shadow-shadow px-4 py-3 flex items-center justify-center">
         <NavIcon
           menu={chatMenu}
-          active={isActive(chatMenu.navigation, pathname)}
+          active={isActive(chatMenu.navigation ?? '', pathname)}
         />
       </div>
     </div>
