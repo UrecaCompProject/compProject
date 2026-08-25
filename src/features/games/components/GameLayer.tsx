@@ -28,7 +28,11 @@ export default function GameLayer({ children }: GameLayerProps) {
             ${revealed ? 'z-10 opacity-100' : 'pointer-events-none z-0 opacity-0'}
           `}
         >
-          <GameComponent reward={params.reward} onClose={closeGame} />
+          <GameComponent
+            reward={params.reward}
+            onWin={params.onWin}
+            onClose={closeGame}
+          />
         </div>
       )}
     </div>

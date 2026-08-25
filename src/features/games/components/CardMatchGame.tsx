@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import backImage1 from '@/assets/images/card-match-back-01.svg';
 import backImage2 from '@/assets/images/card-match-back-02.svg';
@@ -72,7 +72,6 @@ function createDeck(): CardItem[] {
   }));
 }
 
-// 1열(0번 인덱스 기준 짝수 행+열 합)은 파란 뒷면부터, 2열은 보라 뒷면부터 시작하는 체크보드 패턴
 function getBackImage(id: number) {
   const row = Math.floor(id / COLUMN_COUNT);
   const col = id % COLUMN_COUNT;
@@ -102,8 +101,12 @@ export default function CardMatchGame({
     [deck],
   );
   const isCleared = matchedCount === PAIR_COUNT;
-  // 백점만점으로 환산한 점수
   const score = Math.round((matchedCount / PAIR_COUNT) * 100);
+
+  const phaseRef = useRef(phase);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'playing') return;
@@ -121,9 +124,6 @@ export default function CardMatchGame({
     return () => clearTimeout(timer);
   }, [phase, timeLeft]);
 
-  // 헤더 뒤로가기 동작을 phase에 맞게 등록/해제.
-  // intro: 등록 안 함 -> 헤더 기본값(closeGame)이 적용돼 미션 목록으로 완전히 나감
-  // playing/result: intro로만 돌아가도록 등록
   const setBackOverride = useGameStore((state) => state.setBackOverride);
 
   useEffect(() => {
@@ -134,7 +134,6 @@ export default function CardMatchGame({
     }
   }, [phase, setBackOverride]);
 
-  // 게임 컴포넌트 자체가 사라질 때(=닫힘)는 등록해둔 게 남지 않도록 정리
   useEffect(() => {
     return () => setBackOverride(null);
   }, [setBackOverride]);
@@ -162,10 +161,11 @@ export default function CardMatchGame({
       const [firstId, secondId] = nextFlipped;
 
       if (deck[firstId].faceIndex === deck[secondId].faceIndex) {
-        // 이 매칭으로 몇 쌍째 맞추는 건지 미리 계산해둠 (effect 대신 여기서 바로 승리 처리)
         const nextMatchedCount = matchedCount + 1;
 
         setTimeout(() => {
+          if (phaseRef.current !== 'playing') return;
+
           setDeck((prev) =>
             prev.map((card) =>
               card.id === firstId || card.id === secondId
@@ -338,7 +338,6 @@ export default function CardMatchGame({
                   transition-transform duration-500 [transform-style:preserve-3d]
                 "
               >
-                {/* 뒷면 (안 뒤집혔을 때 보임) */}
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl [backface-visibility:hidden]">
                   <img
                     src={backImage}
@@ -347,7 +346,6 @@ export default function CardMatchGame({
                   />
                 </div>
 
-                {/* 앞면 (뒤집힌 후에 보임) */}
                 <div
                   className={`
                     absolute inset-0 flex items-center justify-center

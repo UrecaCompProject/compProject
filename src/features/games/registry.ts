@@ -10,5 +10,5 @@ export const GAME_REGISTRY: Record<GameId, GameDefinition> = {
 };
 
 export function isGameId(id: string): id is GameId {
-  return id in GAME_REGISTRY;
+  return Object.prototype.hasOwnProperty.call(GAME_REGISTRY, id);
 }

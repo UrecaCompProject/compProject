@@ -18,7 +18,7 @@ export default function TicketCard({
   children,
 }: TicketCardProps) {
   const topGradient = `radial-gradient(circle at ${gap / 2}px 0px, transparent ${radius}px, black ${radius}px)`;
-  const bottomGradient = `radial-gradient(circle at ${gap / 2}px ${radius}px, transparent ${radius}px, black ${radius}px)`;
+  const bottomGradient = `radial-gradient(circle at ${gap / 2}px 100%, transparent ${radius}px, black ${radius}px)`;
 
   return (
     <div className={`relative ${className}`}>
@@ -30,10 +30,10 @@ export default function TicketCard({
           maskImage: `${topGradient}, ${bottomGradient}`,
           WebkitMaskRepeat: 'repeat-x, repeat-x',
           maskRepeat: 'repeat-x, repeat-x',
-          WebkitMaskSize: `${gap}px ${radius}px, ${gap}px ${radius}px`,
-          maskSize: `${gap}px ${radius}px, ${gap}px ${radius}px`,
-          WebkitMaskPosition: `${startOffset}px top, ${startOffset}px bottom`,
-          maskPosition: `${startOffset}px top, ${startOffset}px bottom`,
+          WebkitMaskSize: `${gap}px 100%, ${gap}px 100%`,
+          maskSize: `${gap}px 100%, ${gap}px 100%`,
+          WebkitMaskPosition: `${startOffset}px 0, ${startOffset}px 0`,
+          maskPosition: `${startOffset}px 0, ${startOffset}px 0`,
         }}
       />
 
