@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+function cleanEnvValue(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  // .env.local 에 키가 여러 줄로 복사되거나 공백/따옴표가 섞인 경우 안전하게 정리
+  return value.replace(/\s+/g, '').replace(/^['"`]+|['"`]+$/g, '');
+}
+
+const supabaseUrl = cleanEnvValue(import.meta.env.VITE_SUPABASE_URL);
+const supabaseAnonKey = cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
@@ -17,5 +23,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+  },
+});
+
+// 요금제 카탈로그처럼 공개 데이터를 조회할 때 사용하는 anon 전용 클라이언트
+export const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storageKey: 'supabaseAnon',
   },
 });

@@ -6,7 +6,8 @@ export type ChatMode =
   | 'subscribe'
   | 'general'
   | 'game'
-  | 'attendance';
+  | 'attendance'
+  | 'report';
 
 export interface ConsultRequest {
   currentPlan?: string;
@@ -19,6 +20,10 @@ export interface ConsultRequest {
   priority?: 'budget' | 'data' | 'max_data';
   userMessage?: string;
   mode?: ChatMode;
+  isLoggedIn?: boolean;
+  // 레포트 생성용 필드
+  conversation?: string;
+  recommendationResult?: string;
 }
 
 export interface ConsultResponse {
@@ -31,4 +36,23 @@ export interface ConsultResponse {
   notice?: string;
   quickReplies?: string[];
   mode?: ChatMode;
+  form?: {
+    title?: string;
+    fields: {
+      name: string;
+      label: string;
+      type: 'select' | 'number' | 'text' | 'multi-select';
+      options?: string[];
+      required?: boolean;
+    }[];
+  };
+  report?: {
+    summary: string;
+    usageType: string;
+    currentPlan: string;
+    recommendedPlans: string[];
+    recommendationReason: string;
+    monthlySavingAmount: number;
+    importantConditions: string[];
+  };
 }

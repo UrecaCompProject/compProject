@@ -1,6 +1,31 @@
-import { ArrowUp, Menu } from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
-import { Input } from '@/features/shared';
+import {
+  ArrowUp,
+  Menu,
+  UserRound,
+  CreditCard,
+  Gift,
+  FileSpreadsheet,
+} from 'lucide-react';
+
+import { useIsLoggedIn } from '@/features/auth';
+import EventPage from '@/features/pages/EventPage';
+import MainPage from '@/features/pages/MainPage';
+import PlanPage from '@/features/pages/PlanPage';
+import {
+  BottomSheet,
+  IconBadge,
+  Button,
+  Input,
+  useClickOutside,
+} from '@/features/shared';
+
+interface ActiveSheet {
+  title: string;
+  content: ReactNode;
+}
 
 interface ChatInputProps {
   value: string;
@@ -15,41 +40,114 @@ export default function ChatInput({
   onSend,
   disabled = false,
 }: ChatInputProps) {
-  const isLogin = true;
+  const isLogin = useIsLoggedIn();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
   const handleSend = () => {
     onSend(value);
   };
+  const openSheet = (sheet: ActiveSheet) => {
+    setActiveSheet(sheet);
+    setIsSheetOpen(true);
+  };
+
+  useClickOutside(containerRef, isMenuOpen && !isSheetOpen, () =>
+    setIsMenuOpen(false),
+  );
 
   return (
-    <div className="flex items-center gap-2 p-4 bg-white border-t border-border">
-      {isLogin && (
-        <button
-          type="button"
-          className="p-3 inline-flex box-border items-center justify-center transition-colors cursor-pointer rounded-full bg-surface-page text-fg-secondary hover:bg-surface-pressed hover:text-brand-primary"
+    <div className="relative" ref={containerRef}>
+      <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border">
+        {isLogin && (
+          <Button
+            variant="secondary"
+            size="icon"
+            round
+            active={isMenuOpen}
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+          >
+            <Menu size={20} />
+          </Button>
+        )}
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSend();
+          }}
+          placeholder="AI에게 질문해보세요"
+          disabled={disabled}
+          className="flex-1"
+        />
+        <Button
+          variant="primary"
+          size="icon"
+          round
           onClick={handleSend}
           disabled={disabled || !value.trim()}
         >
-          <Menu size={16} />
-        </button>
-      )}
-      <Input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') handleSend();
-        }}
-        placeholder="AI에게 질문해보세요"
-        disabled={disabled}
-        className="flex-1 bg-surface-card shadow-[2px_2px_6px_4px_rgba(0,0,0,0.05)]"
-      />
-      <button
-        type="button"
-        className="p-3 inline-flex box-border items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed rounded-full bg-brand-promo-primary text-surface-card hover:bg-brand-promo-secondary disabled:bg-brand-light"
-        onClick={handleSend}
-        disabled={disabled || !value.trim()}
+          <ArrowUp size={16} />
+        </Button>
+      </div>
+
+      {/* bottom sheet menu */}
+      <div
+        className={`
+          overflow-hidden bg-white transition-[max-height] duration-400 ease-in
+          ${isMenuOpen ? 'max-h-80 ease-out' : 'max-h-0 ease-in'}
+          `}
       >
-        <ArrowUp size={16} />
-      </button>
+        <div className="w-full border-t border-border px-5 py-7 text-medium-12-130 text-fg-tertiary">
+          <div className="flex justify-between align-center max-w-110 mx-auto">
+            <div
+              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
+              onClick={() =>
+                openSheet({ title: '마이페이지', content: <MainPage /> })
+              }
+            >
+              <IconBadge icon={UserRound} size={52} radius={16} />
+              <div>마이페이지</div>
+            </div>
+
+            <div
+              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
+              onClick={() =>
+                openSheet({ title: '요금제', content: <PlanPage /> })
+              }
+            >
+              <IconBadge icon={CreditCard} size={52} radius={16} />
+              <div>요금제</div>
+            </div>
+
+            <div
+              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
+              onClick={() =>
+                openSheet({ title: '혜택/이벤트', content: <EventPage /> })
+              }
+            >
+              <IconBadge icon={Gift} size={52} radius={16} />
+              <div>혜택/이벤트</div>
+            </div>
+
+            <div className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer">
+              <IconBadge icon={FileSpreadsheet} size={52} radius={16} />
+              <div>상담 리포트</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <BottomSheet
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        size="full"
+        bodyClassName="p-0"
+        title={activeSheet?.title ?? ''}
+      >
+        {activeSheet?.content}
+      </BottomSheet>
     </div>
   );
 }

@@ -11,6 +11,7 @@ interface IconListItemProps {
   badgeColor?: IconBadgeColor;
   iconColor?: string;
   iconSize?: number;
+  textClassName?: string;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export default function IconListItem({
   badgeColor = 'brand',
   iconColor = 'text-fg-secondary',
   iconSize = 20,
+  textClassName = 'text-sm text-fg-primary',
   className = '',
 }: IconListItemProps) {
   const iconElement =
@@ -31,19 +33,21 @@ export default function IconListItem({
     );
 
   const content = (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className="flex items-center gap-2">
       {iconElement}
-      <span className="text-sm text-fg-primary">{label}</span>
+      <span className={textClassName}>{label}</span>
     </div>
   );
 
   if (variant === 'bordered') {
     return (
-      <div className="px-3 py-2 border rounded-lg border-border-default">
+      <div
+        className={`px-3 py-2 border rounded-lg border-border-default ${className}`}
+      >
         {content}
       </div>
     );
   }
 
-  return content;
+  return <div className={className}>{content}</div>;
 }

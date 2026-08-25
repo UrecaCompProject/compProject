@@ -12,8 +12,15 @@ export default function ChatPage() {
     setInput,
     isLoading,
     handleSend,
+    handleSignupFinished,
     handleFormSubmit,
+    handleGenerateReport,
     profile,
+    subscriptionOpen,
+    subscriptionPlan,
+    openSubscription,
+    closeSubscription,
+    isLoggedIn,
   } = useChat();
 
   const lastMessage = messages[messages.length - 1];
@@ -25,13 +32,20 @@ export default function ChatPage() {
       <ChatMessageList
         messages={messages}
         isLoading={isLoading}
+        onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
+        onPlanSubscribe={openSubscription}
+        onGenerateReport={handleGenerateReport}
+        subscriptionOpen={subscriptionOpen}
+        subscriptionPlan={subscriptionPlan}
+        onSubscriptionClose={closeSubscription}
       />
       <QuickReplies
         replies={quickReplies}
         onReply={handleSend}
         disabled={isLoading}
+        isLoggedIn={isLoggedIn}
       />
       <ChatInput
         value={input}

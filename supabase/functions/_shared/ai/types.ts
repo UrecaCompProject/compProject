@@ -19,6 +19,7 @@ export interface ConsultInput {
   priority?: 'budget' | 'data' | 'max_data';
   userMessage?: string;
   mode?: ChatMode;
+  isLoggedIn?: boolean;
 }
 
 export interface RecommendedPlan {
@@ -29,6 +30,14 @@ export interface RecommendedPlan {
   monthlyFee?: number;
   data?: string;
   benefits?: string[];
+  category?: string;
+  targetAge?: string;
+  dataSpeedAfter?: string;
+  voice?: string;
+  message?: string;
+  shareData?: string;
+  tethering?: string;
+  notes?: string;
 }
 
 export interface ConsultFormField {

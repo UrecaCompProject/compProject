@@ -20,6 +20,15 @@ export interface ConsultInput {
   priority?: 'budget' | 'data' | 'max_data';
   userMessage?: string;
   mode?: ChatMode;
+  isLoggedIn?: boolean;
+  conversation?: string;
+  recommendationResult?: string;
+}
+
+export interface ReportInput {
+  conversation: string;
+  currentPlan: string;
+  recommendationResult: string;
 }
 
 export interface RecommendedPlan {
@@ -30,6 +39,14 @@ export interface RecommendedPlan {
   monthlyFee?: number;
   data?: string;
   benefits?: string[];
+  category?: string;
+  targetAge?: string;
+  dataSpeedAfter?: string;
+  voice?: string;
+  message?: string;
+  shareData?: string;
+  tethering?: string;
+  notes?: string;
 }
 
 export interface ConsultFormField {
@@ -51,6 +68,17 @@ export interface ConsultResponse {
   quickReplies?: string[];
   mode?: ChatMode;
   form?: ConsultForm;
+  report?: ReportOutput;
+}
+
+export interface ReportOutput {
+  summary: string;
+  usageType: string;
+  currentPlan: string;
+  recommendedPlans: string[];
+  recommendationReason: string;
+  monthlySavingAmount: number;
+  importantConditions: string[];
 }
 
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.
@@ -73,4 +101,26 @@ export async function requestConsult(
   }
 
   return data;
+}
+
+// 상담 내용과 추천 결과를 바탕으로 요약 레포트를 생성합니다.
+export async function generateReport(
+  input: ReportInput,
+): Promise<ReportOutput> {
+  const { data, error } = await supabase.functions.invoke<{
+    report: ReportOutput;
+    mode: 'report';
+  }>('ai-consult', {
+    body: { ...input, mode: 'report' },
+  });
+
+  if (error) {
+    throw new Error(`레포트 생성 실패: ${error.message}`);
+  }
+
+  if (!data?.report) {
+    throw new Error('레포트 응답이 비어 있습니다.');
+  }
+
+  return data.report;
 }

@@ -4,6 +4,7 @@
 import { corsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 import {
   generateQuickReplies,
+  generateReport,
   recommendPlan,
 } from '../_shared/ai/recommend.ts';
 import type { ConsultRequest } from './types.ts';
@@ -15,6 +16,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   try {
     const body: ConsultRequest = await req.json();
+
+    // 레포트 생성 모드
+    if (body.mode === 'report') {
+      const report = await generateReport({
+        conversation: body.conversation ?? '',
+        currentPlan: body.currentPlan ?? '미등록',
+        recommendationResult: body.recommendationResult ?? '',
+      });
+      return new Response(JSON.stringify({ report, mode: 'report' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const result = await recommendPlan(body);
     const quickReplies = await generateQuickReplies(body, result);
 

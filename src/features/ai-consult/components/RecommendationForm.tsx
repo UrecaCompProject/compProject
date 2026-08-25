@@ -98,7 +98,7 @@ export default function RecommendationForm({
               value={String(values[field.name] ?? '')}
               onChange={(e) => handleText(field.name, e.target.value)}
               disabled={disabled}
-              className="w-full h-[45px] px-4 rounded-full border border-border bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled"
+              className="w-full h-11.25 px-4 rounded-full border border-border bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled"
             >
               <option value="">선택해주세요</option>
               {field.options?.map((option) => (
@@ -116,7 +116,7 @@ export default function RecommendationForm({
               onChange={(e) => handleNumber(field.name, e.target.value)}
               placeholder={field.name === 'budget' ? '50000' : '10'}
               disabled={disabled}
-              className="w-full h-[45px] px-4 rounded-full border border-border bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled"
+              className="w-full h-11.25 px-4 rounded-full border border-border bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled"
             />
           )}
 
@@ -126,7 +126,7 @@ export default function RecommendationForm({
               value={String(values[field.name] ?? '')}
               onChange={(e) => handleText(field.name, e.target.value)}
               disabled={disabled}
-              className="w-full h-[45px] px-4 rounded-full border border-border bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled"
+              className="w-full h-11.25 px-4 rounded-full border border-border bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled"
             />
           )}
 
