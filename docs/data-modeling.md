@@ -6,12 +6,14 @@
 | 버전      | v2.0                                                    |
 | 기준 문서 | `supabase/migrations/20260820000001_initial_schema.sql` |
 | 대상 DBMS | PostgreSQL 17 / Supabase                                |
-| 인증      | Supabase Auth + Kakao OAuth                             |
+| 인증      | Supabase Auth                                           |
 | 작성일    | 2026-08-20                                              |
 
 ## v2 스키마 변경 요약
 
 v1에서 설계했던 `consultations` 및 `consultation_messages` 테이블이 제거되었습니다. AI 상담은 최종 산출물인 `consultation_reports` 하나만 영구 저장하며, 추천 요금제(`report_recommendations`)와 만족도(`consultation_satisfactions`)를 레포트 하위에서 관리합니다. 요금제 카탈로그(`plans`)는 `plans.json`의 정수 `id`와 호환됩니다.
+
+`users.kakao_id` 컬럼이 제거되었고, 카카오 OAuth 연동은 미사용으로 변경되었습니다. `auth.users` 가입 시 `public.users` 행을 자동 생성하는 트리거가 추가되었습니다.
 
 ## ERD
 
@@ -66,7 +68,6 @@ erDiagram
 | 컬럼명     | 타입        | NULL | 기본값  | 설명                                                    |
 | ---------- | ----------- | ---- | ------- | ------------------------------------------------------- |
 | id         | UUID        | NO   | -       | Supabase Auth `auth.users(id)`와 1:1 매핑되는 사용자 PK |
-| kakao_id   | TEXT        | NO   | -       | 카카오 고유 ID                                          |
 | email      | TEXT        | YES  | -       | 이메일                                                  |
 | phone      | TEXT        | YES  | -       | 전화번호                                                |
 | nickname   | TEXT        | YES  | -       | 닉네임                                                  |
@@ -77,7 +78,6 @@ erDiagram
 | updated_at | TIMESTAMPTZ | NO   | `now()` | 수정 시각                                               |
 
 - **PK**: `id`
-- **UNIQUE**: `kakao_id`
 - **FK**: `id` → `auth.users(id)` ON DELETE CASCADE
 - **INDEX**: (PK/UNIQUE 외 추가 인덱스 없음)
 - **RLS**: `users_select_self` (SELECT, `id = auth.uid()`), `users_update_self` (UPDATE, `id = auth.uid()`)

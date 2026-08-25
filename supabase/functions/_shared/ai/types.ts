@@ -19,6 +19,7 @@ export interface ConsultInput {
   priority?: 'budget' | 'data' | 'max_data';
   userMessage?: string;
   mode?: ChatMode;
+  isLoggedIn?: boolean;
 }
 
 export interface RecommendedPlan {

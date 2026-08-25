@@ -46,12 +46,9 @@ INSERT INTO public.plans (id, name, carrier, category, target_age, data_tier, mo
 -- ============================================================
 
 INSERT INTO auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at) VALUES
-('11111111-1111-1111-1111-111111111111', 'authenticated', 'authenticated', 'user1@example.com', crypt('password', gen_salt('bf')), now(), '{}', '{"kakao_id":"kakao_1"}', now(), now()),
-('22222222-2222-2222-2222-222222222222', 'authenticated', 'authenticated', 'user2@example.com', crypt('password', gen_salt('bf')), now(), '{}', '{"kakao_id":"kakao_2"}', now(), now());
+('11111111-1111-1111-1111-111111111111', 'authenticated', 'authenticated', 'user1@example.com', crypt('password', gen_salt('bf')), now(), '{}', '{"name":"UserOne","phone":"010-1111-1111","age_group":"일반"}', now(), now()),
+('22222222-2222-2222-2222-222222222222', 'authenticated', 'authenticated', 'user2@example.com', crypt('password', gen_salt('bf')), now(), '{}', '{"name":"UserTwo","phone":"010-2222-2222","age_group":"청년"}', now(), now());
 
-INSERT INTO public.users (id, kakao_id, email, phone, nickname, age_group, is_active) VALUES
-('11111111-1111-1111-1111-111111111111', 'kakao_1', 'user1@example.com', '010-1111-1111', 'UserOne', '일반', true),
-('22222222-2222-2222-2222-222222222222', 'kakao_2', 'user2@example.com', '010-2222-2222', 'UserTwo', '청년', true);
 
 INSERT INTO public.accessibility_settings (user_id, easy_mode, large_font) VALUES
 ('11111111-1111-1111-1111-111111111111', false, false),

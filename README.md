@@ -252,8 +252,6 @@
 ```
 compProject/
 ├── public/                     # 정적 자산
-├── scripts/                    # 개발 보조 및 시드 생성 스크립트
-│   └── generate-seed.cjs
 ├── src/                         # 프론트엔드 소스
 │   ├── assets/                  # 이미지, 아이콘
 │   ├── features/                # 도메인별 기능 컴포넌트 (채팅, 요금제, 리워드 등)
@@ -265,12 +263,10 @@ compProject/
 ├── supabase/                    # Supabase 설정
 │   ├── functions/                # Edge Functions (Deno)
 │   │   ├── ai-consult/
-│   │   ├── _shared/              # 공유 AI/데이터 모듈
-│   │   └── hello/
+│   │   └── _shared/              # 공유 AI/데이터 모듈
 │   ├── migrations/               # DB 스키마 마이그레이션
 │   ├── seed.sql                  # 초기/샘플 데이터
 │   └── config.toml               # Supabase CLI 설정
-├── data/                         # 요금제 원천 JSON
 ├── docs/                         # 기술/데이터 모델 문서
 ├── .env.example
 ├── package.json
@@ -382,7 +378,7 @@ compProject/
 
 - `supabase/migrations/`: DB 마이그레이션 파일
 - `supabase/seed.sql`: 초기 요금제 및 더미 데이터
-- `data/plans_*.json`: 요금제 원천 데이터입니다. 필요 시 `scripts/generate-seed.cjs`로 `seed.sql` 형태로 변환할 수 있습니다.
+- `supabase/functions/_shared/data/plans.json`: AI 추천에 사용되는 요금제 데이터
 
 <br/>
 

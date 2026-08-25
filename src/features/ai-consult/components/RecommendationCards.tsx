@@ -2,21 +2,34 @@ import { useState } from 'react';
 
 import useEmblaCarousel from 'embla-carousel-react';
 import {
-  Anchor,
   Check,
   Database,
   Gift,
   MessageSquare,
   Phone,
+  type LucideIcon,
 } from 'lucide-react';
 
-import { BottomSheet, Button, Card } from '@/features/shared';
+import { useIsLoggedIn } from '@/features/auth';
+import PlanCard, {
+  type PlanCardBenefit,
+} from '@/features/plan-catalog/components/PlanCard';
+import { BottomSheet, Button } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
 interface RecommendationCardsProps {
   plans: RecommendedPlan[];
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  onGenerateReport?: (plans: RecommendedPlan[]) => void;
+  isLoading?: boolean;
 }
+
+const getBenefitIcon = (label: string): LucideIcon => {
+  if (label.includes('데이터') || label.includes('증량')) return Database;
+  if (label.includes('통화')) return Phone;
+  if (label.includes('넷플릭스') || label.includes('OTT')) return Gift;
+  return Check;
+};
 
 const BenefitIcon = ({ label }: { label: string }) => {
   if (label.includes('데이터') || label.includes('증량'))
@@ -27,10 +40,29 @@ const BenefitIcon = ({ label }: { label: string }) => {
   return <Check size={14} />;
 };
 
+const toPlanBenefits = (plan: RecommendedPlan): PlanCardBenefit[] => {
+  const benefits: PlanCardBenefit[] = [];
+  if (plan.data) {
+    benefits.push({
+      icon: Database,
+      label: `${plan.data}${plan.dataSpeedAfter ? ` (소진 후 ${plan.dataSpeedAfter})` : ''}`,
+    });
+  }
+  if (plan.voice) benefits.push({ icon: Phone, label: plan.voice });
+  if (plan.message) benefits.push({ icon: MessageSquare, label: plan.message });
+  (plan.benefits ?? []).slice(0, 2).forEach((benefit) => {
+    benefits.push({ icon: getBenefitIcon(benefit), label: benefit });
+  });
+  return benefits;
+};
+
 export default function RecommendationCards({
   plans,
   onPlanSubscribe,
+  onGenerateReport,
+  isLoading = false,
 }: RecommendationCardsProps) {
+  const isLoggedIn = useIsLoggedIn();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
   const [emblaRef] = useEmblaCarousel({
@@ -51,88 +83,56 @@ export default function RecommendationCards({
     onPlanSubscribe(plan ?? selected!);
   };
 
+  const handleGenerateReport = () => {
+    if (!onGenerateReport || isLoading) return;
+    onGenerateReport(plans);
+  };
+
   if (plans.length === 0) return null;
 
   return (
-    <div className="mt-3">
+    <div className="mt-3 space-y-3">
       <div
         ref={emblaRef}
         className="overflow-hidden select-none"
         aria-label="추천 요금제 목록"
       >
-        <div className="flex">
+        <div className="flex h-full">
           {plans.map((plan) => (
-            <div key={plan.planId} className="w-70 shrink-0 pr-3 last:pr-0">
-              <Card border="default" radius="16" gap="12" className="h-full">
-                <div className="flex items-start justify-between">
-                  <h4 className="text-body font-semibold text-fg-primary leading-tight">
-                    {plan.planName}
-                  </h4>
-                  <Anchor size={18} className="text-brand-promo-primary" />
-                </div>
-
-                <p className="text-body-lg font-bold text-brand-promo-primary">
-                  월{' '}
-                  {plan.monthlyFee !== undefined
-                    ? plan.monthlyFee.toLocaleString()
-                    : '-'}
-                  원
-                </p>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-caption text-fg-secondary">
-                    <Database size={14} className="text-fg-tertiary" />
-                    <span>
-                      {plan.data ?? '-'}
-                      {plan.dataSpeedAfter
-                        ? ` (소진 후 ${plan.dataSpeedAfter})`
-                        : ''}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-caption text-fg-secondary">
-                    <Phone size={14} className="text-fg-tertiary" />
-                    <span>{plan.voice ?? '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-caption text-fg-secondary">
-                    <MessageSquare size={14} className="text-fg-tertiary" />
-                    <span>{plan.message ?? '-'}</span>
-                  </div>
-                  {(plan.benefits ?? []).slice(0, 2).map((benefit, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 text-caption text-fg-secondary"
-                    >
-                      <span className="text-fg-tertiary">
-                        <BenefitIcon label={benefit} />
-                      </span>
-                      <span>{benefit}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 pt-1 mt-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleOpen(plan)}
-                  >
-                    자세히 보기
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleSubscribe(plan)}
-                  >
-                    가입 하기
-                  </Button>
-                </div>
-              </Card>
+            <div
+              key={plan.planId}
+              className="w-fit shrink-0 h-full pr-1 last:pr-0"
+            >
+              <PlanCard
+                title={plan.planName}
+                price={plan.monthlyFee ?? 0}
+                benefits={toPlanBenefits(plan)}
+                context="chat"
+                reason={plan.reason}
+                className="h-full"
+                onDetail={() => handleOpen(plan)}
+                onSelect={() => handleSubscribe(plan)}
+              />
             </div>
           ))}
         </div>
       </div>
+
+      {isLoggedIn ? (
+        <Button
+          variant="secondary"
+          size="md"
+          className="w-full"
+          onClick={handleGenerateReport}
+          disabled={isLoading}
+        >
+          {isLoading ? '레포트 생성 중...' : '레포트 생성'}
+        </Button>
+      ) : (
+        <p className="text-body-sm text-fg-secondary px-1">
+          레포트 저장은 로그인 후에 가능해요.
+        </p>
+      )}
 
       {selected && (
         <BottomSheet

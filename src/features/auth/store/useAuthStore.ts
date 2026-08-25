@@ -11,9 +11,9 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>(() => ({
-  user: '기매진' as unknown as User,
+  user: null,
   session: null,
-  isLoading: false,
+  isLoading: true,
 }));
 
 supabase.auth.getSession().then(({ data: { session } }) => {
