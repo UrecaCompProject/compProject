@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { BottomSheet } from '@/features/shared';
 
-import RewardContent from './RewardContent';
+import RewardHome from './RewardHome';
 
 type RewardSheetProps = {
   open: boolean;
@@ -41,7 +41,7 @@ export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
       bodyClassName={activeView === 'reward' ? 'px-0' : 'px-5'}
     >
       {activeView === 'reward' && (
-        <RewardContent
+        <RewardHome
           onStoreClick={() => setActiveView('store')}
           onCouponClick={() => setActiveView('coupon')}
         />
