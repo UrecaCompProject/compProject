@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { saveReport } from '@/features/ai-consult/api/saveReport';
@@ -107,7 +107,7 @@ export function useChat() {
 
   const wasLoggedInRef = useRef(isLoggedIn);
 
-  const resetChat = () => {
+  const resetChat = useCallback(() => {
     setMessages([
       {
         id: 0,
@@ -120,14 +120,23 @@ export function useChat() {
     setProfile({ mode: 'menu', isLoggedIn });
     setSubscriptionOpen(false);
     setSubscriptionPlan(null);
-  };
+  }, [isLoggedIn]);
 
   useEffect(() => {
     if (wasLoggedInRef.current && !isLoggedIn) {
       resetChat();
+    } else if (!wasLoggedInRef.current && isLoggedIn) {
+      // 채팅 도중 로그인하면 웰컴 메시지의 퀵 리플라이를 로그인 기준으로 갱신합니다.
+      setMessages((prev) => {
+        if (prev.length === 0 || prev[0].type !== 'ai') return prev;
+        return [
+          { ...prev[0], quickReplies: getWelcomeQuickReplies(true) },
+          ...prev.slice(1),
+        ];
+      });
     }
     wasLoggedInRef.current = isLoggedIn;
-  }, [isLoggedIn]);
+  }, [isLoggedIn, resetChat]);
 
   const openSubscription = (plan: RecommendedPlan | null) => {
     if (!isLoggedIn) {
@@ -213,10 +222,10 @@ export function useChat() {
     setIsLoading(true);
 
     try {
-      const { input: nextProfile, response } = await postQuestion(
-        trimmed,
-        profile,
-      );
+      const { input: nextProfile, response } = await postQuestion(trimmed, {
+        ...profile,
+        isLoggedIn,
+      });
       const mergedProfile: ConsultInput = {
         ...nextProfile,
         mode: response.mode ?? nextProfile.mode,

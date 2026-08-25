@@ -2,6 +2,10 @@ import { create } from 'zustand';
 
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
+import { submitSubscription } from '../api/submitSubscription';
+
+import type { SubscriptionForm } from '../types';
+
 interface SubscriptionLog {
   plan: RecommendedPlan;
   subscribedAt: string;
@@ -10,27 +14,30 @@ interface SubscriptionLog {
 interface SubscriptionState {
   currentPlan: RecommendedPlan | null;
   planHistory: SubscriptionLog[];
-  subscribe: (plan: RecommendedPlan) => void;
-  changePlan: (plan: RecommendedPlan) => void;
+  submitApplication: (
+    plan: RecommendedPlan,
+    form: SubscriptionForm,
+  ) => Promise<string>;
 }
 
-export const useSubscriptionStore = create<SubscriptionState>((set) => ({
+export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   currentPlan: null,
   planHistory: [],
-  subscribe: (plan) =>
+  submitApplication: async (plan, form) => {
+    const currentPlanId =
+      form.type === 'change' ? Number(get().currentPlan?.planId) : null;
+    const applicationId = await submitSubscription({
+      plan,
+      form,
+      currentPlanId: Number.isNaN(currentPlanId) ? null : currentPlanId,
+    });
     set((state) => ({
       currentPlan: plan,
       planHistory: [
         ...state.planHistory,
         { plan, subscribedAt: new Date().toISOString() },
       ],
-    })),
-  changePlan: (plan) =>
-    set((state) => ({
-      currentPlan: plan,
-      planHistory: [
-        ...state.planHistory,
-        { plan, subscribedAt: new Date().toISOString() },
-      ],
-    })),
+    }));
+    return applicationId;
+  },
 }));
