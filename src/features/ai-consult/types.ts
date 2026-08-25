@@ -1,4 +1,8 @@
-import type { ConsultForm, RecommendedPlan } from '@/lib/aiConsult';
+import type {
+  ConsultForm,
+  RecommendedPlan,
+  ReportOutput,
+} from '@/lib/aiConsult';
 
 export type MessageType = 'ai' | 'user' | 'signup';
 
@@ -10,6 +14,7 @@ export type ChatMessage =
       quickReplies?: string[];
       form?: ConsultForm;
       recommendations?: RecommendedPlan[];
+      report?: ReportOutput;
     }
   | { id: number; type: 'user'; sentence: string }
   | { id: number; type: 'signup' };

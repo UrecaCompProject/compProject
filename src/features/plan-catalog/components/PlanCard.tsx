@@ -53,17 +53,21 @@ export default function PlanCard({
     >
       <div className="flex items-start justify-between">
         <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
-        <button
-          type="button"
-          onClick={onSaveToggle}
-          aria-label={saved ? '저장 취소' : '요금제 저장'}
-          className="shrink-0"
-        >
-          <Anchor
-            size={22}
-            className={saved ? 'text-brand-promo-primary' : 'text-fg-disabled'}
-          />
-        </button>
+        {onSaveToggle && (
+          <button
+            type="button"
+            onClick={onSaveToggle}
+            aria-label={saved ? '저장 취소' : '요금제 저장'}
+            className="shrink-0"
+          >
+            <Anchor
+              size={22}
+              className={
+                saved ? 'text-brand-promo-primary' : 'text-fg-disabled'
+              }
+            />
+          </button>
+        )}
       </div>
 
       <p className="text-[16px] font-bold text-brand-promo-secondary">

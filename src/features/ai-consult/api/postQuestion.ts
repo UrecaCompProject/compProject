@@ -22,7 +22,11 @@ const OTT_ALIASES: Record<string, string> = {
 // 사용자 메시지에서 상담 조건(연령/데이터/예산/OTT 등)을 추출해 ConsultInput으로 누적합니다.
 export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
   const t = text.trim();
-  const next: ConsultInput = { ...prev, userMessage: t };
+  const next: ConsultInput = {
+    ...prev,
+    userMessage: t,
+    isLoggedIn: prev.isLoggedIn,
+  };
 
   // 메뉴 선택 단계에서는 추천 조건 파싱을 건너뜁니다.
   if (prev.mode === 'menu') {

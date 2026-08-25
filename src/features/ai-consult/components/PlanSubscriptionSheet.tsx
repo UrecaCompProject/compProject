@@ -39,6 +39,7 @@ interface PlanSubscriptionSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plan: RecommendedPlan | null;
+  onComplete?: () => void;
 }
 
 function isValidBirth(birth: string) {
@@ -67,6 +68,7 @@ export default function PlanSubscriptionSheet({
   open,
   onOpenChange,
   plan,
+  onComplete,
 }: PlanSubscriptionSheetProps) {
   const [step, setStep] = useState<SubscriptionStep>('confirm');
   const [form, setForm] = useState<FormState>(initialForm);
@@ -170,7 +172,10 @@ export default function PlanSubscriptionSheet({
         <Button
           size="md"
           className="flex-1"
-          onClick={() => onOpenChange(false)}
+          onClick={() => {
+            onComplete?.();
+            onOpenChange(false);
+          }}
         >
           확인
         </Button>

@@ -18,6 +18,7 @@ interface ChatMessageListProps {
   onFormSubmit?: (values: Partial<ConsultInput>) => void;
   formDefaults?: Partial<ConsultInput>;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  onGenerateReport?: (plans: RecommendedPlan[]) => void;
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
   onSubscriptionClose?: () => void;
@@ -30,6 +31,7 @@ export default function ChatMessageList({
   onFormSubmit,
   formDefaults,
   onPlanSubscribe,
+  onGenerateReport,
   subscriptionOpen = false,
   subscriptionPlan,
   onSubscriptionClose,
@@ -90,8 +92,39 @@ export default function ChatMessageList({
                 <RecommendationCards
                   plans={message.recommendations}
                   onPlanSubscribe={onPlanSubscribe}
+                  onGenerateReport={onGenerateReport}
+                  isLoading={isLoading}
                 />
               )}
+
+            {message.type === 'ai' && message.report && index === lastIndex && (
+              <div className="mt-3 rounded-2xl bg-surface-page p-4 border border-border space-y-3">
+                <h4 className="text-body font-semibold text-fg-primary">
+                  상담 레포트
+                </h4>
+                <div className="space-y-2 text-body-sm text-fg-secondary">
+                  {message.report.currentPlan && (
+                    <p>현재 요금제: {message.report.currentPlan}</p>
+                  )}
+                  {message.report.recommendedPlans.length > 0 && (
+                    <p>
+                      추천 요금제: {message.report.recommendedPlans.join(', ')}
+                    </p>
+                  )}
+                  {message.report.monthlySavingAmount > 0 && (
+                    <p>
+                      예상 월 절감액:{' '}
+                      {message.report.monthlySavingAmount.toLocaleString()}원
+                    </p>
+                  )}
+                  {message.report.importantConditions.length > 0 && (
+                    <p>
+                      주요 조건: {message.report.importantConditions.join(', ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {message.type === 'ai' &&
               message.form &&
@@ -119,6 +152,7 @@ export default function ChatMessageList({
         open={subscriptionOpen}
         onOpenChange={onSubscriptionClose ?? (() => {})}
         plan={subscriptionPlan ?? null}
+        onComplete={onSignupFinished}
       />
     </div>
   );

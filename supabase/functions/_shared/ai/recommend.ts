@@ -2,7 +2,11 @@
 // LangChain 없이 OpenAI /v1/chat/completions를 직접 호출하는 요금제 추천 로직.
 import { loadPlans } from './data.ts';
 import type { Plan } from './data.ts';
-import { noticePromptText, reasonPromptText } from './prompts/index.ts';
+import {
+  noticePromptText,
+  reasonPromptText,
+  reportPromptText,
+} from './prompts/index.ts';
 import { chatOpenAI } from './openai.ts';
 import type {
   ChatMode,
@@ -10,6 +14,8 @@ import type {
   ConsultInput,
   RecommendOutput,
   RecommendedPlan,
+  ReportInput,
+  ReportOutput,
 } from './types.ts';
 
 const noticeSystemPrompt =
@@ -425,6 +431,7 @@ function resolveNextMode(input: ConsultInput): ChatMode {
   const t = (input.userMessage || '').trim();
   const current = input.mode ?? 'menu';
 
+  if (current === 'report') return 'report';
   if (/^메뉴|^처음|^처음으로|^돌아가기|^안녕|^시작/.test(t)) return 'menu';
   if (/요금제\s*추천|추천받기|맞춤\s*추천/.test(t)) return 'recommend';
   if (/요금제\s*비교|비교\s*하기|비교해/.test(t)) return 'compare';
@@ -432,57 +439,69 @@ function resolveNextMode(input: ConsultInput): ChatMode {
   if (/상담|문의|질문|도움/.test(t)) return 'general';
   if (/게임|미니게임/.test(t)) return 'game';
   if (/출석|출첵|출석체크/.test(t)) return 'attendance';
+  if (/레포트|리포트|레포트\s*생성|리포트\s*생성/.test(t)) return 'report';
 
   // 이전 모드를 유지하며, 메뉴라면 추천으로 전진시킵니다.
   if (current === 'menu' && t.length > 0) return 'recommend';
   return current;
 }
 
-// 초기 메뉴 응답.
-function buildMenuResponse(): RecommendOutput {
+// 초기 메뉴 응답. 로그인 여부에 따라 가입 버튼을 다르게 노출.
+function buildMenuResponse(isLoggedIn: boolean): RecommendOutput {
   return {
     recommendations: [],
     notice: '원하시는 메뉴를 선택해 주세요.',
-    quickReplies: [
-      '요금제 추천받기',
-      '요금제 비교하기',
-      '요금제 가입하기',
-      '게임 하기',
-      '출석체크',
-      '기타 상담',
-    ],
+    quickReplies: isLoggedIn
+      ? [
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '요금제 가입하기',
+          '게임 하기',
+          '출석체크',
+          '기타 상담',
+        ]
+      : [
+          '회원 가입하기',
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '게임 하기',
+          '출석체크',
+          '기타 상담',
+        ],
     mode: 'menu',
   };
 }
 
-// 요금제 비교 기초 응답.
-function buildCompareResponse(): RecommendOutput {
+// 요금제 비교 기초 응답. 비로그인 시 현재 요금제 비교는 회원가입 유도.
+function buildCompareResponse(isLoggedIn: boolean): RecommendOutput {
   return {
     recommendations: [],
-    notice:
-      '비교할 요금제를 알려주세요. 현재 요금제와 추천 요금제를 비교하거나, 두 요금제 이름을 직접 입력할 수 있어요.',
-    quickReplies: [
-      '현재 요금제와 비교',
-      '요금제 이름 직접 입력',
-      '메뉴로 돌아가기',
-    ],
+    notice: isLoggedIn
+      ? '비교할 요금제를 알려주세요. 현재 요금제와 추천 요금제를 비교하거나, 두 요금제 이름을 직접 입력할 수 있어요.'
+      : '현재 요금제와 비교는 로그인 후에 이용할 수 있어요.',
+    quickReplies: isLoggedIn
+      ? ['현재 요금제와 비교', '요금제 이름 직접 입력', '메뉴로 돌아가기']
+      : ['회원 가입하기', '요금제 이름 직접 입력', '메뉴로 돌아가기'],
     mode: 'compare',
   };
 }
 
-// 요금제 가입 기초 응답.
-function buildSubscribeResponse(): RecommendOutput {
+// 요금제 가입 기초 응답. 비로그인 시 회원가입을 먼저 유도.
+function buildSubscribeResponse(isLoggedIn: boolean): RecommendOutput {
   return {
     recommendations: [],
-    notice:
-      '가입하실 요금제나 가입 경로를 알려주세요. 온라인 가입과 영업점 방문 중 편한 방법을 안내해드릴게요.',
-    quickReplies: ['온라인 가입', '영업점 방문', '메뉴로 돌아가기'],
+    notice: isLoggedIn
+      ? '가입하실 요금제나 가입 경로를 알려주세요. 온라인 가입과 영업점 방문 중 편한 방법을 안내해드릴게요.'
+      : '요금제 가입은 로그인 후에 가능해요. 회원가입을 먼저 진행해주세요.',
+    quickReplies: isLoggedIn
+      ? ['온라인 가입', '영업점 방문', '메뉴로 돌아가기']
+      : ['회원 가입하기', '영업점 방문', '메뉴로 돌아가기'],
     mode: 'subscribe',
   };
 }
 
-// 일반 상담 기초 응답.
-function buildGeneralResponse(): RecommendOutput {
+// 일반 상담 기초 응답. 로그인 여부에 따라 가입 버튼을 다르게 노출.
+function buildGeneralResponse(isLoggedIn: boolean): RecommendOutput {
   return {
     recommendations: [],
     notice:
@@ -490,7 +509,7 @@ function buildGeneralResponse(): RecommendOutput {
     quickReplies: [
       '요금제 추천받기',
       '요금제 비교하기',
-      '요금제 가입하기',
+      isLoggedIn ? '요금제 가입하기' : '회원 가입하기',
       '메뉴로 돌아가기',
     ],
     mode: 'general',
@@ -539,10 +558,13 @@ export async function recommendPlan(
   input: ConsultInput,
 ): Promise<RecommendOutput> {
   const mode = resolveNextMode(input);
-  if (mode === 'menu') return buildMenuResponse();
-  if (mode === 'compare') return buildCompareResponse();
-  if (mode === 'subscribe') return buildSubscribeResponse();
-  if (mode === 'general') return buildGeneralResponse();
+  if (mode === 'menu') return buildMenuResponse(input.isLoggedIn ?? false);
+  if (mode === 'compare')
+    return buildCompareResponse(input.isLoggedIn ?? false);
+  if (mode === 'subscribe')
+    return buildSubscribeResponse(input.isLoggedIn ?? false);
+  if (mode === 'general')
+    return buildGeneralResponse(input.isLoggedIn ?? false);
   if (mode === 'game') return buildGameResponse();
   if (mode === 'attendance') return buildAttendanceResponse();
 
@@ -704,4 +726,40 @@ export async function generateQuickReplies(
   if (input.ageGroup !== '청소년') qs.push('청소년 요금제도 보기');
 
   return qs.slice(0, 3);
+}
+
+const reportSystemPrompt = `
+당신은 AI 통신 요금제 상담 내용을 요약하는 역할을 담당합니다.
+제공된 조건과 추천 결과만 사용해 JSON 형식으로 레포트를 작성하세요.
+존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
+`;
+
+// 상담 대화와 추천 결과를 바탕으로 요약 레포트를 생성합니다.
+export async function generateReport(
+  input: ReportInput,
+): Promise<ReportOutput> {
+  const { conversation, currentPlan, recommendationResult } = input;
+  const filledPrompt = fillTemplate(reportPromptText, {
+    conversation,
+    currentPlan: currentPlan || '미등록',
+    recommendationResult,
+  });
+
+  try {
+    const raw = await chatOpenAI(reportSystemPrompt, filledPrompt);
+    const parsed = safeJsonParse<ReportOutput>(raw);
+    if (parsed && parsed.summary) return parsed;
+  } catch {
+    // LLM 실패 시 아래 기본값으로 fallback
+  }
+
+  return {
+    summary: '요금제 추천 상담 내용을 요약한 레포트입니다.',
+    usageType: '',
+    currentPlan: currentPlan || '미등록',
+    recommendedPlans: [],
+    recommendationReason: '',
+    monthlySavingAmount: 0,
+    importantConditions: [],
+  };
 }
