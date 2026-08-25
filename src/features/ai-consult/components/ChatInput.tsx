@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import {
@@ -14,7 +14,13 @@ import { useIsLoggedIn } from '@/features/auth';
 import EventPage from '@/features/pages/EventPage';
 import MainPage from '@/features/pages/MainPage';
 import PlanPage from '@/features/pages/PlanPage';
-import { BottomSheet, IconBadge, Button, Input } from '@/features/shared';
+import {
+  BottomSheet,
+  IconBadge,
+  Button,
+  Input,
+  useClickOutside,
+} from '@/features/shared';
 
 interface ActiveSheet {
   title: string;
@@ -35,6 +41,7 @@ export default function ChatInput({
   disabled = false,
 }: ChatInputProps) {
   const isLogin = useIsLoggedIn();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
@@ -46,8 +53,12 @@ export default function ChatInput({
     setIsSheetOpen(true);
   };
 
+  useClickOutside(containerRef, isMenuOpen && !isSheetOpen, () =>
+    setIsMenuOpen(false),
+  );
+
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border">
         {isLogin && (
           <Button
@@ -80,13 +91,15 @@ export default function ChatInput({
           <ArrowUp size={16} />
         </Button>
       </div>
+
+      {/* bottom sheet menu */}
       <div
         className={`
-          overflow-hidden bg-white transition-[max-height] duration-400 
+          overflow-hidden bg-white transition-[max-height] duration-400 ease-in
           ${isMenuOpen ? 'max-h-80 ease-out' : 'max-h-0 ease-in'}
           `}
       >
-        <div className="w-full border-t border-border px-4 py-7 text-medium-12-130 text-fg-tertiary">
+        <div className="w-full border-t border-border px-5 py-7 text-medium-12-130 text-fg-tertiary">
           <div className="flex justify-between align-center max-w-110 mx-auto">
             <div
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
@@ -130,6 +143,7 @@ export default function ChatInput({
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
         size="full"
+        bodyClassName="p-0"
         title={activeSheet?.title ?? ''}
       >
         {activeSheet?.content}

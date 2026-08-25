@@ -8,3 +8,4 @@ export type { IconBadgeColor } from './components/IconBadge';
 export { default as BottomSheet } from './components/BottomSheet';
 export { default as Modal } from './components/Modal';
 export { useModalStore } from './store/useModalStore';
+export { useClickOutside } from './hooks/useClickOutside';
