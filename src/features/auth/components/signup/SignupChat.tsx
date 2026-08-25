@@ -4,10 +4,10 @@ import AIChat from '@/features/ai-consult/components/AIChat';
 import { Button, Input } from '@/features/shared';
 
 import { useSignupFlow } from '../../hooks/useSignupFlow';
-import { maskBirth, maskName } from '../../utils/signup';
+import { formatTime, maskBirth, maskName, maskPhone } from '../../utils/signup';
 
 interface SignupChatProps {
-  /** 가입이 완료되어 흐름이 끝났을 때 호출됩니다. */
+  /** 인증 시간 초과로 취소되거나 가입이 완료되어 흐름이 끝났을 때 호출됩니다. */
   onFinish?: () => void;
 }
 
@@ -16,14 +16,22 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     step,
     info,
     errors,
+    isSendingOtp,
+    code,
+    isVerifyingCode,
+    verifyError,
     credentials,
     credentialsErrors,
     agreedToPrivacy,
     isCompletingSignup,
     completeError,
+    remainingSeconds,
+    isCancelled,
+    setCode,
     setAgreedToPrivacy,
     handleChange,
     handleSubmitBasicInfo,
+    handleVerifyCode,
     handleCredentialsChange,
     handleSubmitCredentials,
     handleCompleteSignup,
@@ -66,29 +74,91 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   </p>
                 )}
               </div>
-              <Button onClick={handleSubmitBasicInfo} className="mt-2 w-full">
-                다음 &gt;
+              <div>
+                <Input
+                  value={info.phone}
+                  onChange={handleChange('phone')}
+                  placeholder="전화번호"
+                  type="tel"
+                  variant={errors.phone ? 'error' : 'default'}
+                />
+                {errors.phone && (
+                  <p className="text-caption text-semantic-error mt-1">
+                    {errors.phone}
+                  </p>
+                )}
+              </div>
+              <Button
+                onClick={handleSubmitBasicInfo}
+                disabled={isSendingOtp}
+                className="mt-2 w-full"
+              >
+                {isSendingOtp ? '인증번호 발송 중...' : '다음 >'}
               </Button>
             </div>
           }
         />
       )}
 
-      {step !== 'basic-info' && step !== 'completed' && (
-        <AIChat
-          variant="success"
-          sentence={
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-1 font-medium">
-                <CheckCircle2 size={16} />
-                <span>입력 완료</span>
+      {step !== 'basic-info' &&
+        step !== 'completed' &&
+        step !== 'already-member' && (
+          <AIChat
+            variant="success"
+            sentence={
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1 font-medium">
+                  <CheckCircle2 size={16} />
+                  <span>입력 완료</span>
+                </div>
+                <div className="text-fg-secondary">
+                  {maskName(info.name)} · {maskBirth(info.birth)} ·{' '}
+                  {maskPhone(info.phone)}
+                </div>
               </div>
-              <div className="text-fg-secondary">
-                {maskName(info.name)} · {maskBirth(info.birth)}
+            }
+          />
+        )}
+
+      {step === 'verify-code' && !isCancelled && (
+        <>
+          <AIChat sentence="인증번호를 보내드렸어요. 3분 이내에 입력해주세요." />
+          <AIChat
+            sentence={
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex items-center justify-between text-caption text-fg-tertiary">
+                  <span>인증번호</span>
+                  <span className="text-semantic-error">
+                    {formatTime(remainingSeconds)}
+                  </span>
+                </div>
+                <Input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="인증번호"
+                  inputMode="numeric"
+                  variant={verifyError ? 'error' : 'default'}
+                />
+                {verifyError && (
+                  <p className="text-caption text-semantic-error">
+                    {verifyError}
+                  </p>
+                )}
+                <Button
+                  onClick={handleVerifyCode}
+                  disabled={code.trim().length === 0 || isVerifyingCode}
+                  className="mt-2 w-full"
+                >
+                  {isVerifyingCode ? '확인 중...' : '확인'}
+                </Button>
               </div>
-            </div>
-          }
-        />
+            }
+          />
+        </>
+      )}
+
+      {isCancelled && (
+        <AIChat variant="error" sentence="회원가입이 취소되었습니다." />
       )}
 
       {step === 'credentials' && (
@@ -168,6 +238,10 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                     <span className="font-medium">{maskName(info.name)}</span>
                   </div>
                   <div className="flex items-center justify-between text-body">
+                    <span className="text-fg-tertiary">휴대폰</span>
+                    <span className="font-medium">{maskPhone(info.phone)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-body">
                     <span className="text-fg-tertiary">이메일</span>
                     <span className="font-medium">{credentials.email}</span>
                   </div>
@@ -184,8 +258,8 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                       [필수] 개인정보 수집 및 이용 동의
                     </span>
                     <br />
-                    수집 항목: 이름, 생년월일 · 이용 목적: 회원가입 및 서비스
-                    이용 · 보유 기간: 회원 탈퇴 시까지
+                    수집 항목: 이름, 생년월일, 휴대폰 번호 · 이용 목적: 회원가입
+                    및 본인 확인 · 보유 기간: 회원 탈퇴 시까지
                   </span>
                 </label>
                 {completeError && (
@@ -211,6 +285,13 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
           variant="success"
           sentence="회원가입이 완료되었어요! 🎉
           자동 로그인이 진행되었고, 이전 채팅과 이어서 대화할 수 있습니다"
+        />
+      )}
+
+      {step === 'already-member' && (
+        <AIChat
+          variant="success"
+          sentence="이미 가입되어 있는 번호예요! 자동으로 로그인했어요 🎉"
         />
       )}
     </div>

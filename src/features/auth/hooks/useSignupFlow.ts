@@ -1,14 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
-import { postSignup } from '../api/postSignup';
+import { postSignup, sendSignupOtp, verifySignupOtp } from '../api/postSignup';
 import { isValidBirth, isValidEmail, isValidPassword } from '../utils/signup';
 
-export type SignupStep = 'basic-info' | 'credentials' | 'review' | 'completed';
+import { useCountdown } from './useCountdown';
+
+const VERIFY_DURATION_SECONDS = 3 * 60;
+
+export type SignupStep =
+  | 'basic-info'
+  | 'verify-code'
+  | 'credentials'
+  | 'review'
+  | 'completed'
+  | 'already-member';
 
 export interface BasicInfo {
   name: string;
   birth: string;
+  phone: string;
 }
 
 export type BasicInfoErrors = Partial<Record<keyof BasicInfo, string>>;
@@ -21,14 +32,22 @@ export interface Credentials {
 
 export type CredentialsErrors = Partial<Record<keyof Credentials, string>>;
 
-// SignupChat의 스텝 전환·form 상태를 한데 묶어서 내려준다.
+// SignupChat의 스텝 전환·인증 타이머·form 상태를 한데 묶어서 내려준다.
+// 각 SignupChat 인스턴스(=시도)마다 독립적인 로컬 상태를 가진다 — 채팅 로그에
+// 여러 시도가 동시에 남아있을 수 있어 전역 상태로 두면 서로 간섭한다.
 export function useSignupFlow(onFinish?: () => void) {
   const [step, setStep] = useState<SignupStep>('basic-info');
   const [info, setInfo] = useState<BasicInfo>({
     name: '',
     birth: '',
+    phone: '',
   });
   const [errors, setErrors] = useState<BasicInfoErrors>({});
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+
+  const [code, setCode] = useState('');
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const [credentials, setCredentials] = useState<Credentials>({
     email: '',
@@ -45,7 +64,14 @@ export function useSignupFlow(onFinish?: () => void) {
 
   const hasNotifiedFinishRef = useRef(false);
 
-  const isFinished = step === 'completed';
+  const {
+    remainingSeconds,
+    isExpired,
+    start: startVerifyCountdown,
+  } = useCountdown(VERIFY_DURATION_SECONDS);
+  const isCancelled = step === 'verify-code' && isExpired;
+  const isFinished =
+    isCancelled || step === 'completed' || step === 'already-member';
 
   useEffect(() => {
     if (isFinished && !hasNotifiedFinishRef.current) {
@@ -59,7 +85,7 @@ export function useSignupFlow(onFinish?: () => void) {
       setInfo((prev) => ({ ...prev, [field]: e.target.value }));
     };
 
-  const handleSubmitBasicInfo = () => {
+  const handleSubmitBasicInfo = async () => {
     const nextErrors: BasicInfoErrors = {};
     if (info.name.trim().length < 2) {
       nextErrors.name = '이름을 정확히 입력해주세요.';
@@ -67,11 +93,47 @@ export function useSignupFlow(onFinish?: () => void) {
     if (!isValidBirth(info.birth)) {
       nextErrors.birth = '생년월일 6자리를 정확히 입력해주세요.';
     }
+    if (info.phone.trim().length === 0) {
+      nextErrors.phone = '전화번호를 입력해주세요.';
+    }
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    setStep('credentials');
+    setIsSendingOtp(true);
+    try {
+      await sendSignupOtp(info.phone);
+      startVerifyCountdown();
+      setStep('verify-code');
+    } catch (error) {
+      setErrors({
+        phone:
+          error instanceof Error
+            ? error.message
+            : '인증번호 발송에 실패했습니다.',
+      });
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (code.trim().length === 0) return;
+
+    setIsVerifyingCode(true);
+    setVerifyError(null);
+    try {
+      const { isExistingMember } = await verifySignupOtp(info.phone, code);
+      setStep(isExistingMember ? 'already-member' : 'credentials');
+    } catch (error) {
+      setVerifyError(
+        error instanceof Error
+          ? error.message
+          : '인증번호가 올바르지 않습니다.',
+      );
+    } finally {
+      setIsVerifyingCode(false);
+    }
   };
 
   const handleCredentialsChange =
@@ -106,6 +168,7 @@ export function useSignupFlow(onFinish?: () => void) {
       await postSignup(
         info.name,
         info.birth,
+        info.phone,
         credentials.email,
         credentials.password,
       );
@@ -125,14 +188,22 @@ export function useSignupFlow(onFinish?: () => void) {
     step,
     info,
     errors,
+    isSendingOtp,
+    code,
+    isVerifyingCode,
+    verifyError,
     credentials,
     credentialsErrors,
     agreedToPrivacy,
     isCompletingSignup,
     completeError,
+    remainingSeconds,
+    isCancelled,
+    setCode,
     setAgreedToPrivacy,
     handleChange,
     handleSubmitBasicInfo,
+    handleVerifyCode,
     handleCredentialsChange,
     handleSubmitCredentials,
     handleCompleteSignup,
