@@ -28,14 +28,3 @@ export function maskName(name: string) {
 export function maskBirth(birth: string) {
   return `${birth.slice(0, 2)}****`;
 }
-
-export function maskPhone(phone: string) {
-  const digits = phone.replace(/-/g, '');
-  return `${digits.slice(0, 3)}-${'*'.repeat(digits.length - 7)}-${digits.slice(-4)}`;
-}
-
-export function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
