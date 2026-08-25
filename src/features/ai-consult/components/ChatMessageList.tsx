@@ -149,6 +149,9 @@ export default function ChatMessageList({
       </div>
 
       <PlanSubscriptionSheet
+        key={
+          subscriptionOpen ? (subscriptionPlan?.planId ?? 'catalog') : 'closed'
+        }
         open={subscriptionOpen}
         onOpenChange={onSubscriptionClose ?? (() => {})}
         plan={subscriptionPlan ?? null}

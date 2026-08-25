@@ -1,14 +1,15 @@
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 import { Check, CheckCircle2, Smartphone } from 'lucide-react';
 
+import { getPlanCatalog } from '@/features/plan-catalog/api/getPlanCatalog';
 import { BottomSheet, Button, Input } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 
 type SubscriptionStep =
-  'confirm' | 'identity' | 'delivery' | 'agreement' | 'complete';
+  'planSelect' | 'confirm' | 'identity' | 'delivery' | 'agreement' | 'complete';
 type SubscriptionType = 'new' | 'portability' | 'device' | 'change';
 
 interface FormState {
@@ -60,6 +61,11 @@ const STEP_TITLES: Record<
   SubscriptionStep,
   { title: string; label: string; desc: string }
 > = {
+  planSelect: {
+    title: '요금제 선택',
+    label: '요금',
+    desc: '가입할 요금제를 선택해주세요',
+  },
   confirm: {
     title: '가입 유형',
     label: '유형',
@@ -84,6 +90,7 @@ const STEP_TITLES: Record<
 };
 
 const STEPS: SubscriptionStep[] = [
+  'planSelect',
   'confirm',
   'identity',
   'delivery',
@@ -169,17 +176,84 @@ function PlanSummary({ plan }: { plan: RecommendedPlan }) {
   );
 }
 
+function PlanSelectItem({
+  plan,
+  selected,
+  onClick,
+}: {
+  plan: RecommendedPlan;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left rounded-2xl border p-4 transition-colors cursor-pointer ${
+        selected
+          ? 'border-brand-promo-primary bg-brand-promo-primary/5'
+          : 'border-border bg-white hover:bg-surface-page'
+      }`}
+    >
+      <div className="flex items-baseline justify-between">
+        <span className="text-body font-semibold text-fg-primary">
+          {plan.planName}
+        </span>
+        <span className="text-body font-bold text-brand-promo-secondary">
+          월 {plan.monthlyFee?.toLocaleString()}원
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-caption text-fg-secondary">
+        {plan.data && <span>데이터 {plan.data}</span>}
+        {plan.voice && <span>음성 {plan.voice}</span>}
+        {plan.message && <span>메시지 {plan.message}</span>}
+      </div>
+      {selected && (
+        <div className="mt-2 flex items-center gap-1 text-caption text-brand-promo-primary">
+          <Check size={14} />
+          선택됨
+        </div>
+      )}
+    </button>
+  );
+}
+
 export default function PlanSubscriptionSheet({
   open,
   onOpenChange,
   plan,
   onComplete,
 }: PlanSubscriptionSheetProps) {
-  const [step, setStep] = useState<SubscriptionStep>('confirm');
+  const [step, setStep] = useState<SubscriptionStep>(
+    plan ? 'confirm' : 'planSelect',
+  );
+  const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
+    plan,
+  );
   const [form, setForm] = useState<FormState>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [planList, setPlanList] = useState<RecommendedPlan[]>([]);
+  const [isPlanListLoading, setIsPlanListLoading] = useState(true);
   const subscribe = useSubscriptionStore((state) => state.subscribe);
   const changePlan = useSubscriptionStore((state) => state.changePlan);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    getPlanCatalog()
+      .then((plans) => {
+        if (!cancelled) setPlanList(plans);
+      })
+      .catch(() => {
+        if (!cancelled) setPlanList([]);
+      })
+      .finally(() => {
+        if (!cancelled) setIsPlanListLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const update = <K extends keyof FormState>(field: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -197,6 +271,8 @@ export default function PlanSubscriptionSheet({
 
   const canProceed = useMemo(() => {
     switch (step) {
+      case 'planSelect':
+        return selectedPlan !== null;
       case 'confirm':
         return true;
       case 'identity':
@@ -212,10 +288,12 @@ export default function PlanSubscriptionSheet({
       default:
         return false;
     }
-  }, [step, form]);
+  }, [step, selectedPlan, form]);
 
   const helperText = useMemo(() => {
     switch (step) {
+      case 'planSelect':
+        return '가입할 요금제를 선택해주세요';
       case 'confirm':
         return '가입 유형을 선택해주세요';
       case 'identity':
@@ -237,11 +315,11 @@ export default function PlanSubscriptionSheet({
     if (step === 'agreement') {
       setIsSubmitting(true);
       window.setTimeout(() => {
-        if (plan) {
+        if (selectedPlan) {
           if (form.type === 'change') {
-            changePlan(plan);
+            changePlan(selectedPlan);
           } else {
-            subscribe(plan);
+            subscribe(selectedPlan);
           }
         }
         setIsSubmitting(false);
@@ -251,6 +329,7 @@ export default function PlanSubscriptionSheet({
     }
 
     const order: SubscriptionStep[] = [
+      'planSelect',
       'confirm',
       'identity',
       'delivery',
@@ -262,13 +341,14 @@ export default function PlanSubscriptionSheet({
 
   const handlePrev = () => {
     const order: SubscriptionStep[] = [
+      'planSelect',
       'confirm',
       'identity',
       'delivery',
       'agreement',
     ];
     const index = order.indexOf(step);
-    setStep(order[Math.max(0, index - 1)] ?? 'confirm');
+    setStep(order[Math.max(0, index - 1)] ?? 'planSelect');
   };
 
   const allAgreed =
@@ -287,12 +367,12 @@ export default function PlanSubscriptionSheet({
   ];
 
   const title = STEP_TITLES[step].title;
-  const description =
-    step === 'confirm' && plan
-      ? `${plan.planName} · 월 ${plan.monthlyFee !== undefined ? plan.monthlyFee.toLocaleString() : '-'}원`
-      : STEP_TITLES[step].desc || undefined;
-
-  if (!plan) return null;
+  const description = useMemo(() => {
+    if (step === 'confirm' && selectedPlan) {
+      return `${selectedPlan.planName} · 월 ${selectedPlan.monthlyFee !== undefined ? selectedPlan.monthlyFee.toLocaleString() : '-'}원`;
+    }
+    return STEP_TITLES[step].desc || undefined;
+  }, [step, selectedPlan]);
 
   const footer = (
     <div className="flex flex-col gap-2 w-full">
@@ -300,7 +380,7 @@ export default function PlanSubscriptionSheet({
         <p className="text-center text-caption text-error">{helperText}</p>
       )}
       <div className="flex gap-2 w-full">
-        {step !== 'confirm' && step !== 'complete' && (
+        {step !== 'planSelect' && step !== 'complete' && (
           <Button
             variant="outline"
             size="md"
@@ -348,16 +428,44 @@ export default function PlanSubscriptionSheet({
       description={description}
       footer={footer}
       onBack={
-        step !== 'confirm' && step !== 'complete' ? handlePrev : undefined
+        step !== 'planSelect' && step !== 'complete' ? handlePrev : undefined
       }
       size={step === 'complete' ? 'content' : 'large'}
     >
       <div className="space-y-5 pb-2">
         <StepIndicator current={step} onChange={setStep} />
 
-        {step === 'confirm' && (
+        {step === 'planSelect' && (
+          <section className="space-y-4">
+            <p className="text-body-sm text-fg-secondary">
+              가입하실 요금제를 아래에서 선택해주세요.
+            </p>
+            {isPlanListLoading && (
+              <p className="text-center text-caption text-fg-tertiary py-8">
+                요금제를 불러오는 중...
+              </p>
+            )}
+            {!isPlanListLoading && planList.length === 0 && (
+              <p className="text-center text-caption text-fg-tertiary py-8">
+                등록된 요금제가 없습니다.
+              </p>
+            )}
+            <div className="space-y-3">
+              {planList.map((p) => (
+                <PlanSelectItem
+                  key={p.planId}
+                  plan={p}
+                  selected={p.planId === selectedPlan?.planId}
+                  onClick={() => setSelectedPlan(p)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {step === 'confirm' && selectedPlan && (
           <section className="space-y-5">
-            <PlanSummary plan={plan} />
+            <PlanSummary plan={selectedPlan} />
             <div>
               <h5 className="text-body font-semibold text-fg-primary mb-3">
                 가입 유형을 선택해주세요
@@ -565,7 +673,7 @@ export default function PlanSubscriptionSheet({
           </section>
         )}
 
-        {step === 'complete' && (
+        {step === 'complete' && selectedPlan && (
           <section className="flex flex-col items-center gap-4 py-4 text-center">
             <CheckCircle2 size={48} className="text-semantic-success" />
             <div>
@@ -574,9 +682,9 @@ export default function PlanSubscriptionSheet({
                 완료되었어요
               </h5>
               <p className="text-body-sm text-fg-secondary mt-1">
-                {plan.planName} · 월{' '}
-                {plan.monthlyFee !== undefined
-                  ? plan.monthlyFee.toLocaleString()
+                {selectedPlan.planName} · 월{' '}
+                {selectedPlan.monthlyFee !== undefined
+                  ? selectedPlan.monthlyFee.toLocaleString()
                   : '-'}
                 원
               </p>
