@@ -49,7 +49,7 @@ export default function PlanCard({
       shadow
       gap="16"
       style={{ borderWidth: '1.5px' }}
-      className={`${contextWidth[context]} ${className}`}
+      className={`flex flex-col ${contextWidth[context]} ${className}`}
     >
       <div className="flex items-start justify-between">
         <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
@@ -76,7 +76,7 @@ export default function PlanCard({
 
       <Line />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 flex-1">
         {benefits.map((benefit) => (
           <IconListItem
             key={benefit.label}

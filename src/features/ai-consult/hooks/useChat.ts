@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { saveReport } from '@/features/ai-consult/api/saveReport';
@@ -105,7 +105,44 @@ export function useChat() {
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
 
-  const openSubscription = (plan: RecommendedPlan) => {
+  const wasLoggedInRef = useRef(isLoggedIn);
+
+  const resetChat = () => {
+    setMessages([
+      {
+        id: 0,
+        type: 'ai',
+        sentence: WELCOME_MESSAGE,
+        quickReplies: getWelcomeQuickReplies(isLoggedIn),
+      },
+    ]);
+    setInput('');
+    setProfile({ mode: 'menu', isLoggedIn });
+    setSubscriptionOpen(false);
+    setSubscriptionPlan(null);
+  };
+
+  useEffect(() => {
+    if (wasLoggedInRef.current && !isLoggedIn) {
+      resetChat();
+    }
+    wasLoggedInRef.current = isLoggedIn;
+  }, [isLoggedIn]);
+
+  const openSubscription = (plan: RecommendedPlan | null) => {
+    if (!isLoggedIn) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence:
+            '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
+          quickReplies: ['회원 가입하기', '기타 상담'],
+        },
+      ]);
+      return;
+    }
     setSubscriptionPlan(plan);
     setSubscriptionOpen(true);
   };
@@ -169,21 +206,7 @@ export function useChat() {
       }
 
       const lastPlan = findLastRecommendedPlan(messages);
-      if (lastPlan) {
-        openSubscription(lastPlan);
-        return;
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          type: 'ai',
-          sentence:
-            '가입할 요금제가 아직 추천되지 않았어요. 먼저 요금제 추천을 받아보세요.',
-          quickReplies: ['요금제 추천받기', '기타 상담'],
-        },
-      ]);
+      openSubscription(lastPlan ?? null);
       return;
     }
 

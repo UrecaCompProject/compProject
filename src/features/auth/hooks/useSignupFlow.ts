@@ -2,12 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { postSignup, sendSignupOtp, verifySignupOtp } from '../api/postSignup';
-import {
-  isValidBirth,
-  isValidEmail,
-  isValidPassword,
-  isValidPhone,
-} from '../utils/signup';
+import { isValidBirth, isValidEmail, isValidPassword } from '../utils/signup';
 
 import { useCountdown } from './useCountdown';
 
@@ -98,8 +93,8 @@ export function useSignupFlow(onFinish?: () => void) {
     if (!isValidBirth(info.birth)) {
       nextErrors.birth = '생년월일 6자리를 정확히 입력해주세요.';
     }
-    if (!isValidPhone(info.phone)) {
-      nextErrors.phone = '전화번호를 정확히 입력해주세요.';
+    if (info.phone.trim().length === 0) {
+      nextErrors.phone = '전화번호를 입력해주세요.';
     }
 
     setErrors(nextErrors);
@@ -123,7 +118,7 @@ export function useSignupFlow(onFinish?: () => void) {
   };
 
   const handleVerifyCode = async () => {
-    if (code.trim().length !== 6) return;
+    if (code.trim().length === 0) return;
 
     setIsVerifyingCode(true);
     setVerifyError(null);

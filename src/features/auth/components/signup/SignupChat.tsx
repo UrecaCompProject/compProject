@@ -135,9 +135,8 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                 <Input
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="인증번호 6자리"
+                  placeholder="인증번호"
                   inputMode="numeric"
-                  maxLength={6}
                   variant={verifyError ? 'error' : 'default'}
                 />
                 {verifyError && (
@@ -147,7 +146,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                 )}
                 <Button
                   onClick={handleVerifyCode}
-                  disabled={code.trim().length !== 6 || isVerifyingCode}
+                  disabled={code.trim().length === 0 || isVerifyingCode}
                   className="mt-2 w-full"
                 >
                   {isVerifyingCode ? '확인 중...' : '확인'}
