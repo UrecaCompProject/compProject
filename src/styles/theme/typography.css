@@ -20,4 +20,8 @@
   --text-chip: 14px;
   --text-chip--line-height: 130%;
   --text-chip--font-weight: 600;
+
+  --text-medium-12-130: 12px;
+  --text-medium-12-130--line-height: 130%;
+  --text-medium-12-130--font-weight: 600;
 }
