@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { ChevronLeft } from 'lucide-react';
 import { Drawer } from 'vaul';
 
 type BottomSheetSize = 'content' | 'large' | 'full';
@@ -7,6 +8,7 @@ type BottomSheetSize = 'content' | 'large' | 'full';
 type BottomSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBack?: () => void;
   title: string;
   description?: string;
   children: ReactNode;
@@ -14,6 +16,7 @@ type BottomSheetProps = {
   size?: BottomSheetSize;
   dismissible?: boolean;
   className?: string;
+  bodyClassName?: string;
 };
 
 const sizeClasses: Record<BottomSheetSize, string> = {
@@ -25,6 +28,7 @@ const sizeClasses: Record<BottomSheetSize, string> = {
 export default function BottomSheet({
   open,
   onOpenChange,
+  onBack,
   title,
   description,
   children,
@@ -32,6 +36,7 @@ export default function BottomSheet({
   size = 'large',
   dismissible = true,
   className = '',
+  bodyClassName = 'px-5',
 }: BottomSheetProps) {
   return (
     <Drawer.Root
@@ -69,9 +74,22 @@ export default function BottomSheet({
 
           <div className="flex min-h-0 flex-1 flex-col">
             <header className="shrink-0 px-5 pb-3 pt-4">
-              <Drawer.Title className="text-title text-fg-primary">
-                {title}
-              </Drawer.Title>
+              <div className="flex h-8 items-center gap-2">
+                {onBack && (
+                  <button
+                    type="button"
+                    aria-label="이전 화면으로 돌아가기"
+                    onClick={onBack}
+                    className="inline-flex h-8 w-8 items-center justify-center"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                )}
+
+                <Drawer.Title className="text-title text-fg-primary">
+                  {title}
+                </Drawer.Title>
+              </div>
 
               {description && (
                 <Drawer.Description className="mt-1 text-caption text-fg-tertiary">
@@ -80,7 +98,7 @@ export default function BottomSheet({
               )}
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-5">
+            <div className={`min-h-0 flex-1 overflow-y-auto ${bodyClassName}`}>
               {children}
             </div>
 
