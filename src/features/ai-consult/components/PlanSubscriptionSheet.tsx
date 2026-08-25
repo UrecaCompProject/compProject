@@ -8,23 +8,13 @@ import type { RecommendedPlan } from '@/lib/aiConsult';
 
 import { useSubscriptionStore } from '../store/useSubscriptionStore';
 
+import type { SubscriptionForm } from '../types';
+
 type SubscriptionStep =
   'planSelect' | 'confirm' | 'identity' | 'delivery' | 'agreement' | 'complete';
 type SubscriptionType = 'new' | 'portability' | 'device' | 'change';
 
-interface FormState {
-  type: SubscriptionType;
-  name: string;
-  birth: string;
-  phone: string;
-  address: string;
-  simType: 'usim' | 'esim' | '';
-  agreedPrivacy: boolean;
-  agreedService: boolean;
-  agreedMarketing: boolean;
-}
-
-const initialForm: FormState = {
+const initialForm: SubscriptionForm = {
   type: 'new',
   name: '',
   birth: '',
@@ -230,13 +220,15 @@ export default function PlanSubscriptionSheet({
   const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
     plan,
   );
-  const [form, setForm] = useState<FormState>(initialForm);
+  const [form, setForm] = useState<SubscriptionForm>(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [planList, setPlanList] = useState<RecommendedPlan[]>([]);
   const [isPlanListLoading, setIsPlanListLoading] = useState(true);
   const [planListError, setPlanListError] = useState<string | null>(null);
-  const subscribe = useSubscriptionStore((state) => state.subscribe);
-  const changePlan = useSubscriptionStore((state) => state.changePlan);
+  const submitApplication = useSubscriptionStore(
+    (state) => state.submitApplication,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -266,7 +258,10 @@ export default function PlanSubscriptionSheet({
     };
   }, [open]);
 
-  const update = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+  const update = <K extends keyof SubscriptionForm>(
+    field: K,
+    value: SubscriptionForm[K],
+  ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -320,22 +315,25 @@ export default function PlanSubscriptionSheet({
 
   const showHelper = !canProceed && step !== 'complete';
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!canProceed || isSubmitting) return;
 
     if (step === 'agreement') {
+      if (!selectedPlan) return;
       setIsSubmitting(true);
-      window.setTimeout(() => {
-        if (selectedPlan) {
-          if (form.type === 'change') {
-            changePlan(selectedPlan);
-          } else {
-            subscribe(selectedPlan);
-          }
-        }
-        setIsSubmitting(false);
+      setSubmitError(null);
+      try {
+        await submitApplication(selectedPlan, form);
         setStep('complete');
-      }, 800);
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error
+            ? error.message
+            : '가입 신청 중 문제가 발생했어요. 다시 시도해주세요.',
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -389,6 +387,9 @@ export default function PlanSubscriptionSheet({
     <div className="flex flex-col gap-2 w-full">
       {showHelper && (
         <p className="text-center text-caption text-error">{helperText}</p>
+      )}
+      {submitError && (
+        <p className="text-center text-caption text-error">{submitError}</p>
       )}
       <div className="flex gap-2 w-full">
         {step !== 'planSelect' && step !== 'complete' && (
@@ -616,7 +617,10 @@ export default function PlanSubscriptionSheet({
                       key={sim.value}
                       type="button"
                       onClick={() =>
-                        update('simType', sim.value as FormState['simType'])
+                        update(
+                          'simType',
+                          sim.value as SubscriptionForm['simType'],
+                        )
                       }
                       className={`rounded-2xl border p-4 text-body-sm font-medium transition-colors cursor-pointer ${
                         selected
