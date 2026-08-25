@@ -64,6 +64,61 @@ const STEP_TITLES: Record<SubscriptionStep, string> = {
   complete: '신청 완료',
 };
 
+const STEPS: SubscriptionStep[] = [
+  'confirm',
+  'identity',
+  'delivery',
+  'agreement',
+  'complete',
+];
+
+function StepIndicator({
+  current,
+  onChange,
+}: {
+  current: SubscriptionStep;
+  onChange: (step: SubscriptionStep) => void;
+}) {
+  const currentIndex = STEPS.indexOf(current);
+
+  return (
+    <div className="flex items-center justify-between mb-6">
+      {STEPS.map((step, index) => {
+        const isActive = step === current;
+        const isPast = index < currentIndex;
+        const clickable = index <= currentIndex;
+
+        return (
+          <button
+            key={step}
+            type="button"
+            disabled={!clickable}
+            onClick={() => clickable && onChange(step)}
+            className={`flex flex-col items-center gap-1 ${
+              clickable ? 'cursor-pointer' : 'cursor-default opacity-40'
+            }`}
+          >
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-caption font-semibold ${
+                isActive
+                  ? 'bg-brand-promo-primary text-surface-card'
+                  : isPast
+                    ? 'bg-brand-promo-primary/20 text-brand-promo-primary'
+                    : 'bg-surface-pressed text-fg-disabled'
+              }`}
+            >
+              {index + 1}
+            </div>
+            <span className="text-[10px] text-fg-secondary whitespace-nowrap">
+              {STEP_TITLES[step].split(' ')[0]}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PlanSubscriptionSheet({
   open,
   onOpenChange,
@@ -201,6 +256,7 @@ export default function PlanSubscriptionSheet({
       footer={footer}
     >
       <div className="space-y-5 pb-2">
+        <StepIndicator current={step} onChange={setStep} />
         {step === 'confirm' && (
           <section>
             <h5 className="text-body font-semibold text-fg-primary mb-3">

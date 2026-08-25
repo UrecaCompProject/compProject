@@ -12,7 +12,7 @@ export interface PlanCardBenefit {
 type PlanCardContext = 'chat' | 'report';
 
 const contextWidth: Record<PlanCardContext, string> = {
-  chat: 'w-[230px]',
+  chat: 'w-80',
   report: 'w-[350px]',
 };
 

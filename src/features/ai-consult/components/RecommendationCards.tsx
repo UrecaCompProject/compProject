@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { useIsLoggedIn } from '@/features/auth';
 import PlanCard, {
   type PlanCardBenefit,
 } from '@/features/plan-catalog/components/PlanCard';
@@ -21,7 +22,6 @@ interface RecommendationCardsProps {
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   isLoading?: boolean;
-  isLoggedIn?: boolean;
 }
 
 const getBenefitIcon = (label: string): LucideIcon => {
@@ -61,8 +61,8 @@ export default function RecommendationCards({
   onPlanSubscribe,
   onGenerateReport,
   isLoading = false,
-  isLoggedIn = false,
 }: RecommendationCardsProps) {
+  const isLoggedIn = useIsLoggedIn();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
   const [emblaRef] = useEmblaCarousel({
@@ -99,14 +99,14 @@ export default function RecommendationCards({
       >
         <div className="flex">
           {plans.map((plan) => (
-            <div key={plan.planId} className="w-70 shrink-0 pr-3 last:pr-0">
+            <div key={plan.planId} className="w-80 shrink-0 pr-2 last:pr-0">
               <PlanCard
                 title={plan.planName}
                 price={plan.monthlyFee ?? 0}
                 benefits={toPlanBenefits(plan)}
                 context="chat"
                 reason={plan.reason}
-                className="h-full w-70"
+                className="h-full"
                 onDetail={() => handleOpen(plan)}
                 onSelect={() => handleSubscribe(plan)}
               />
