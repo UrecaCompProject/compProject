@@ -8,7 +8,7 @@ type CouponListProps = {
 
 export default function CouponList({ coupons }: CouponListProps) {
   return (
-    <section className="grid grid-cols-2 gap-2">
+    <section className="grid grid-cols-2 gap-x-2 gap-y-5">
       {coupons.map((coupon) => (
         <CouponCard key={coupon.id} coupon={coupon} />
       ))}

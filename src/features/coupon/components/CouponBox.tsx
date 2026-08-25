@@ -17,7 +17,7 @@ export default function CouponBox() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <CouponSummary count={availableCoupons.length} />
 
       <CouponSearch value={query} onChange={setQuery} />
