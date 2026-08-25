@@ -6,6 +6,7 @@ type ButtonSize = 'chip' | 'sm' | 'md' | 'lg';
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  active?: boolean;
 }
 
 const ButtonColorVariants: Record<ButtonVariant, string> = {
@@ -13,7 +14,7 @@ const ButtonColorVariants: Record<ButtonVariant, string> = {
     'bg-brand-promo-primary text-white hover:bg-brand-promo-secondary disabled:bg-surface-pressed disabled:text-brand-light',
   secondary:
     'bg-surface-page text-brand-primary hover:bg-bg-pressed disabled:text-fg-disabled',
-  chip: 'bg-white text-fg-tertiary border border-border hover:bg-surface-pressed hover:text-brand-primary hover:border-border-brand',
+  chip: 'bg-white text-fg-tertiary border border-border hover:bg-surface-pressed hover:text-brand-primary hover:border-border-brand aria-pressed:bg-surface-pressed aria-pressed:text-brand-primary aria-pressed:border-border-brand',
   outline:
     'border border-brand-promo-primary text-brand-promo-secondary hover:bg-bg-subtle disabled:text-fg-disabled disabled:border-border',
 };
@@ -28,11 +29,13 @@ const ButtonSizeVariants: Record<ButtonSize, string> = {
 export default function Button({
   variant = 'primary',
   size = 'md',
+  active = false,
   className = '',
   ...props
 }: ButtonProps) {
   return (
     <button
+      aria-pressed={active}
       className={`inline-flex box-border items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed ${ButtonColorVariants[variant]} ${ButtonSizeVariants[size]} ${className}`}
       {...props}
     />
