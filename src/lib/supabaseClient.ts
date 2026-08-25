@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 function cleanEnvValue(value: string | undefined): string | undefined {
-  return value?.replace(/^['"`]+|['"`]+$/g, '').trim();
+  if (!value) return undefined;
+  // .env.local 에 키가 여러 줄로 복사되거나 공백/따옴표가 섞인 경우 안전하게 정리
+  return value.replace(/\s+/g, '').replace(/^['"`]+|['"`]+$/g, '');
 }
 
 const supabaseUrl = cleanEnvValue(import.meta.env.VITE_SUPABASE_URL);
@@ -30,5 +32,6 @@ export const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: false,
     autoRefreshToken: false,
     detectSessionInUrl: false,
+    storageKey: 'supabaseAnon',
   },
 });
