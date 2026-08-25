@@ -130,6 +130,19 @@ export function useChat() {
   }, [isLoggedIn]);
 
   const openSubscription = (plan: RecommendedPlan | null) => {
+    if (!isLoggedIn) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence:
+            '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
+          quickReplies: ['회원 가입하기', '기타 상담'],
+        },
+      ]);
+      return;
+    }
     setSubscriptionPlan(plan);
     setSubscriptionOpen(true);
   };
