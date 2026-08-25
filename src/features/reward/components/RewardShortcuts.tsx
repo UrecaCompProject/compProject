@@ -6,6 +6,13 @@ type RewardShortcutsProps = {
   onCouponClick: () => void;
 };
 
+/**
+ * Renders shortcut buttons for the badge-exchange store and the user's coupons.
+ *
+ * @param onStoreClick - Handles clicks on the store shortcut
+ * @param onCouponClick - Handles clicks on the coupon shortcut
+ * @returns The shortcut button section
+ */
 export default function RewardShortcuts({
   onStoreClick,
   onCouponClick,

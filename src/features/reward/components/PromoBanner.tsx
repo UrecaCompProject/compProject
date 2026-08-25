@@ -1,5 +1,8 @@
 import bannerImage from '../assets/banner1.png';
 
+/**
+ * Renders a promotional banner advertising a free Baskin-Robbins pint for collecting 70 badges.
+ */
 export default function PromoBanner() {
   return (
     <section className="overflow-hidden bg-accent-soft">

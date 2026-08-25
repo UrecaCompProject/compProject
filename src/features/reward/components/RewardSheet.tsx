@@ -17,6 +17,12 @@ const titles: Record<RewardView, string> = {
   coupon: '나의 쿠폰함',
 };
 
+/**
+ * Displays the reward sheet and manages navigation between reward-related views.
+ *
+ * @param open - Whether the sheet is open
+ * @param onOpenChange - Called when the sheet's open state changes
+ */
 export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
   const [activeView, setActiveView] = useState<RewardView>('reward');
   const handleOpenChange = (nextOpen: boolean) => {
