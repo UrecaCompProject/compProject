@@ -11,9 +11,9 @@ import {
 } from 'lucide-react';
 
 import { useIsLoggedIn } from '@/features/auth';
-import EventPage from '@/features/pages/EventPage';
 import MainPage from '@/features/pages/MainPage';
 import PlanPage from '@/features/pages/PlanPage';
+import { RewardSheet } from '@/features/reward';
 import {
   BottomSheet,
   IconBadge,
@@ -44,6 +44,7 @@ export default function ChatInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [rewardOpen, setRewardOpen] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
   const handleSend = () => {
     onSend(value);
@@ -53,7 +54,7 @@ export default function ChatInput({
     setIsSheetOpen(true);
   };
 
-  useClickOutside(containerRef, isMenuOpen && !isSheetOpen, () =>
+  useClickOutside(containerRef, isMenuOpen && !isSheetOpen && !rewardOpen, () =>
     setIsMenuOpen(false),
   );
 
@@ -123,9 +124,10 @@ export default function ChatInput({
 
             <div
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() =>
-                openSheet({ title: '혜택/이벤트', content: <EventPage /> })
-              }
+              onClick={() => {
+                setIsMenuOpen(false);
+                setRewardOpen(true);
+              }}
             >
               <IconBadge icon={Gift} size={52} radius={16} />
               <div>혜택/이벤트</div>
@@ -148,6 +150,8 @@ export default function ChatInput({
       >
         {activeSheet?.content}
       </BottomSheet>
+
+      <RewardSheet open={rewardOpen} onOpenChange={setRewardOpen} />
     </div>
   );
 }
