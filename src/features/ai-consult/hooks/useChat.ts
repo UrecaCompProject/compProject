@@ -74,9 +74,7 @@ function buildConversationLog(messages: ChatMessage[]): string {
     .filter((m) => m.type === 'ai' || m.type === 'user')
     .map((m) => {
       const role = m.type === 'ai' ? 'AI' : '사용자';
-      const text =
-        typeof m.sentence === 'string' ? m.sentence : '[입력 폼/카드 UI]';
-      return `${role}: ${text}`;
+      return `${role}: ${m.sentence}`;
     })
     .join('\n');
 }

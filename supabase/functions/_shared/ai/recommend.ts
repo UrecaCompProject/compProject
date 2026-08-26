@@ -902,13 +902,28 @@ export async function generateReport(
     // LLM 실패 시 아래 기본값으로 fallback
   }
 
+  // LLM 실패 시 추천 결과 텍스트에서 최소한의 요금제 이름과 절감액을 추출
+  const fallbackPlans = recommendationResult
+    .split('\n')
+    .map((line) => {
+      const match = line.match(/^(.+?)\s*\(/);
+      return match ? match[1].trim() : line.trim();
+    })
+    .filter((line) => line.length > 0);
+
+  const savingMatch = recommendationResult.match(/절감액\s+([\d,]+)원/);
+  const fallbackSaving = savingMatch
+    ? parseInt(savingMatch[1].replace(/,/g, ''), 10)
+    : 0;
+
   return {
     summary: '요금제 추천 상담 내용을 요약한 레포트입니다.',
     usageType: '',
     currentPlan: currentPlan || '미등록',
-    recommendedPlans: [],
-    recommendationReason: '',
-    monthlySavingAmount: 0,
+    recommendedPlans: fallbackPlans,
+    recommendationReason:
+      recommendationResult || '추천된 요금제를 확인해주세요.',
+    monthlySavingAmount: Number.isNaN(fallbackSaving) ? 0 : fallbackSaving,
     importantConditions: [],
   };
 }
