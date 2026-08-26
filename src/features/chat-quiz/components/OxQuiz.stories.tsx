@@ -42,8 +42,8 @@ function OxQuizConversation() {
 
   return (
     <div className="flex flex-col gap-3">
-      <MyChat sentence="OX 퀴즈 할래" />
-      <AIChat sentence="네, OX 퀴즈를 진행하겠습니다." />
+      <MyChat sentence="보안 OX 퀴즈 할래" />
+      <AIChat sentence="네, 보안 OX 퀴즈를 진행하겠습니다." />
       <AIChat
         sentence={
           <OxQuiz

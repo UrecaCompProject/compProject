@@ -4,12 +4,13 @@ import { SignupChat } from '@/features/auth';
 import type { ConsultInput, RecommendedPlan } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
+import ChatQuizMessage from './ChatQuizMessage';
 import MyChat from './MyChat';
 import PlanSubscriptionSheet from './PlanSubscriptionSheet';
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
 
-import type { ChatMessage } from '../types';
+import type { ChatMessage, QuizQuestionMessage } from '../types';
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
@@ -22,6 +23,10 @@ interface ChatMessageListProps {
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
   onSubscriptionClose?: () => void;
+  onQuizOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
+  onQuizMultipleChoiceSelect: (messageId: number, optionId: string) => void;
+  onQuizMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
+  onQuizNext: () => void;
 }
 
 export default function ChatMessageList({
@@ -35,6 +40,10 @@ export default function ChatMessageList({
   subscriptionOpen = false,
   subscriptionPlan,
   onSubscriptionClose,
+  onQuizOxAnswer,
+  onQuizMultipleChoiceSelect,
+  onQuizMultipleChoiceConfirm,
+  onQuizNext,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -83,6 +92,17 @@ export default function ChatMessageList({
 
             {message.type === 'signup' && (
               <SignupChat onFinish={onSignupFinished} />
+            )}
+
+            {(message.type === 'quiz-question' ||
+              message.type === 'quiz-result') && (
+              <ChatQuizMessage
+                message={message}
+                onOxAnswer={onQuizOxAnswer}
+                onMultipleChoiceSelect={onQuizMultipleChoiceSelect}
+                onMultipleChoiceConfirm={onQuizMultipleChoiceConfirm}
+                onNext={onQuizNext}
+              />
             )}
 
             {message.type === 'ai' &&

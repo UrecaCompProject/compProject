@@ -47,8 +47,8 @@ function MultipleChoiceConversation() {
 
   return (
     <div className="flex flex-col gap-3">
-      <MyChat sentence="통신·보안 퀴즈 할래" />
-      <AIChat sentence="네, 통신·보안 퀴즈를 진행하겠습니다." />
+      <MyChat sentence="통신 상식 퀴즈 할래" />
+      <AIChat sentence="네, 통신 상식 퀴즈를 진행하겠습니다." />
       <AIChat
         sentence={
           <MultipleChoiceQuiz

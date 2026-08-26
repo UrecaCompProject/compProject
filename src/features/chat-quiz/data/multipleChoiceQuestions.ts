@@ -2,49 +2,52 @@ import type { MultipleChoiceQuestion } from '../type';
 
 export const multipleChoiceQuestions: MultipleChoiceQuestion[] = [
   {
-    id: 'security-1',
+    id: 'telecom-1',
     type: 'multiple-choice',
-    category: 'security',
-    question: '다음 중 개인정보를 안전하게 보호하는 방법은 무엇일까요?',
+    category: 'telecom',
+    question: '데이터 무제한 요금제에 대한 설명으로 알맞은 것은 무엇일까요?',
     options: [
-      { id: '1', label: '서비스마다 서로 다른 비밀번호를 사용한다.' },
-      { id: '2', label: '모든 계정에 같은 비밀번호를 사용한다.' },
-      { id: '3', label: '비밀번호를 다른 사람과 공유한다.' },
-      { id: '4', label: '공공장소에 비밀번호를 적어 둔다.' },
-    ],
-    correctOptionId: '1',
-    explanation:
-      '서비스마다 서로 다른 비밀번호를 사용하면 하나의 비밀번호가 유출됐을 때 다른 계정까지 피해를 입는 것을 줄일 수 있습니다.',
-  },
-  {
-    id: 'security-2',
-    type: 'multiple-choice',
-    category: 'security',
-    question:
-      '출처를 알 수 없는 문자 메시지에 링크가 있다면 어떻게 해야 할까요?',
-    options: [
-      { id: '1', label: '내용을 확인하기 위해 바로 누른다.' },
-      { id: '2', label: '친구에게 대신 눌러 달라고 부탁한다.' },
-      { id: '3', label: '링크를 누르지 않고 발신자를 확인한다.' },
-      { id: '4', label: '다른 사람에게 링크를 전달한다.' },
-    ],
-    correctOptionId: '3',
-    explanation:
-      '출처를 알 수 없는 링크는 피싱이나 악성 프로그램으로 연결될 수 있으므로 누르지 않아야 합니다.',
-  },
-  {
-    id: 'security-3',
-    type: 'multiple-choice',
-    category: 'security',
-    question: '공용 Wi-Fi를 사용할 때 가장 안전한 행동은 무엇일까요?',
-    options: [
-      { id: '1', label: '금융 정보를 바로 입력한다.' },
-      { id: '2', label: '중요한 개인정보 입력을 피한다.' },
-      { id: '3', label: '자동 로그인을 항상 활성화한다.' },
-      { id: '4', label: '다른 사람과 계정을 공유한다.' },
+      { id: '1', label: '모든 상품이 항상 최고 속도를 제공한다.' },
+      { id: '2', label: '일정 사용량 이후 속도가 제한될 수 있다.' },
+      { id: '3', label: 'Wi-Fi 사용량도 기본 데이터에서 차감된다.' },
+      { id: '4', label: '모든 상품의 월 요금이 동일하다.' },
     ],
     correctOptionId: '2',
     explanation:
-      '공용 Wi-Fi에서는 통신 내용이 노출될 가능성이 있으므로 중요한 개인정보 입력을 피하는 것이 안전합니다.',
+      '일부 무제한 요금제는 일정 데이터를 사용한 뒤 제한된 속도로 계속 데이터를 제공합니다.',
+  },
+  {
+    id: 'telecom-2',
+    type: 'multiple-choice',
+    category: 'telecom',
+    question: '5G 요금제에 대한 설명으로 알맞은 것은 무엇일까요?',
+    options: [
+      { id: '1', label: '모든 5G 요금제는 데이터를 무제한 제공한다.' },
+      { id: '2', label: '5G 요금제에는 데이터 제한 상품이 없다.' },
+      { id: '3', label: '정해진 데이터만 제공하는 5G 상품도 있다.' },
+      { id: '4', label: '5G 요금제는 모두 같은 속도를 제공한다.' },
+    ],
+    correctOptionId: '3',
+    explanation:
+      '5G 요금제에도 정해진 데이터만 제공하거나 사용량 이후 속도를 제한하는 상품이 있습니다.',
+  },
+  {
+    id: 'telecom-3',
+    type: 'multiple-choice',
+    category: 'telecom',
+    question:
+      'Wi-Fi 사용과 휴대폰 데이터에 대한 설명으로 알맞은 것은 무엇일까요?',
+    options: [
+      { id: '1', label: 'Wi-Fi를 사용해도 기본 데이터가 항상 차감된다.' },
+      { id: '2', label: 'Wi-Fi는 통화량에서 차감된다.' },
+      { id: '3', label: 'Wi-Fi는 문자 제공량에서 차감된다.' },
+      {
+        id: '4',
+        label: '일반적으로 Wi-Fi 사용량은 기본 데이터에서 차감되지 않는다.',
+      },
+    ],
+    correctOptionId: '4',
+    explanation:
+      '일반적으로 Wi-Fi를 통한 데이터 사용은 휴대폰 요금제의 기본 데이터에서 차감되지 않습니다.',
   },
 ];
