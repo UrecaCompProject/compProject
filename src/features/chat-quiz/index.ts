@@ -6,6 +6,8 @@ export { multipleChoiceQuestions } from './data/multipleChoiceQuestions';
 export { oxQuestions } from './data/oxQuestions';
 
 export type {
+  QuizKind,
+  QuizQuestion,
   MultipleChoiceQuestion,
   OxQuestion,
   QuizOption,
