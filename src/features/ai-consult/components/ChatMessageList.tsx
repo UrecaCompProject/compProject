@@ -7,6 +7,7 @@ import AIChat from './AIChat';
 import ChatQuizMessage from './ChatQuizMessage';
 import CompareResultSheet from './CompareResultSheet';
 import MyChat from './MyChat';
+import PlanSelector from './PlanSelector';
 import PlanSubscriptionSheet from './PlanSubscriptionSheet';
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
@@ -17,11 +18,14 @@ import type { ChatMessage, QuizQuestionMessage } from '../types';
 interface ChatMessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
+  isGeneratingReport?: boolean;
   onSignupFinished?: () => void;
   onFormSubmit?: (values: Partial<ConsultInput>) => void;
   formDefaults?: Partial<ConsultInput>;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
   onPlanCompare?: (plan: RecommendedPlan) => void;
+  onSelectCurrentPlan?: (planName: string) => void;
+  onSelectTargetPlan?: (planName: string) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
@@ -35,11 +39,14 @@ interface ChatMessageListProps {
 export default function ChatMessageList({
   messages,
   isLoading = false,
+  isGeneratingReport = false,
   onSignupFinished,
   onFormSubmit,
   formDefaults,
   onPlanSubscribe,
   onPlanCompare,
+  onSelectCurrentPlan,
+  onSelectTargetPlan,
   onGenerateReport,
   subscriptionOpen = false,
   subscriptionPlan,
@@ -111,32 +118,42 @@ export default function ChatMessageList({
 
             {message.type === 'ai' &&
               message.recommendations &&
-              message.recommendations.length > 0 &&
-              index === lastIndex && (
+              message.recommendations.length > 0 && (
                 <RecommendationCards
                   plans={message.recommendations}
                   onPlanSubscribe={onPlanSubscribe}
                   onPlanCompare={onPlanCompare}
                   onGenerateReport={onGenerateReport}
                   isLoading={isLoading}
+                  isGeneratingReport={isGeneratingReport}
                 />
               )}
 
-            {message.type === 'ai' && message.report && index === lastIndex && (
+            {message.type === 'ai' && message.report && (
               <ReportCard report={message.report} />
             )}
 
-            {message.type === 'ai' &&
-              message.compareResult &&
-              index === lastIndex && (
-                <CompareResultSheet
-                  result={message.compareResult}
-                  onSubscribe={() =>
-                    message.compareResult &&
-                    onPlanSubscribe?.(message.compareResult.planB)
-                  }
-                />
-              )}
+            {message.type === 'ai' && message.compareResult && (
+              <CompareResultSheet
+                result={message.compareResult}
+                onSubscribe={() =>
+                  message.compareResult &&
+                  onPlanSubscribe?.(message.compareResult.planB)
+                }
+              />
+            )}
+
+            {message.type === 'ai' && message.planSelector && (
+              <PlanSelector
+                mode={message.planSelectorMode ?? 'current'}
+                onSelect={(planName) =>
+                  message.planSelectorMode === 'target'
+                    ? onSelectTargetPlan?.(planName)
+                    : onSelectCurrentPlan?.(planName)
+                }
+                disabled={isLoading}
+              />
+            )}
 
             {message.type === 'ai' &&
               message.form &&
