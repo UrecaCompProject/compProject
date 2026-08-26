@@ -1,25 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
 
+import badgeImage from '@/assets/images/badge.svg';
+import { Button } from '@/features/shared';
+
 const CARD_W = 316;
 const CARD_H = 280;
-const PADDING = 26; // 사각형 안쪽 패딩 (20~30px 범위)
-const HINT_DURATION = 1300;
-const HINT_INTERVAL = 4200;
+const BRUSH_PADDING_X = 4; // 브러시가 가로로 꽉 차도록 최소한의 좌우 여백만 둔다
+const HINT_DURATION = 1300; // 브러시가 한 방향으로 그려지는(또는 역재생되는) 시간
+const HINT_HOLD_DURATION = 2000; // 다 그려진 뒤 멈춰있는 시간
+const HINT_INTERVAL = 5600; // 정방향 + 홀드 + 역방향 + 여유시간
 const CLEAR_THRESHOLD = 0.55; // 이 비율 이상 긁으면 자동으로 전체 오픈
+const MAX_BADGE_REWARD = 5;
 
 const LABEL = '여기를 긁어보세요';
-const REWARD_EMOJI = '🎉';
-const REWARD_DESCRIPTION = '마이 혜택함에서 바로 사용해보세요';
-const CTA_LABEL = '받기';
+const REWARD_DESCRIPTION = '나의 쿠폰함에서 확인해보세요';
+const CTA_LABEL = '쿠폰함 확인하기';
 
-// 브러시 경로 (298 x 230 viewBox 기준)
+// 브러시 경로 (373 x 216 viewBox 기준, 가로로 넓게 퍼지는 형태)
 const BRUSH_D =
-  'M25.0004 96.4029C52.297 64.5028 109.482 6.69675 119.852 30.6732C132.814 60.6437 23.9571 197.928 65.2748 203.874C106.592 209.82 189.621 110.156 217.645 95.6257C245.67 81.0949 226.104 139.948 214.766 178.075C203.429 216.203 246.828 191.202 272.58 170.088';
-const BRUSH_VB_W = 298;
-const BRUSH_VB_H = 230;
+  'M30.0081 98.9688C88.5082 80.9701 163.474 10.97 173.844 34.9464C186.806 64.9169 95.4698 158.398 136.787 164.344C178.105 170.289 240.734 73.8738 268.758 59.343C296.782 44.8122 248.125 130.715 236.788 168.843C225.45 206.971 317.255 169.083 343.008 147.969';
+const BRUSH_VB_W = 373;
+const BRUSH_VB_H = 216;
+const BRUSH_STROKE_WIDTH = 60; // 원본 SVG의 stroke-width 그대로 사용 (비율 유지를 위해 균일 scale에만 곱해짐)
 
-const FONT =
-  "600 20px -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+const FONT = "700 19px 'Pretendard Variable', 'Pretendard', sans-serif";
 
 function easeInOutQuad(t: number): number {
   return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
@@ -32,12 +36,17 @@ type ScratchGameProps = {
 };
 
 export default function ScratchGame({
-  reward = 1,
+  reward: rewardProp,
   onWin,
   onClose,
 }: ScratchGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isCleared, setIsCleared] = useState(false);
+
+  // reward를 안 넘겨주면 1~5개 사이에서 랜덤으로 정해서 컴포넌트 생애주기 동안 고정 유지
+  const [reward] = useState(
+    () => rewardProp ?? Math.floor(Math.random() * MAX_BADGE_REWARD) + 1,
+  );
 
   // 캔버스 setup effect는 마운트 시 한 번만 실행되어야 하므로
   // reward/onWin은 ref로 최신값을 참조한다 (참조가 바뀌어도 effect 재실행 X).
@@ -64,8 +73,13 @@ export default function ScratchGame({
     canvas.style.height = `${CARD_H}px`;
     ctx.scale(dpr, dpr);
 
-    const scaleX = (CARD_W - PADDING * 2) / BRUSH_VB_W;
-    const scaleY = (CARD_H - PADDING * 2) / BRUSH_VB_H;
+    // 브러시가 눌리거나 늘어나지 않도록 가로/세로에 동일한 비율(scale)만 적용한다.
+    // 가로는 카드 폭에 꽉 차게 맞추고, 세로는 그 비율을 그대로 따르되 텍스트 중앙에 오도록 정렬한다.
+    const BRUSH_SIZE_MULTIPLIER = 1.5;
+    const brushScale =
+      ((CARD_W - BRUSH_PADDING_X * 2) / BRUSH_VB_W) * BRUSH_SIZE_MULTIPLIER;
+    const brushOffsetX = (CARD_W - BRUSH_VB_W * brushScale) / 2;
+    const brushOffsetY = (CARD_H - BRUSH_VB_H * brushScale) / 2;
 
     function paintGradient(target: CanvasRenderingContext2D) {
       const gradient = target.createLinearGradient(0, 0, CARD_W, CARD_H);
@@ -84,6 +98,7 @@ export default function ScratchGame({
       target.fillText(LABEL, CARD_W / 2, CARD_H / 2);
     }
 
+    // 그라데이션 색 텍스트 스프라이트 (글자 모양만 남김)
     const spriteCanvas = document.createElement('canvas');
     spriteCanvas.width = CARD_W * dpr;
     spriteCanvas.height = CARD_H * dpr;
@@ -98,6 +113,7 @@ export default function ScratchGame({
     spriteCtx.fillText(LABEL, CARD_W / 2, CARD_H / 2);
     spriteCtx.globalCompositeOperation = 'source-over';
 
+    // 경로 길이 측정 (dash 애니메이션으로 "브러시가 지나가는" 효과 구현)
     const svgNS = 'http://www.w3.org/2000/svg';
     const measureSvg = document.createElementNS(svgNS, 'svg');
     const measurePath = document.createElementNS(svgNS, 'path');
@@ -117,14 +133,15 @@ export default function ScratchGame({
     maskCanvas.height = CARD_H * dpr;
     const maskCtx = maskCanvas.getContext('2d')!;
 
-    const BRUSH_WIDTH = 64;
+    // 마스크(텍스트 리빌)와 실제 보이는 흰 브러시가 반드시 같은 두께여야 서로 어긋나 보이지 않음
+    const BRUSH_WIDTH = BRUSH_STROKE_WIDTH;
 
     function drawBrushMask(progress: number) {
       maskCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       maskCtx.clearRect(0, 0, CARD_W, CARD_H);
       maskCtx.save();
-      maskCtx.translate(PADDING, PADDING);
-      maskCtx.scale(scaleX, scaleY);
+      maskCtx.translate(brushOffsetX, brushOffsetY);
+      maskCtx.scale(brushScale, brushScale);
       maskCtx.lineWidth = BRUSH_WIDTH;
       maskCtx.lineCap = 'round';
       maskCtx.lineJoin = 'round';
@@ -137,8 +154,8 @@ export default function ScratchGame({
 
     function drawWhiteBrushStroke(progress: number) {
       ctx!.save();
-      ctx!.translate(PADDING, PADDING);
-      ctx!.scale(scaleX, scaleY);
+      ctx!.translate(brushOffsetX, brushOffsetY);
+      ctx!.scale(brushScale, brushScale);
       ctx!.lineWidth = BRUSH_WIDTH;
       ctx!.lineCap = 'round';
       ctx!.lineJoin = 'round';
@@ -165,30 +182,48 @@ export default function ScratchGame({
       revealCtx.globalCompositeOperation = 'source-over';
 
       drawBase(ctx!);
-      drawWhiteBrushStroke(progress);
-      ctx!.drawImage(revealCanvas, 0, 0, CARD_W, CARD_H);
+      drawWhiteBrushStroke(progress); // 흰색 브러시 자체가 지나가는 모습
+      ctx!.drawImage(revealCanvas, 0, 0, CARD_W, CARD_H); // 지나간 자리는 텍스트가 그라데이션 색으로 보임
     }
 
     let hintRAF = 0;
     let hintIntervalId = 0;
+    let hintTimeoutId = 0;
     let userInteracted = false;
 
+    // 브러시가 한 번 끝까지 그려진 뒤(0→1), HINT_HOLD_DURATION 만큼 멈췄다가
+    // 다시 역재생(1→0)되어 텍스트가 원래의 흰색 상태로 되돌아간다.
     function playHint() {
       if (userInteracted) return;
-      const start = performance.now();
-      function step(now: number) {
+      const forwardStart = performance.now();
+
+      function stepForward(now: number) {
         if (userInteracted) return;
-        const t = Math.min(1, (now - start) / HINT_DURATION);
+        const t = Math.min(1, (now - forwardStart) / HINT_DURATION);
         renderHintFrame(easeInOutQuad(t));
         if (t < 1) {
-          hintRAF = requestAnimationFrame(step);
-        } else {
-          window.setTimeout(() => {
-            if (!userInteracted) drawBase(ctx!);
-          }, 300);
+          hintRAF = requestAnimationFrame(stepForward);
+          return;
         }
+        hintTimeoutId = window.setTimeout(() => {
+          if (userInteracted) return;
+          const reverseStart = performance.now();
+
+          function stepReverse(reverseNow: number) {
+            if (userInteracted) return;
+            const rt = Math.min(1, (reverseNow - reverseStart) / HINT_DURATION);
+            renderHintFrame(easeInOutQuad(1 - rt));
+            if (rt < 1) {
+              hintRAF = requestAnimationFrame(stepReverse);
+            } else {
+              drawBase(ctx!); // 완전히 원래 상태로 복귀
+            }
+          }
+          hintRAF = requestAnimationFrame(stepReverse);
+        }, HINT_HOLD_DURATION);
       }
-      hintRAF = requestAnimationFrame(step);
+
+      hintRAF = requestAnimationFrame(stepForward);
     }
 
     function startHintLoop() {
@@ -208,6 +243,7 @@ export default function ScratchGame({
       userInteracted = true;
       if (hintRAF) cancelAnimationFrame(hintRAF);
       if (hintIntervalId) clearInterval(hintIntervalId);
+      if (hintTimeoutId) clearTimeout(hintTimeoutId);
       drawBase(ctx!); // 힌트 도중이었다면 깨끗한 기본 상태로 되돌린 뒤 스크래치 시작
     }
 
@@ -238,7 +274,7 @@ export default function ScratchGame({
       const data = ctx!.getImageData(0, 0, canvas!.width, canvas!.height).data;
       let transparent = 0;
       let total = 0;
-      const step = 4 * 8;
+      const step = 4 * 8; // 성능을 위해 일부 픽셀만 샘플링
       for (let i = 3; i < data.length; i += step) {
         total++;
         if (data[i] < 40) transparent++;
@@ -284,6 +320,7 @@ export default function ScratchGame({
       userInteracted = true;
       if (hintRAF) cancelAnimationFrame(hintRAF);
       if (hintIntervalId) clearInterval(hintIntervalId);
+      if (hintTimeoutId) clearTimeout(hintTimeoutId);
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
@@ -293,22 +330,22 @@ export default function ScratchGame({
 
   return (
     <div className="flex flex-col items-center gap-3.5">
-      <div className="relative h-70 w-79 overflow-hidden rounded-[20px] bg-surface-card shadow-[inset_0_4px_4px_0_rgba(255,255,255,0.25),0_4px_40px_0_rgba(0,0,0,0.1)]">
-        <div className="absolute inset-0 box-border flex flex-col items-center justify-center gap-2 bg-linear-to-br from-[#6C5CE7] to-[#7C9BFF] px-6 text-center text-white">
-          <div className="text-[38px] leading-none">{REWARD_EMOJI}</div>
-          <div className="text-[19px] font-bold">
-            데이터 {reward}GB 쿠폰 당첨
-          </div>
+      <div className="relative h-[280px] w-[316px] overflow-hidden rounded-[20px] bg-surface-card shadow-[inset_0_4px_4px_0_rgba(255,255,255,0.25),0_4px_40px_0_rgba(0,0,0,0.1)]">
+        <div className="absolute inset-0 box-border flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#6C5CE7] to-[#7C9BFF] px-6 text-center text-white">
+          <img src={badgeImage} alt="" className="w-12 h-12" />
+          <div className="text-[19px] font-bold">배지 {reward}개 획득!</div>
           <div className="mb-1 text-[13px] opacity-85">
             {REWARD_DESCRIPTION}
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
+            round
+            className="mt-1"
             onClick={onClose}
-            className="mt-1 rounded-full bg-white px-6 py-2.5 text-[13px] font-bold text-[#5B4BDB]"
           >
             {CTA_LABEL}
-          </button>
+          </Button>
         </div>
         <canvas
           ref={canvasRef}
