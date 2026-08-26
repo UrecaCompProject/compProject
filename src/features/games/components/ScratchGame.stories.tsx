@@ -1,3 +1,5 @@
+import { AIChat } from '@/features/ai-consult';
+
 import ScratchGame from './ScratchGame';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -5,22 +7,27 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 const meta = {
   title: 'games/ScratchGame',
   component: ScratchGame,
-  parameters: {
-    // 채팅 말풍선 안에 인라인으로 놓일 걸 가정해서, 캔버스에 좁은 폭을 줘서 확인
-    layout: 'centered',
-  },
 } satisfies Meta<typeof ScratchGame>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Standalone: Story = {
-  args: { reward: 3 },
+  args: { reward: 1 },
 };
 
-export const WithConfirmButton: Story = {
-  args: {
-    reward: 5,
-    onClose: () => alert('닫기 클릭됨 (실제로는 채팅 쪽에서 처리)'),
-  },
+export const InChatPreview: Story = {
+  args: { reward: 1 },
+  decorators: [
+    (Story) => (
+      <div className="flex flex-col gap-4 p-4 mx-auto w-90 bg-surface-page">
+        <div>
+          <AIChat sentence={'오늘의 스크래치 이벤트에 참여해보세요!'} />
+          <div className="mt-3">
+            <Story />
+          </div>
+        </div>
+      </div>
+    ),
+  ],
 };

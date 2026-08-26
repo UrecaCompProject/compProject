@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 
 /** 등록된 게임 id. registry.ts의 key와 항상 일치해야 함 */
-export type GameId = 'card-match'; // 게임 추가할 때마다 유니온에 추가
+export type GameId = 'card-match' | 'scratch';
 
 export type GameComponentProps = {
   reward?: number;
