@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import type { QuizKind } from '@/features/chat-quiz';
 import { CouponBox } from '@/features/coupon';
 import { GameLayer, useActiveGameMeta, useGameStore } from '@/features/games';
 import { BottomSheet } from '@/features/shared';
@@ -7,9 +8,12 @@ import { BottomSheet } from '@/features/shared';
 import RewardHome from './RewardHome';
 import StoreContent from './StoreContent';
 
+import type { Mission } from '../types';
+
 type RewardSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onStartQuiz?: (quizType: QuizKind) => void;
 };
 
 type RewardView = 'reward' | 'store' | 'coupon';
@@ -20,9 +24,14 @@ const titles: Record<RewardView, string> = {
   coupon: '나의 쿠폰함',
 };
 
-export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
+export default function RewardSheet({
+  open,
+  onOpenChange,
+  onStartQuiz,
+}: RewardSheetProps) {
   const [activeView, setActiveView] = useState<RewardView>('reward');
   const activeGame = useActiveGameMeta();
+  const openGame = useGameStore((state) => state.openGame);
   const closeGame = useGameStore((state) => state.closeGame);
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -35,6 +44,23 @@ export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
 
   const handleBack = () => {
     setActiveView('reward');
+  };
+
+  const handleMissionAction = (mission: Mission) => {
+    if (mission.id === 'card-match') {
+      openGame('card-match', { reward: mission.reward });
+      return;
+    }
+
+    const quizTypeByMissionId: Partial<Record<string, QuizKind>> = {
+      'security-quiz': 'ox',
+      'telecom-quiz': 'multiple-choice',
+    };
+    const quizType = quizTypeByMissionId[mission.id];
+    if (!quizType || !onStartQuiz) return;
+
+    handleOpenChange(false);
+    onStartQuiz(quizType);
   };
 
   return (
@@ -57,6 +83,7 @@ export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
           <RewardHome
             onStoreClick={() => setActiveView('store')}
             onCouponClick={() => setActiveView('coupon')}
+            onMissionAction={handleMissionAction}
           />
         )}
 

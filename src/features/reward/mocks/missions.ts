@@ -31,7 +31,7 @@ export const missions: Mission[] = [
   },
   {
     id: 'security-quiz',
-    title: '보안 퀴즈',
+    title: '보안 OX 퀴즈',
     reward: 1,
     actionLabel: '시작',
     icon: 'security',

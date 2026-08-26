@@ -70,6 +70,7 @@ export default defineConfig([
   globalIgnores([
     'dist',
     'build',
+    'storybook-static',
     'node_modules',
     'stats.html',
     // Supabase Edge Functions(Deno 런타임)는 npm: specifier 를 사용하므로

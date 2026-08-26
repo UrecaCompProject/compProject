@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { multipleChoiceQuestions, oxQuestions } from '@/features/chat-quiz';
@@ -19,6 +19,12 @@ type QuizSession = {
 type UseChatQuizParams = {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
 };
+
+type StartQuizOptions = {
+  includeUserMessage?: boolean;
+};
+
+const QUIZ_START_DELAY = 800;
 
 function getQuestions(quizType: QuizKind) {
   return quizType === 'ox' ? oxQuestions : multipleChoiceQuestions;
@@ -55,13 +61,23 @@ function createQuestionMessage(
 export function useChatQuiz({ setMessages }: UseChatQuizParams) {
   const [session, setSession] = useState<QuizSession | null>(null);
   const idRef = useRef(0);
+  const questionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextId = useCallback(() => {
     idRef.current = Math.max(idRef.current + 1, Date.now());
     return idRef.current;
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (questionTimerRef.current) clearTimeout(questionTimerRef.current);
+    };
+  }, []);
+
   const startQuiz = useCallback(
-    (quizType: QuizKind) => {
+    (
+      quizType: QuizKind,
+      { includeUserMessage = true }: StartQuizOptions = {},
+    ) => {
       const nextSession: QuizSession = {
         quizType,
         currentQuestionIndex: 0,
@@ -69,15 +85,27 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
       };
       const introduction =
         quizType === 'ox'
-          ? '네, OX 퀴즈를 진행하겠습니다.'
-          : '네, 통신·보안 퀴즈를 진행하겠습니다.';
+          ? '네, 보안 OX 퀴즈를 진행하겠습니다.'
+          : '네, 통신 상식 퀴즈를 진행하겠습니다.';
+      const userRequest =
+        quizType === 'ox' ? '보안 OX 퀴즈 할래' : '통신 상식 퀴즈 할래';
 
       setSession(nextSession);
+      if (questionTimerRef.current) clearTimeout(questionTimerRef.current);
       setMessages((previous) => [
         ...previous,
+        ...(includeUserMessage
+          ? [{ id: nextId(), type: 'user' as const, sentence: userRequest }]
+          : []),
         { id: nextId(), type: 'ai', sentence: introduction },
-        createQuestionMessage(nextId(), quizType, 0),
       ]);
+      questionTimerRef.current = setTimeout(() => {
+        setMessages((previous) => [
+          ...previous,
+          createQuestionMessage(nextId(), quizType, 0),
+        ]);
+        questionTimerRef.current = null;
+      }, QUIZ_START_DELAY);
     },
     [nextId, setMessages],
   );
