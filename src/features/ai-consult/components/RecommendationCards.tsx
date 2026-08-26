@@ -20,6 +20,7 @@ import type { RecommendedPlan } from '@/lib/aiConsult';
 interface RecommendationCardsProps {
   plans: RecommendedPlan[];
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  onPlanCompare?: (plan: RecommendedPlan) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   isLoading?: boolean;
 }
@@ -59,6 +60,7 @@ const toPlanBenefits = (plan: RecommendedPlan): PlanCardBenefit[] => {
 export default function RecommendationCards({
   plans,
   onPlanSubscribe,
+  onPlanCompare,
   onGenerateReport,
   isLoading = false,
 }: RecommendationCardsProps) {
@@ -81,6 +83,12 @@ export default function RecommendationCards({
     if (plan) setSelected(plan);
     setOpen(false);
     onPlanSubscribe(plan ?? selected!);
+  };
+
+  const handleCompare = () => {
+    if (!onPlanCompare || !selected) return;
+    setOpen(false);
+    onPlanCompare(selected);
   };
 
   const handleGenerateReport = () => {
@@ -146,7 +154,12 @@ export default function RecommendationCards({
           }
           footer={
             <div className="flex gap-2 w-full">
-              <Button variant="outline" size="md" className="flex-1">
+              <Button
+                variant="outline"
+                size="md"
+                className="flex-1"
+                onClick={handleCompare}
+              >
                 비교 하기
               </Button>
               <Button

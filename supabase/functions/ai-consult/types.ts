@@ -24,6 +24,9 @@ export interface ConsultRequest {
   // 레포트 생성용 필드
   conversation?: string;
   recommendationResult?: string;
+  // 요금제 비교용 필드
+  comparePlanA?: string;
+  comparePlanB?: string;
 }
 
 export interface ConsultResponse {
@@ -54,5 +57,46 @@ export interface ConsultResponse {
     recommendationReason: string;
     monthlySavingAmount: number;
     importantConditions: string[];
+  };
+  compareResult?: {
+    summary: string;
+    planAAdvantage: string;
+    planBAdvantage: string;
+    recommendedPlanId: string;
+    reason: string;
+    planA: {
+      planId: string;
+      planName: string;
+      reason: string;
+      savingAmount: number;
+      monthlyFee?: number;
+      data?: string;
+      benefits?: string[];
+      category?: string;
+      targetAge?: string;
+      dataSpeedAfter?: string;
+      voice?: string;
+      message?: string;
+      shareData?: string;
+      tethering?: string;
+      notes?: string;
+    };
+    planB: {
+      planId: string;
+      planName: string;
+      reason: string;
+      savingAmount: number;
+      monthlyFee?: number;
+      data?: string;
+      benefits?: string[];
+      category?: string;
+      targetAge?: string;
+      dataSpeedAfter?: string;
+      voice?: string;
+      message?: string;
+      shareData?: string;
+      tethering?: string;
+      notes?: string;
+    };
   };
 }

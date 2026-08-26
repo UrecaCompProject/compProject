@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { getCurrentPlan } from '@/features/plan-catalog/api/getCurrentPlan';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
 import { submitSubscription } from '../api/submitSubscription';
@@ -14,6 +15,7 @@ interface SubscriptionLog {
 interface SubscriptionState {
   currentPlan: RecommendedPlan | null;
   planHistory: SubscriptionLog[];
+  loadCurrentPlan: () => Promise<void>;
   submitApplication: (
     plan: RecommendedPlan,
     form: SubscriptionForm,
@@ -23,6 +25,10 @@ interface SubscriptionState {
 export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   currentPlan: null,
   planHistory: [],
+  loadCurrentPlan: async () => {
+    const plan = await getCurrentPlan();
+    set({ currentPlan: plan });
+  },
   submitApplication: async (plan, form) => {
     const currentPlanId =
       form.type === 'change' ? Number(get().currentPlan?.planId) : null;

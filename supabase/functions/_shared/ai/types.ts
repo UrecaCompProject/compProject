@@ -20,6 +20,10 @@ export interface ConsultInput {
   userMessage?: string;
   mode?: ChatMode;
   isLoggedIn?: boolean;
+  // 요금제 비교 모드에서 비교할 두 요금제 이름.
+  // 프론트엔드에서 "현재 요금제와 비교" 시 currentPlan + 추천 요금제 이름을 설정.
+  comparePlanA?: string;
+  comparePlanB?: string;
 }
 
 export interface RecommendedPlan {
@@ -59,6 +63,7 @@ export interface RecommendOutput {
   quickReplies?: string[];
   mode?: ChatMode;
   form?: ConsultForm;
+  compareResult?: CompareResult;
 }
 
 export interface UsageAnalysisOutput {
@@ -83,6 +88,12 @@ export interface CompareOutput {
   planBAdvantage: string;
   recommendedPlanId: string;
   reason: string;
+}
+
+// CompareOutput에 프론트엔드 렌더링에 필요한 두 요금제 상세 정보를 추가한 비교 결과.
+export interface CompareResult extends CompareOutput {
+  planA: RecommendedPlan;
+  planB: RecommendedPlan;
 }
 
 export interface ReportInput {

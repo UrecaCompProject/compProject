@@ -47,6 +47,15 @@ export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
   else if (/40대/.test(t)) next.ageGroup = '40대';
   else if (/50대|60대|어르신|시니어/.test(t)) next.ageGroup = '50대 이상';
 
+  // 현재 사용 중인 요금제 파싱
+  const currentPlanMatch =
+    t.match(/현재\s*요금제[\s:]*(.+?)(?:\n|$)/) ||
+    t.match(/현재\s*사용[\s중]*[\s:]*(.+?)(?:\n|$)/) ||
+    t.match(/쓰고\s*있는\s*요금제[\s:]*(.+?)(?:\n|$)/);
+  if (currentPlanMatch) {
+    next.currentPlan = currentPlanMatch[1].trim();
+  }
+
   const gbMatch = t.match(/(\d+(?:\.\d+)?)\s*(?:GB|G|기가)(?![a-zA-Z])/i);
   if (gbMatch) {
     next.dataUsage = parseFloat(gbMatch[1]);

@@ -15,6 +15,7 @@ export default function ChatPage() {
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
+    handlePlanCompare,
     profile,
     subscriptionOpen,
     subscriptionPlan,
@@ -36,6 +37,7 @@ export default function ChatPage() {
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
         onPlanSubscribe={openSubscription}
+        onPlanCompare={handlePlanCompare}
         onGenerateReport={handleGenerateReport}
         subscriptionOpen={subscriptionOpen}
         subscriptionPlan={subscriptionPlan}

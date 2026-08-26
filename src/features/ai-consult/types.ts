@@ -1,4 +1,5 @@
 import type {
+  CompareResult,
   ConsultForm,
   RecommendedPlan,
   ReportOutput,
@@ -27,6 +28,7 @@ export type ChatMessage =
       form?: ConsultForm;
       recommendations?: RecommendedPlan[];
       report?: ReportOutput;
+      compareResult?: CompareResult;
     }
   | { id: number; type: 'user'; sentence: string }
   | { id: number; type: 'signup' };

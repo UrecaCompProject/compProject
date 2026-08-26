@@ -4,6 +4,7 @@ import { SignupChat } from '@/features/auth';
 import type { ConsultInput, RecommendedPlan } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
+import CompareResultSheet from './CompareResultSheet';
 import MyChat from './MyChat';
 import PlanSubscriptionSheet from './PlanSubscriptionSheet';
 import RecommendationCards from './RecommendationCards';
@@ -18,6 +19,7 @@ interface ChatMessageListProps {
   onFormSubmit?: (values: Partial<ConsultInput>) => void;
   formDefaults?: Partial<ConsultInput>;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  onPlanCompare?: (plan: RecommendedPlan) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
@@ -31,6 +33,7 @@ export default function ChatMessageList({
   onFormSubmit,
   formDefaults,
   onPlanSubscribe,
+  onPlanCompare,
   onGenerateReport,
   subscriptionOpen = false,
   subscriptionPlan,
@@ -92,6 +95,7 @@ export default function ChatMessageList({
                 <RecommendationCards
                   plans={message.recommendations}
                   onPlanSubscribe={onPlanSubscribe}
+                  onPlanCompare={onPlanCompare}
                   onGenerateReport={onGenerateReport}
                   isLoading={isLoading}
                 />
@@ -125,6 +129,18 @@ export default function ChatMessageList({
                 </div>
               </div>
             )}
+
+            {message.type === 'ai' &&
+              message.compareResult &&
+              index === lastIndex && (
+                <CompareResultSheet
+                  result={message.compareResult}
+                  onSubscribe={() =>
+                    message.compareResult &&
+                    onPlanSubscribe?.(message.compareResult.planB)
+                  }
+                />
+              )}
 
             {message.type === 'ai' &&
               message.form &&
