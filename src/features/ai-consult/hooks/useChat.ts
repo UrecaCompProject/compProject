@@ -51,6 +51,11 @@ function formatFormSummary(values: Partial<ConsultInput>): string {
 function findLastRecommendedPlan(
   messages: ChatMessage[],
 ): RecommendedPlan | null {
+  const last = findLastRecommendations(messages);
+  return last.length > 0 ? last[0] : null;
+}
+
+function findLastRecommendations(messages: ChatMessage[]): RecommendedPlan[] {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     if (
@@ -58,10 +63,10 @@ function findLastRecommendedPlan(
       message.recommendations &&
       message.recommendations.length > 0
     ) {
-      return message.recommendations[0];
+      return message.recommendations;
     }
   }
-  return null;
+  return [];
 }
 
 function buildConversationLog(messages: ChatMessage[]): string {
@@ -207,7 +212,7 @@ export function useChat() {
           sentence: formatResponse(response),
           quickReplies: response.quickReplies,
           form: response.form,
-          recommendations: response.recommendations,
+          recommendations: findLastRecommendations(prev),
           compareResult: response.compareResult,
         },
       ]);
