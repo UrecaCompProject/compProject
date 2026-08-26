@@ -1,19 +1,11 @@
 import { useState } from 'react';
 
 import useEmblaCarousel from 'embla-carousel-react';
-import {
-  Check,
-  Database,
-  Gift,
-  MessageSquare,
-  Phone,
-  type LucideIcon,
-} from 'lucide-react';
+import { Check } from 'lucide-react';
 
 import { useIsLoggedIn } from '@/features/auth';
-import PlanCard, {
-  type PlanCardBenefit,
-} from '@/features/plan-catalog/components/PlanCard';
+import PlanCard from '@/features/plan-catalog/components/PlanCard';
+import { toPlanBenefits } from '@/features/plan-catalog/utils/toPlanBenefits';
 import { BottomSheet, Button } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
 
@@ -24,38 +16,6 @@ interface RecommendationCardsProps {
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   isLoading?: boolean;
 }
-
-const getBenefitIcon = (label: string): LucideIcon => {
-  if (label.includes('데이터') || label.includes('증량')) return Database;
-  if (label.includes('통화')) return Phone;
-  if (label.includes('넷플릭스') || label.includes('OTT')) return Gift;
-  return Check;
-};
-
-const BenefitIcon = ({ label }: { label: string }) => {
-  if (label.includes('데이터') || label.includes('증량'))
-    return <Database size={14} />;
-  if (label.includes('통화')) return <Phone size={14} />;
-  if (label.includes('넷플릭스') || label.includes('OTT'))
-    return <Gift size={14} />;
-  return <Check size={14} />;
-};
-
-const toPlanBenefits = (plan: RecommendedPlan): PlanCardBenefit[] => {
-  const benefits: PlanCardBenefit[] = [];
-  if (plan.data) {
-    benefits.push({
-      icon: Database,
-      label: `${plan.data}${plan.dataSpeedAfter ? ` (소진 후 ${plan.dataSpeedAfter})` : ''}`,
-    });
-  }
-  if (plan.voice) benefits.push({ icon: Phone, label: plan.voice });
-  if (plan.message) benefits.push({ icon: MessageSquare, label: plan.message });
-  (plan.benefits ?? []).slice(0, 2).forEach((benefit) => {
-    benefits.push({ icon: getBenefitIcon(benefit), label: benefit });
-  });
-  return benefits;
-};
 
 export default function RecommendationCards({
   plans,
@@ -202,7 +162,7 @@ export default function RecommendationCards({
                         className="flex items-start gap-2 text-body-sm text-fg-secondary"
                       >
                         <span className="mt-0.5 text-fg-tertiary">
-                          <BenefitIcon label={benefit} />
+                          <Check size={14} />
                         </span>
                         {benefit}
                       </li>
