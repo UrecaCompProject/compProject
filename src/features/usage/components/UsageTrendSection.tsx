@@ -21,6 +21,12 @@ const MONTHLY_USAGE = [
   { month: '8월', usage: 9.04 },
 ];
 
+const Y_TICK_COUNT: Record<'3' | '6' | '12', number> = {
+  '3': 4,
+  '6': 5,
+  '12': 6,
+};
+
 export default function UsageTrendSection() {
   const [tabValue, setTabValue] = useState<'3' | '6' | '12'>('3');
   const visibleUsage = MONTHLY_USAGE.slice(-Number(tabValue));
@@ -28,10 +34,6 @@ export default function UsageTrendSection() {
   return (
     <SectionCard>
       <div className="text-bold-16-140">평균 데이터 사용량</div>
-      <div className="text-regular-12-130 text-fg-disabled">
-        지난달까지 집계된 데이터 사용량을 기준으로 산출된 평균 데이터
-        사용량입니다.
-      </div>
 
       <Tab
         options={[
@@ -48,7 +50,15 @@ export default function UsageTrendSection() {
         values={visibleUsage.map((item) => item.usage)}
         valueLabel="데이터 사용량"
         unit="GB"
+        yTickCount={Y_TICK_COUNT[tabValue]}
       />
+      <div className="text-regular-12-130 text-fg-disabled flex gap-1">
+        <span>・</span>
+        <span>
+          지난달까지 집계된 데이터 사용량을 기준으로 산출된 평균 데이터
+          사용량입니다.
+        </span>
+      </div>
     </SectionCard>
   );
 }

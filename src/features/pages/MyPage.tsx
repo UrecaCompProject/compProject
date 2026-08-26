@@ -36,7 +36,7 @@ export default function MyPage() {
         </SectionCard>
 
         <SectionCard>
-          <div className="text-bold-16-140">가입 정보</div>
+          <div className="text-bold-16-140">요금 조회 / 납부 정보</div>
           <Line />
           <div className="flex justify-between">
             <div className="text-bold-16-140">최종 예상 요금</div>
@@ -63,7 +63,7 @@ export default function MyPage() {
             label="5G 데이터"
             value="9.04GB"
             total="17.00GB"
-            percent={53.18}
+            percent={100 - (9.04 / 17) * 100}
           />
           <UsageProgressRow
             label="400kB 속도 데이터"
@@ -79,13 +79,13 @@ export default function MyPage() {
             label="유무선 통화"
             value="224분 5초"
             total="300분"
-            percent={53.18}
+            percent={100 - (224 / 300) * 100}
           />
           <UsageProgressRow
             label="영상 & 부가 통화"
             value="15분 42초"
             total="300분"
-            percent={100}
+            percent={100 - (15 / 300) * 100}
           />
         </SectionCard>
 
@@ -94,9 +94,9 @@ export default function MyPage() {
 
           <UsageProgressRow
             label="메세지"
-            value="0건"
+            value="100건"
             total="100건"
-            percent={0}
+            percent={(100 / 100) * 100}
           />
         </SectionCard>
 

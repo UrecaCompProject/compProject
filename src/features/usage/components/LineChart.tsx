@@ -30,6 +30,7 @@ interface LineChartProps {
   unit?: string;
   height?: number;
   className?: string;
+  yTickCount?: number;
 }
 
 export default function LineChart({
@@ -40,11 +41,18 @@ export default function LineChart({
   unit = '',
   height = 220,
   className = '',
+  yTickCount = 5,
 }: LineChartProps) {
   const average =
     values.length === 0
       ? 0
       : values.reduce((sum, value) => sum + value, 0) / values.length;
+
+  // 0부터 최댓값까지 정수 눈금이 yTickCount개 찍히도록, 최댓값을
+  // (yTickCount - 1)의 배수로 올림한다.
+  const dataMax = values.length === 0 ? 0 : Math.max(...values);
+  const step = Math.ceil(dataMax / (yTickCount - 1)) || 1;
+  const yMax = step * (yTickCount - 1);
 
   const data = {
     labels,
@@ -52,20 +60,21 @@ export default function LineChart({
       {
         label: valueLabel,
         data: values,
-        borderColor: '#4c8fe1',
-        backgroundColor: 'rgba(76, 143, 225, 0.12)',
+        borderColor: '#3d74f0',
+        backgroundColor: '#3d74f020',
         fill: true,
         tension: 0.3,
-        pointRadius: 3,
-        pointBackgroundColor: '#4c8fe1',
+        pointRadius: 2,
+        borderWidth: 2,
+        pointBackgroundColor: '#3d74f0',
       },
       {
         label: averageLabel,
         data: labels.map(() => average),
-        borderColor: '#d6567f',
-        borderDash: [6, 4],
+        borderColor: '#c2ceea',
+        borderDash: [6, 3],
         pointRadius: 0,
-        borderWidth: 2,
+        borderWidth: 1.5,
         fill: false,
       },
     ],
@@ -77,8 +86,7 @@ export default function LineChart({
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: {
-        position: 'bottom',
-        labels: { boxWidth: 12, boxHeight: 12, usePointStyle: true },
+        display: false,
       },
       tooltip: {
         callbacks: {
@@ -88,8 +96,27 @@ export default function LineChart({
       },
     },
     scales: {
-      y: { beginAtZero: true, grid: { color: '#dbe6f3' } },
-      x: { grid: { display: false } },
+      y: {
+        display: true,
+        min: 0,
+        max: yMax,
+        grid: { color: '#dbe6f3' },
+        ticks: { stepSize: step, color: '#c2ceea', font: { size: 12 } },
+      },
+      x: {
+        grid: { display: false },
+        ticks: {
+          color: '#a8afb9',
+          font: { size: values.length === 12 ? 13 : 13, weight: 500 },
+          callback(value) {
+            const label = this.getLabelForValue(Number(value));
+            const isTwelveMonths = values.length === 12;
+            return isTwelveMonths && this.chart.width < 400
+              ? label.replace('월', '')
+              : label;
+          },
+        },
+      },
     },
   };
 
