@@ -86,6 +86,11 @@ function formatFormSummary(values: Partial<ConsultInput>): string {
 function findLastRecommendedPlan(
   messages: ChatMessage[],
 ): RecommendedPlan | null {
+  const last = findLastRecommendations(messages);
+  return last.length > 0 ? last[0] : null;
+}
+
+function findLastRecommendations(messages: ChatMessage[]): RecommendedPlan[] {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     if (
@@ -93,10 +98,10 @@ function findLastRecommendedPlan(
       message.recommendations &&
       message.recommendations.length > 0
     ) {
-      return message.recommendations[0];
+      return message.recommendations;
     }
   }
-  return null;
+  return [];
 }
 
 function buildConversationLog(messages: ChatMessage[]): string {
@@ -104,9 +109,7 @@ function buildConversationLog(messages: ChatMessage[]): string {
     .filter((m) => m.type === 'ai' || m.type === 'user')
     .map((m) => {
       const role = m.type === 'ai' ? 'AI' : '사용자';
-      const text =
-        typeof m.sentence === 'string' ? m.sentence : '[입력 폼/카드 UI]';
-      return `${role}: ${text}`;
+      return `${role}: ${m.sentence}`;
     })
     .join('\n');
 }
@@ -224,6 +227,66 @@ export function useChat() {
     ]);
   };
 
+  const fetchCompare = async (planBName: string) => {
+    setIsLoading(true);
+    try {
+      const request: ConsultInput = {
+        ...profile,
+        userMessage: '현재 요금제와 비교',
+        mode: 'compare',
+        isLoggedIn,
+        comparePlanA: profile.currentPlan,
+        comparePlanB: planBName,
+      };
+      const response = await requestConsult(request);
+      const mergedProfile: ConsultInput = {
+        ...request,
+        mode: response.mode ?? 'compare',
+      };
+      setProfile(mergedProfile);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence: formatResponse(response),
+          quickReplies: response.quickReplies,
+          form: response.form,
+          recommendations: findLastRecommendations(prev),
+          compareResult: response.compareResult,
+        },
+      ]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : '비교 요청 중 문제가 발생했어요. 다시 시도해주세요.';
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: 'ai', sentence: message },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePlanCompare = (plan: RecommendedPlan) => {
+    if (!profile.currentPlan) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence:
+            '현재 요금제를 먼저 알려주세요. "현재 요금제: (요금제명)"이라고 입력해주세요.',
+          quickReplies: ['메뉴로 돌아가기'],
+        },
+      ]);
+      return;
+    }
+    fetchCompare(plan.planName);
+  };
+
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -267,6 +330,26 @@ export function useChat() {
       return;
     }
 
+    // 현재 요금제와 마지막 추천 요금제 비교
+    if (trimmed === '현재 요금제와 비교') {
+      const lastPlan = findLastRecommendedPlan(messages);
+      if (!lastPlan || !profile.currentPlan) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: 'ai',
+            sentence:
+              '비교할 요금제 정보가 부족해요. 먼저 현재 요금제와 추천 요금제를 확인해주세요.',
+            quickReplies: ['요금제 추천받기', '메뉴로 돌아가기'],
+          },
+        ]);
+        return;
+      }
+      await fetchCompare(lastPlan.planName);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -289,6 +372,7 @@ export function useChat() {
           quickReplies: response.quickReplies,
           form: response.form,
           recommendations: response.recommendations,
+          compareResult: response.compareResult,
         },
       ]);
     } catch (error) {
@@ -342,6 +426,7 @@ export function useChat() {
           quickReplies: response.quickReplies,
           form: response.form,
           recommendations: response.recommendations,
+          compareResult: response.compareResult,
         },
       ]);
     } catch (error) {
@@ -405,6 +490,7 @@ export function useChat() {
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
+    handlePlanCompare,
     profile,
     subscriptionOpen,
     subscriptionPlan,

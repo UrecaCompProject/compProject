@@ -4,6 +4,7 @@ import type {
   QuizKind,
 } from '@/features/chat-quiz';
 import type {
+  CompareResult,
   ConsultForm,
   RecommendedPlan,
   ReportOutput,
@@ -18,6 +19,7 @@ export interface SubscriptionForm {
   birth: string;
   phone: string;
   address: string;
+  addressDetail: string;
   simType: 'usim' | 'esim' | '';
   agreedPrivacy: boolean;
   agreedService: boolean;
@@ -62,6 +64,7 @@ export type ChatMessage =
       form?: ConsultForm;
       recommendations?: RecommendedPlan[];
       report?: ReportOutput;
+      compareResult?: CompareResult;
     }
   | { id: number; type: 'user'; sentence: string }
   | { id: number; type: 'signup' }

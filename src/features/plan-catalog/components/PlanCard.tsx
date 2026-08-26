@@ -77,9 +77,9 @@ export default function PlanCard({
       <Line />
 
       <div className="flex flex-col gap-3 flex-1">
-        {benefits.map((benefit) => (
+        {benefits.map((benefit, index) => (
           <IconListItem
-            key={benefit.label}
+            key={`${benefit.label}-${index}`}
             icon={benefit.icon}
             label={benefit.label}
             iconSize={14}

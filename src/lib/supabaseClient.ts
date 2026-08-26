@@ -15,13 +15,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+function getAuthStorage() {
+  if (typeof window === 'undefined') return undefined;
+  const persist = import.meta.env.VITE_PERSIST_AUTH;
+  if (persist === 'session') return window.sessionStorage;
+  return window.localStorage;
+}
+
 // 프론트엔드 전용 클라이언트.
 // anon key 를 사용하므로 RLS 정책의 통제를 받는다.
 // service_role 키는 브라우저에 절대 노출하면 안 된다.
+const persistAuth = import.meta.env.VITE_PERSIST_AUTH !== 'false';
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: persistAuth,
+    storage: getAuthStorage(),
+    autoRefreshToken: persistAuth,
     detectSessionInUrl: true,
   },
 });
