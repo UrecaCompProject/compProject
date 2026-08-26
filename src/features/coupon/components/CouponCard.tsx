@@ -6,8 +6,8 @@ type CouponCardProps = {
 
 export default function CouponCard({ coupon }: CouponCardProps) {
   return (
-    <article className="group min-w-0 cursor-pointer">
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-reward-locked bg-surface-card p-4 transition-shadow duration-200 group-hover:shadow-md">
+    <article className="group flex min-w-0 cursor-pointer flex-col items-center gap-2 rounded-[20px] bg-white px-1 py-2">
+      <div className="relative flex aspect-square w-full max-w-[163px] items-center justify-center overflow-hidden rounded-[8px] bg-[#F9F9F9]">
         <img
           src={coupon.image}
           alt={`${coupon.name} 상품 이미지`}
@@ -20,10 +20,10 @@ export default function CouponCard({ coupon }: CouponCardProps) {
         />
       </div>
 
-      <h3 className="mt-2 line-clamp-2 text-center text-caption text-fg-primary">
+      <h3 className="h-[21px] w-full shrink-0 truncate px-1 text-center text-caption leading-[21px] text-fg-primary">
         {coupon.name}
       </h3>
-      <p className="mt-0.5 text-center text-[10px] leading-[14px] text-fg-tertiary">
+      <p className="text-center text-[10px] leading-[14px] text-fg-tertiary">
         유효기간: {coupon.expiresAt}
       </p>
     </article>

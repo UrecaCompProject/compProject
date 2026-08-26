@@ -1,26 +1,29 @@
-import { missions } from '../data/missions';
+import { missions } from '../mocks/missions';
 
 import CheckIn from './CheckIn';
 import MissionList from './MissionList';
 import PromoBanner from './PromoBanner';
-import RewardLinks from './RewardLinks';
+import RewardShortcuts from './RewardShortcuts';
 
-type RewardContentProps = {
+type RewardHomeProps = {
   onStoreClick: () => void;
   onCouponClick: () => void;
 };
 
-export default function RewardContent({
+export default function RewardHome({
   onStoreClick,
   onCouponClick,
-}: RewardContentProps) {
+}: RewardHomeProps) {
   return (
     <div className="flex flex-col bg-surface-page">
       <PromoBanner />
 
       <CheckIn />
 
-      <RewardLinks onStoreClick={onStoreClick} onCouponClick={onCouponClick} />
+      <RewardShortcuts
+        onStoreClick={onStoreClick}
+        onCouponClick={onCouponClick}
+      />
 
       <MissionList missions={missions} />
     </div>

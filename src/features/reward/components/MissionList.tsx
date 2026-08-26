@@ -1,8 +1,8 @@
-import badgeImage from '../../assets/badge.png';
+import badgeImage from '@/assets/images/badge.png';
 
 import MissionItem from './MissionItem';
 
-import type { Mission } from '../types/mission';
+import type { Mission } from '../types';
 
 type MissionListProps = {
   missions: Mission[];

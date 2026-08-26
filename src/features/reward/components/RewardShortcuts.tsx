@@ -1,15 +1,15 @@
-import couponBannerImage from '../../assets/to-coupon-box.png';
-import storeBannerImage from '../../assets/to-store-banner.png';
+import couponBannerImage from '@/assets/images/to-coupon-box.png';
+import storeBannerImage from '@/assets/images/to-store-banner.png';
 
-type RewardLinksProps = {
+type RewardShortcutsProps = {
   onStoreClick: () => void;
   onCouponClick: () => void;
 };
 
-export default function RewardLinks({
+export default function RewardShortcuts({
   onStoreClick,
   onCouponClick,
-}: RewardLinksProps) {
+}: RewardShortcutsProps) {
   return (
     <section className="grid grid-cols-2 gap-2 px-4 py-3">
       <button
