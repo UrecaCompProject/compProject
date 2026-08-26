@@ -48,6 +48,12 @@ export default function CompareResultSheet({
 
   return (
     <>
+      <div className="mt-2 rounded-2xl bg-surface-page p-3 text-center">
+        <p className="text-body-sm font-medium text-fg-primary">
+          {result.planA.planName} <span className="text-fg-tertiary">vs</span>{' '}
+          {result.planB.planName}
+        </p>
+      </div>
       <Button
         variant="secondary"
         size="md"

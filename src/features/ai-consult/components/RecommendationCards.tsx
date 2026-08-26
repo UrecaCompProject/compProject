@@ -15,6 +15,7 @@ interface RecommendationCardsProps {
   onPlanCompare?: (plan: RecommendedPlan) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   isLoading?: boolean;
+  isGeneratingReport?: boolean;
 }
 
 export default function RecommendationCards({
@@ -23,6 +24,7 @@ export default function RecommendationCards({
   onPlanCompare,
   onGenerateReport,
   isLoading = false,
+  isGeneratingReport = false,
 }: RecommendationCardsProps) {
   const isLoggedIn = useIsLoggedIn();
   const [open, setOpen] = useState(false);
@@ -94,7 +96,7 @@ export default function RecommendationCards({
           onClick={handleGenerateReport}
           disabled={isLoading}
         >
-          {isLoading ? '레포트 생성 중...' : '레포트 생성'}
+          {isGeneratingReport ? '레포트 생성 중...' : '레포트 생성'}
         </Button>
       ) : (
         <p className="text-body-sm text-fg-secondary px-1">
