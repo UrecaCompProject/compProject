@@ -11,9 +11,7 @@ import {
 } from 'lucide-react';
 
 import { useIsLoggedIn } from '@/features/auth';
-import EventPage from '@/features/pages/EventPage';
-import MainPage from '@/features/pages/MainPage';
-import PlanPage from '@/features/pages/PlanPage';
+import { EventPage, MyPage, PlanPage } from '@/features/pages';
 import {
   BottomSheet,
   IconBadge,
@@ -77,7 +75,9 @@ export default function ChatInput({
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSend();
           }}
-          placeholder="AI에게 질문해보세요"
+          placeholder={
+            isLogin ? 'AI에게 질문해보세요' : '로그인 후 질문할 수 있습니다'
+          }
           disabled={disabled}
           className="flex-1"
         />
@@ -100,11 +100,11 @@ export default function ChatInput({
           `}
       >
         <div className="w-full border-t border-border px-5 py-7 text-medium-12-130 text-fg-tertiary">
-          <div className="flex justify-between align-center max-w-110 mx-auto">
+          <div className="flex justify-between items-center max-w-110 mx-auto">
             <div
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() =>
-                openSheet({ title: '마이페이지', content: <MainPage /> })
+                openSheet({ title: '마이페이지', content: <MyPage /> })
               }
             >
               <IconBadge icon={UserRound} size={52} radius={16} />
