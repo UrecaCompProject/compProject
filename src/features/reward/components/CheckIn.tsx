@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 
-import badgeImage from '../assets/badge.png';
+import badgeImage from '@/assets/images/badge.png';
 
 const days = ['일', '월', '화', '수', '목', '금', '토'];
 

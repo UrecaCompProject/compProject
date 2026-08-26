@@ -1,5 +1,5 @@
-import couponBannerImage from '../assets/to-coupon-box.png';
-import storeBannerImage from '../assets/to-store-banner.png';
+import couponBannerImage from '@/assets/images/to-coupon-box.png';
+import storeBannerImage from '@/assets/images/to-store-banner.png';
 
 type RewardShortcutsProps = {
   onStoreClick: () => void;
