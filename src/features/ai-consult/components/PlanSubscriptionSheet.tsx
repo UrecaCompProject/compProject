@@ -20,6 +20,7 @@ const initialForm: SubscriptionForm = {
   birth: '',
   phone: '',
   address: '',
+  addressDetail: '',
   simType: '',
   agreedPrivacy: false,
   agreedService: false,
@@ -263,6 +264,33 @@ export default function PlanSubscriptionSheet({
     value: SubscriptionForm[K],
   ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const openPostcode = () => {
+    if (typeof window === 'undefined') return;
+
+    const loadAndOpen = () => {
+      if (!window.daum?.Postcode) return;
+      new window.daum.Postcode({
+        oncomplete: (data) => {
+          update(
+            'address',
+            data.roadAddress || data.jibunAddress || data.address,
+          );
+        },
+      }).open();
+    };
+
+    if (!window.daum?.Postcode) {
+      const script = document.createElement('script');
+      script.src =
+        '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+      script.async = true;
+      script.onload = loadAndOpen;
+      document.head.appendChild(script);
+    } else {
+      loadAndOpen();
+    }
   };
 
   const fieldErrors = useMemo(
@@ -590,12 +618,19 @@ export default function PlanSubscriptionSheet({
                   variant="outline"
                   size="md"
                   type="button"
-                  disabled
+                  onClick={openPostcode}
                   className="shrink-0"
                 >
                   도로명 검색
                 </Button>
               </div>
+              <Input
+                value={form.addressDetail}
+                onChange={(e) => update('addressDetail', e.target.value)}
+                placeholder="상세 주소"
+                variant={fieldErrors.address ? 'error' : 'default'}
+                className="mt-2"
+              />
               {fieldErrors.address && (
                 <p className="mt-1 text-caption text-error">
                   주소를 5자 이상 입력해주세요

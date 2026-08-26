@@ -5,8 +5,24 @@
 interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
+  readonly VITE_PERSIST_AUTH?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+interface Window {
+  daum?: {
+    Postcode: new (options: {
+      oncomplete: (data: {
+        roadAddress: string;
+        jibunAddress: string;
+        address: string;
+        zonecode: string;
+        buildingName?: string;
+        apartment?: string;
+      }) => void;
+    }) => { open: () => void };
+  };
 }

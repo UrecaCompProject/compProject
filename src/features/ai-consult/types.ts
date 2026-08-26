@@ -13,6 +13,7 @@ export interface SubscriptionForm {
   birth: string;
   phone: string;
   address: string;
+  addressDetail: string;
   simType: 'usim' | 'esim' | '';
   agreedPrivacy: boolean;
   agreedService: boolean;
