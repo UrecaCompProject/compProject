@@ -11,18 +11,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-
-interface Window {
-  daum?: {
-    Postcode: new (options: {
-      oncomplete: (data: {
-        roadAddress: string;
-        jibunAddress: string;
-        address: string;
-        zonecode: string;
-        buildingName?: string;
-        apartment?: string;
-      }) => void;
-    }) => { open: () => void };
-  };
-}

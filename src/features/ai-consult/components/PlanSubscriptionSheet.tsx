@@ -266,33 +266,6 @@ export default function PlanSubscriptionSheet({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const openPostcode = () => {
-    if (typeof window === 'undefined') return;
-
-    const loadAndOpen = () => {
-      if (!window.daum?.Postcode) return;
-      new window.daum.Postcode({
-        oncomplete: (data) => {
-          update(
-            'address',
-            data.roadAddress || data.jibunAddress || data.address,
-          );
-        },
-      }).open();
-    };
-
-    if (!window.daum?.Postcode) {
-      const script = document.createElement('script');
-      script.src =
-        '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-      script.async = true;
-      script.onload = loadAndOpen;
-      document.head.appendChild(script);
-    } else {
-      loadAndOpen();
-    }
-  };
-
   const fieldErrors = useMemo(
     () => ({
       name: form.name.length > 0 && form.name.trim().length < 2,
@@ -618,7 +591,7 @@ export default function PlanSubscriptionSheet({
                   variant="outline"
                   size="md"
                   type="button"
-                  onClick={openPostcode}
+                  disabled
                   className="shrink-0"
                 >
                   도로명 검색
