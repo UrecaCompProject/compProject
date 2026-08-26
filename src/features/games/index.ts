@@ -1,5 +1,6 @@
 export { default as GameLayer } from './components/GameLayer';
 export { default as CardMatchGame } from './components/CardMatchGame';
+export { default as ScratchGame } from './components/ScratchGame';
 
 export { GAME_REGISTRY, isGameId } from './registry';
 export { useGameStore } from './store/useGameStore';

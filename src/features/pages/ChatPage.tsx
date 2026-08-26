@@ -22,6 +22,11 @@ export default function ChatPage() {
     openSubscription,
     closeSubscription,
     isLoggedIn,
+    startQuiz,
+    answerOx,
+    selectMultipleChoice,
+    confirmMultipleChoice,
+    nextQuestion,
   } = useChat();
 
   const lastMessage = messages[messages.length - 1];
@@ -42,6 +47,10 @@ export default function ChatPage() {
         subscriptionOpen={subscriptionOpen}
         subscriptionPlan={subscriptionPlan}
         onSubscriptionClose={closeSubscription}
+        onQuizOxAnswer={answerOx}
+        onQuizMultipleChoiceSelect={selectMultipleChoice}
+        onQuizMultipleChoiceConfirm={confirmMultipleChoice}
+        onQuizNext={nextQuestion}
       />
       <QuickReplies
         replies={quickReplies}
@@ -53,6 +62,7 @@ export default function ChatPage() {
         value={input}
         onChange={setInput}
         onSend={handleSend}
+        onStartQuiz={startQuiz}
         disabled={isLoading}
       />
     </div>

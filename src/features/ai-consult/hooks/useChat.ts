@@ -4,12 +4,15 @@ import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { saveReport } from '@/features/ai-consult/api/saveReport';
 import { formatResponse } from '@/features/ai-consult/utils/formatResponse';
 import { useIsLoggedIn } from '@/features/auth';
+import type { QuizKind } from '@/features/chat-quiz';
 import { generateReport, requestConsult } from '@/lib/aiConsult';
 import type {
   ConsultInput,
   RecommendedPlan,
   ReportOutput,
 } from '@/lib/aiConsult';
+
+import { useChatQuiz } from './useChatQuiz';
 
 import type { ChatMessage } from '../types';
 
@@ -34,6 +37,38 @@ function getWelcomeQuickReplies(isLoggedIn: boolean): string[] {
         '출석체크',
         '기타 상담',
       ];
+}
+
+function getQuizIntent(message: string): QuizKind | null {
+  const normalized = message.toLowerCase().replace(/\s+/g, '');
+  const shortOxReplies = new Set([
+    'ox',
+    '오엑스',
+    'ox퀴즈',
+    '오엑스퀴즈',
+    'ox게임',
+    '보안퀴즈',
+    '보안ox퀴즈',
+  ]);
+  const shortMultipleChoiceReplies = new Set([
+    '통신퀴즈',
+    '통신상식퀴즈',
+    '통신보안퀴즈',
+    '사지선다',
+    '사지선다퀴즈',
+  ]);
+
+  if (shortOxReplies.has(normalized)) return 'ox';
+  if (shortMultipleChoiceReplies.has(normalized)) return 'multiple-choice';
+
+  const wantsToStart = /(할래|할게|하자|해줘|해볼래|시작|진행)/.test(
+    normalized,
+  );
+  if (!wantsToStart) return null;
+
+  if (/(ox|오엑스|보안).*(퀴즈|게임)/.test(normalized)) return 'ox';
+  if (/통신.*(퀴즈|게임)/.test(normalized)) return 'multiple-choice';
+  return null;
 }
 
 function formatFormSummary(values: Partial<ConsultInput>): string {
@@ -98,6 +133,13 @@ export function useChat() {
       quickReplies: getWelcomeQuickReplies(isLoggedIn),
     },
   ]);
+  const {
+    startQuiz,
+    answerOx,
+    selectMultipleChoice,
+    confirmMultipleChoice,
+    nextQuestion,
+  } = useChatQuiz({ setMessages });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<ConsultInput>({
@@ -254,6 +296,12 @@ export function useChat() {
       { id: Date.now(), type: 'user', sentence: trimmed },
     ]);
     setInput('');
+
+    const quizIntent = getQuizIntent(trimmed);
+    if (quizIntent) {
+      startQuiz(quizIntent, { includeUserMessage: false });
+      return;
+    }
 
     // 회원가입 흐름
     if (trimmed === '회원 가입하기') {
@@ -449,5 +497,10 @@ export function useChat() {
     openSubscription,
     closeSubscription,
     isLoggedIn,
+    startQuiz,
+    answerOx,
+    selectMultipleChoice,
+    confirmMultipleChoice,
+    nextQuestion,
   };
 }
