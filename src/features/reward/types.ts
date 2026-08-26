@@ -8,3 +8,11 @@ export type Mission = {
   actionLabel: '시작' | '공유';
   icon: MissionIcon;
 };
+
+export type RewardProduct = {
+  id: number;
+  brand: string;
+  name: string;
+  imageUrl: string;
+  badgeCost: number;
+};

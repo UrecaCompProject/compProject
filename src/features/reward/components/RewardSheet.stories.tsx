@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Button } from '@/features/shared';
+import { Button, Modal } from '@/features/shared';
 
 import RewardSheet from './RewardSheet';
 
@@ -33,6 +33,7 @@ export const Default: Story = {
         <Button onClick={() => setOpen(true)}>혜택/이벤트 열기</Button>
 
         <RewardSheet open={open} onOpenChange={setOpen} />
+        <Modal />
       </main>
     );
   },

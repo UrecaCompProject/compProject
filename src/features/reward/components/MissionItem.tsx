@@ -8,7 +8,7 @@ import {
   Target,
 } from 'lucide-react';
 
-import badgeImage from '../assets/badge.png';
+import badgeImage from '@/assets/images/badge.png';
 
 import type { Mission, MissionIcon } from '../types';
 import type { LucideIcon } from 'lucide-react';

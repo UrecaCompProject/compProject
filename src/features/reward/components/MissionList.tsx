@@ -1,4 +1,4 @@
-import badgeImage from '../assets/badge.png';
+import badgeImage from '@/assets/images/badge.png';
 
 import MissionItem from './MissionItem';
 

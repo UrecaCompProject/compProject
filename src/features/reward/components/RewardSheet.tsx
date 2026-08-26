@@ -1,9 +1,11 @@
 import { useState } from 'react';
 
+import { CouponBox } from '@/features/coupon';
 import { GameLayer, useActiveGameMeta, useGameStore } from '@/features/games';
 import { BottomSheet } from '@/features/shared';
 
 import RewardHome from './RewardHome';
+import StoreContent from './StoreContent';
 
 type RewardSheetProps = {
   open: boolean;
@@ -44,7 +46,11 @@ export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
         activeGame?.onBack ?? (activeView === 'reward' ? undefined : handleBack)
       }
       size="full"
-      bodyClassName={activeGame || activeView === 'reward' ? 'px-0' : 'px-5'}
+      bodyClassName={
+        activeGame || activeView !== 'coupon'
+          ? 'px-0'
+          : 'bg-surface-page px-5 py-4'
+      }
     >
       <GameLayer>
         {activeView === 'reward' && (
@@ -54,9 +60,11 @@ export default function RewardSheet({ open, onOpenChange }: RewardSheetProps) {
           />
         )}
 
-        {activeView === 'store' && <div />}
+        {activeView === 'store' && (
+          <StoreContent onGoToCoupon={() => setActiveView('coupon')} />
+        )}
 
-        {activeView === 'coupon' && <div />}
+        {activeView === 'coupon' && <CouponBox />}
       </GameLayer>
     </BottomSheet>
   );
