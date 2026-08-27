@@ -234,22 +234,33 @@ function scoreCandidates(candidates: Plan[], input: ConsultInput): Plan[] {
 
 // 사용자 조건에 맞는 상위 후보 요금제만 추려 prompt 길이를 줄임.
 function filterRecommendPlans(plans: Plan[], input: ConsultInput): Plan[] {
+  // "다른 요금제 보기" 재질의 시 이미 추천한 요금제를 제외
+  const excludeIds = new Set(
+    (input.excludePlanIds ?? []).map((id) => String(id)),
+  );
+  const availablePlans =
+    excludeIds.size > 0
+      ? plans.filter((p) => !excludeIds.has(String(p.id)))
+      : plans;
+
   const filters = buildCandidateFilters(input);
   let candidates: Plan[] = [];
 
   for (const filter of filters) {
-    candidates = plans.filter(filter);
+    candidates = availablePlans.filter(filter);
     if (candidates.length >= 3) break;
   }
 
   if (candidates.length === 0) {
-    candidates = plans.filter((p) => ageMatches(input.ageGroup, p.target_age));
+    candidates = availablePlans.filter((p) =>
+      ageMatches(input.ageGroup, p.target_age),
+    );
   }
 
   const ott = input.ott;
   if (ott && ott.length > 0) {
     const seen = new Set(candidates.map((p) => p.id));
-    for (const p of plans) {
+    for (const p of availablePlans) {
       if (
         ageMatches(input.ageGroup, p.target_age) &&
         hasOttMatch(ott, p.benefits) &&
@@ -848,6 +859,7 @@ export async function generateQuickReplies(
       }
       idx++;
     }
+    qs.push('메뉴로 돌아가기');
     return qs;
   }
 
@@ -865,7 +877,8 @@ export async function generateQuickReplies(
       qs.push('더 저렴한 요금제 보기');
       qs.push('OTT 포함 요금제 보기');
     }
-    return qs.slice(0, 3);
+    qs.push('메뉴로 돌아가기');
+    return [...qs.slice(0, 3), '메뉴로 돌아가기'];
   }
 
   if (!isMaxData) qs.push('데이터가 더 큰 요금제 보기');
@@ -874,7 +887,7 @@ export async function generateQuickReplies(
   if (hasOtt) qs.push('OTT 혜택 없는 요금제 보기');
   if (input.ageGroup !== '청소년') qs.push('청소년 요금제도 보기');
 
-  return qs.slice(0, 3);
+  return [...qs.slice(0, 3), '메뉴로 돌아가기'];
 }
 
 const reportSystemPrompt = `
