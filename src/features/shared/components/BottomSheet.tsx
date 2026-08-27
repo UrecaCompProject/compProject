@@ -60,6 +60,7 @@ export default function BottomSheet({
             -translate-x-1/2 flex-col
             rounded-t-3xl bg-surface-card
             outline-none
+            transition-[height,max-height] duration-300 ease-out
             ${sizeClasses[size]}
             ${className}
           `}

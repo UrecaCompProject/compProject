@@ -1,4 +1,6 @@
-interface BenefitOption {
+import { BenefitIconLabel } from '@/features/shared';
+
+export interface BenefitOption {
   imageUrl: string;
   label: string;
 }
@@ -33,18 +35,13 @@ export default function PlanCompareBenefitRow({
           <p className="text-[12px] text-fg-tertiary">{selectedSubtext}</p>
         )}
         {selectedOptions.length > 0 && (
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             {selectedOptions.map((option) => (
-              <div key={option.label} className="flex items-center gap-2">
-                <img
-                  src={option.imageUrl}
-                  alt={option.label}
-                  className="object-contain w-4 h-4 rounded-sm"
-                />
-                <span className="text-[12px] text-fg-secondary">
-                  {option.label}
-                </span>
-              </div>
+              <BenefitIconLabel
+                key={option.label}
+                imageUrl={option.imageUrl}
+                label={option.label}
+              />
             ))}
           </div>
         )}

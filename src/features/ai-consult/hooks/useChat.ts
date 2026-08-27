@@ -31,14 +31,7 @@ function getWelcomeQuickReplies(isLoggedIn: boolean): string[] {
         '출석체크',
         '기타 상담',
       ]
-    : [
-        '회원 가입하기',
-        '요금제 추천받기',
-        '요금제 비교하기',
-        '게임 하기',
-        '출석체크',
-        '기타 상담',
-      ];
+    : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'];
 }
 
 function getQuizIntent(message: string): QuizKind | null {
@@ -234,24 +227,12 @@ export function useChat() {
     setSubscriptionOpen(true);
   };
 
-  // 가입 시트 닫기 — 단순 닫기(swipe/X) 시 메뉴 복귀 퀵리플라이를 추가.
-  // 가입 완료(onComplete) 후에는 handleSignupFinished가 이미 메시지를 추가하므로
-  // subscriptionCompletedRef 플래그로 중복을 방지
+  // 가입 시트 닫기 — 단순 닫기(swipe/X) 시에는 기존 마지막 AI 메시지의
+  // 퀵리플라이를 그대로 유지하기 위해 새 메시지를 추가하지 않는다.
+  // 가입 완료(onComplete) 시에는 handleSignupFinished가 별도 메시지를 추가한다.
   const closeSubscription = (open: boolean) => {
     if (open) return;
     setSubscriptionOpen(false);
-    if (!subscriptionCompletedRef.current) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence:
-            '가입을 취소했어요. 다른 도움이 필요하시면 아래에서 선택해주세요.',
-          quickReplies: getWelcomeQuickReplies(isLoggedIn),
-        },
-      ]);
-    }
     subscriptionCompletedRef.current = false;
   };
 

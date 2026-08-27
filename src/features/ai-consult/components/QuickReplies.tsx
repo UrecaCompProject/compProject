@@ -9,7 +9,13 @@ interface QuickRepliesProps {
   isLoggedIn?: boolean;
 }
 
-const LOGIN_ONLY_REPLIES = ['온라인 가입', '요금제 가입하기'];
+// 비회원에게 노출되지 않아야 할 회원 전용 퀵리플라이 (게임/출석체크는 로그인 필요)
+const LOGIN_ONLY_REPLIES = [
+  '온라인 가입',
+  '요금제 가입하기',
+  '게임 하기',
+  '출석체크',
+];
 const GUEST_ONLY_REPLIES = ['회원 가입하기'];
 
 export default function QuickReplies({

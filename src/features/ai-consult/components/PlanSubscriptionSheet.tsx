@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react';
 
-import { Check, CheckCircle2, Smartphone } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { getPlanCatalog } from '@/features/plan-catalog/api/getPlanCatalog';
 import { BottomSheet, Button, Input } from '@/features/shared';
 import type { RecommendedPlan } from '@/lib/aiConsult';
@@ -11,14 +12,11 @@ import { useSubscriptionStore } from '../store/useSubscriptionStore';
 import type { SubscriptionForm } from '../types';
 
 type SubscriptionStep =
-  'planSelect' | 'confirm' | 'identity' | 'delivery' | 'agreement' | 'complete';
-type SubscriptionType = 'new' | 'portability' | 'device' | 'change';
+  'planSelect' | 'confirm' | 'delivery' | 'agreement' | 'complete';
+type SubscriptionType = 'new' | 'change';
 
 const initialForm: SubscriptionForm = {
   type: 'new',
-  name: '',
-  birth: '',
-  phone: '',
   address: '',
   addressDetail: '',
   simType: '',
@@ -32,20 +30,6 @@ interface PlanSubscriptionSheetProps {
   onOpenChange: (open: boolean) => void;
   plan: RecommendedPlan | null;
   onComplete?: () => void;
-}
-
-function isValidBirth(birth: string) {
-  if (!/^\d{6}$/.test(birth)) return false;
-  const month = Number(birth.slice(2, 4));
-  const day = Number(birth.slice(4, 6));
-  if (month < 1 || month > 12) return false;
-  const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return day >= 1 && day <= daysInMonth[month - 1];
-}
-
-function isValidPhone(phone: string) {
-  const digits = phone.replace(/-/g, '');
-  return /^\d{10,11}$/.test(digits);
 }
 
 const STEP_TITLES: Record<
@@ -62,15 +46,10 @@ const STEP_TITLES: Record<
     label: '유형',
     desc: '가입 방법을 선택해주세요',
   },
-  identity: {
-    title: '본인 정보',
-    label: '본인',
-    desc: '가입자 정보를 입력해주세요',
-  },
   delivery: {
     title: '배송/유심',
     label: '배송',
-    desc: 'USIM 받으실 주소를 입력해주세요',
+    desc: 'USIM 유형을 선택해주세요',
   },
   agreement: {
     title: '약관 동의',
@@ -83,7 +62,6 @@ const STEP_TITLES: Record<
 const STEPS: SubscriptionStep[] = [
   'planSelect',
   'confirm',
-  'identity',
   'delivery',
   'agreement',
   'complete',
@@ -227,9 +205,22 @@ export default function PlanSubscriptionSheet({
   const [planList, setPlanList] = useState<RecommendedPlan[]>([]);
   const [isPlanListLoading, setIsPlanListLoading] = useState(true);
   const [planListError, setPlanListError] = useState<string | null>(null);
+  const [expandedTerm, setExpandedTerm] = useState<string | null>(null);
   const submitApplication = useSubscriptionStore(
     (state) => state.submitApplication,
   );
+
+  // 로그인된 사용자 정보 — 본인 입력 단계 없이 확인용으로 표시
+  const user = useAuthStore((state) => state.user);
+  const userInfo = useMemo(() => {
+    const meta = user?.user_metadata;
+    return {
+      name: (meta?.name as string) || '',
+      birth: (meta?.birth as string) || '',
+      phone: (meta?.phone as string) || '',
+      email: user?.email || '',
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!open) return;
@@ -268,9 +259,6 @@ export default function PlanSubscriptionSheet({
 
   const fieldErrors = useMemo(
     () => ({
-      name: form.name.length > 0 && form.name.trim().length < 2,
-      birth: form.birth.length > 0 && !isValidBirth(form.birth),
-      phone: form.phone.length > 0 && !isValidPhone(form.phone),
       address: form.address.length > 0 && form.address.trim().length < 5,
     }),
     [form],
@@ -282,14 +270,13 @@ export default function PlanSubscriptionSheet({
         return selectedPlan !== null;
       case 'confirm':
         return true;
-      case 'identity':
-        return (
-          form.name.trim().length >= 2 &&
-          isValidBirth(form.birth) &&
-          isValidPhone(form.phone)
-        );
       case 'delivery':
-        return form.address.trim().length >= 5 && form.simType !== '';
+        if (form.simType === '') return false;
+        // USIM은 물리 배송이 필요하므로 주소 필수, eSIM은 주소 불필요
+        if (form.simType === 'usim') {
+          return form.address.trim().length >= 5;
+        }
+        return true;
       case 'agreement':
         return form.agreedPrivacy && form.agreedService;
       default:
@@ -303,16 +290,16 @@ export default function PlanSubscriptionSheet({
         return '가입할 요금제를 선택해주세요';
       case 'confirm':
         return '가입 유형을 선택해주세요';
-      case 'identity':
-        return '이름, 생년월일, 휴대폰 번호를 모두 입력해주세요';
       case 'delivery':
-        return '배송 주소와 USIM 유형을 선택해주세요';
+        return form.simType === 'usim'
+          ? '배송 주소를 입력해주세요'
+          : 'USIM 유형을 선택해주세요';
       case 'agreement':
         return '필수 약관에 모두 동의해주세요';
       default:
         return '';
     }
-  }, [step]);
+  }, [step, form.simType]);
 
   const showHelper = !canProceed && step !== 'complete';
 
@@ -341,7 +328,6 @@ export default function PlanSubscriptionSheet({
     const order: SubscriptionStep[] = [
       'planSelect',
       'confirm',
-      'identity',
       'delivery',
       'agreement',
     ];
@@ -353,7 +339,6 @@ export default function PlanSubscriptionSheet({
     const order: SubscriptionStep[] = [
       'planSelect',
       'confirm',
-      'identity',
       'delivery',
       'agreement',
     ];
@@ -371,8 +356,6 @@ export default function PlanSubscriptionSheet({
 
   const typeOptions: { value: SubscriptionType; label: string }[] = [
     { value: 'new', label: '신규 가입' },
-    { value: 'portability', label: '번호이동' },
-    { value: 'device', label: '기기변경' },
     { value: 'change', label: '요금제 변경' },
   ];
 
@@ -410,7 +393,8 @@ export default function PlanSubscriptionSheet({
             className="flex-1"
             onClick={() => {
               onComplete?.();
-              onOpenChange(false);
+              // onComplete 후 vaul 닫기 애니메이션이 정상 동작하도록 약간 지연
+              setTimeout(() => onOpenChange(false), 100);
             }}
           >
             확인
@@ -486,30 +470,36 @@ export default function PlanSubscriptionSheet({
             <PlanSummary plan={selectedPlan} />
             <div>
               <h5 className="text-body font-semibold text-fg-primary mb-3">
-                가입 유형을 선택해주세요
+                가입 유형을 선택해 주세요
               </h5>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
                 {typeOptions.map((option) => {
                   const selected = form.type === option.value;
                   return (
-                    <button
+                    <label
                       key={option.value}
-                      type="button"
-                      onClick={() => update('type', option.value)}
-                      className={`flex flex-col items-center justify-center gap-2 rounded-2xl border p-4 transition-colors cursor-pointer ${
+                      className={`flex items-center gap-3 rounded-2xl border p-4 transition-colors cursor-pointer ${
                         selected
-                          ? 'border-brand-promo-primary bg-brand-promo-primary/5 text-brand-promo-primary'
-                          : 'border-border bg-white text-fg-secondary hover:bg-surface-page'
+                          ? 'border-brand-promo-primary bg-brand-promo-primary/5'
+                          : 'border-border bg-white hover:bg-surface-page'
                       }`}
                     >
-                      <Smartphone size={20} />
-                      <span className="text-body-sm font-medium">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => update('type', option.value)}
+                        className="size-5 shrink-0 accent-brand-promo-primary"
+                      />
+                      <span
+                        className={`text-body-sm font-medium ${
+                          selected
+                            ? 'text-brand-promo-primary'
+                            : 'text-fg-secondary'
+                        }`}
+                      >
                         {option.label}
                       </span>
-                      {selected && (
-                        <Check size={14} className="text-brand-promo-primary" />
-                      )}
-                    </button>
+                    </label>
                   );
                 })}
               </div>
@@ -517,99 +507,9 @@ export default function PlanSubscriptionSheet({
           </section>
         )}
 
-        {step === 'identity' && (
-          <section className="space-y-4">
-            <div>
-              <label className="text-caption text-fg-secondary mb-1.5 block">
-                이름
-              </label>
-              <Input
-                value={form.name}
-                onChange={(e) => update('name', e.target.value)}
-                placeholder="이름을 입력해주세요"
-                variant={fieldErrors.name ? 'error' : 'default'}
-              />
-              {fieldErrors.name && (
-                <p className="mt-1 text-caption text-error">
-                  2자 이상 입력해주세요
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-caption text-fg-secondary mb-1.5 block">
-                생년월일 6자리
-              </label>
-              <Input
-                value={form.birth}
-                onChange={(e) => update('birth', e.target.value)}
-                placeholder="YYMMDD"
-                inputMode="numeric"
-                maxLength={6}
-                variant={fieldErrors.birth ? 'error' : 'default'}
-              />
-              {fieldErrors.birth && (
-                <p className="mt-1 text-caption text-error">
-                  6자리 생년월일을 정확히 입력해주세요
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="text-caption text-fg-secondary mb-1.5 block">
-                휴대폰 번호
-              </label>
-              <Input
-                value={form.phone}
-                onChange={(e) => update('phone', e.target.value)}
-                placeholder="- 없이 입력"
-                inputMode="tel"
-                variant={fieldErrors.phone ? 'error' : 'default'}
-              />
-              {fieldErrors.phone && (
-                <p className="mt-1 text-caption text-error">
-                  10~11자리 휴대폰 번호를 입력해주세요
-                </p>
-              )}
-            </div>
-          </section>
-        )}
-
         {step === 'delivery' && (
           <section className="space-y-4">
-            <div>
-              <label className="text-caption text-fg-secondary mb-1.5 block">
-                배송 주소
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  value={form.address}
-                  onChange={(e) => update('address', e.target.value)}
-                  placeholder="도로명 주소를 입력해주세요"
-                  variant={fieldErrors.address ? 'error' : 'default'}
-                  className="flex-1"
-                />
-                <Button
-                  variant="outline"
-                  size="md"
-                  type="button"
-                  disabled
-                  className="shrink-0"
-                >
-                  도로명 검색
-                </Button>
-              </div>
-              <Input
-                value={form.addressDetail}
-                onChange={(e) => update('addressDetail', e.target.value)}
-                placeholder="상세 주소"
-                variant={fieldErrors.address ? 'error' : 'default'}
-                className="mt-2"
-              />
-              {fieldErrors.address && (
-                <p className="mt-1 text-caption text-error">
-                  주소를 5자 이상 입력해주세요
-                </p>
-              )}
-            </div>
+            {/* USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시 */}
             <div>
               <label className="text-caption text-fg-secondary mb-1.5 block">
                 USIM 유형
@@ -642,11 +542,69 @@ export default function PlanSubscriptionSheet({
                 })}
               </div>
             </div>
+            {form.simType === 'usim' && (
+              <div>
+                <label className="text-caption text-fg-secondary mb-1.5 block">
+                  배송 주소
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={form.address}
+                    onChange={(e) => update('address', e.target.value)}
+                    placeholder="도로명 주소를 입력해주세요"
+                    variant={fieldErrors.address ? 'error' : 'default'}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="md"
+                    type="button"
+                    disabled
+                    className="shrink-0"
+                  >
+                    도로명 검색
+                  </Button>
+                </div>
+                <Input
+                  value={form.addressDetail}
+                  onChange={(e) => update('addressDetail', e.target.value)}
+                  placeholder="상세 주소"
+                  variant={fieldErrors.address ? 'error' : 'default'}
+                  className="mt-2"
+                />
+                {fieldErrors.address && (
+                  <p className="mt-1 text-caption text-error">
+                    주소를 5자 이상 입력해주세요
+                  </p>
+                )}
+              </div>
+            )}
           </section>
         )}
 
         {step === 'agreement' && (
           <section className="space-y-4">
+            {/* 본인정보 확인 패널 — 로그인된 사용자 정보를 읽기 전용으로 표시 */}
+            <div className="rounded-2xl border border-border bg-surface-page p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <h6 className="text-body-sm font-semibold text-fg-primary">
+                  신청자 정보 확인
+                </h6>
+                <span className="text-caption text-semantic-success font-medium">
+                  본인 인증 완료
+                </span>
+              </div>
+              <div className="text-body-sm text-fg-secondary space-y-1">
+                <InfoRow label="이름" value={userInfo.name || '-'} />
+                <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
+                <InfoRow label="이메일" value={userInfo.email || '-'} />
+              </div>
+              <p className="text-caption text-fg-tertiary">
+                로그인된 계정 정보가 자동 적용되었습니다. 정보가 다르다면
+                마이페이지에서 수정 후 신청해 주세요.
+              </p>
+            </div>
+
             <p className="text-body-sm text-fg-secondary">
               아래 약관에 동의해 주세요.
             </p>
@@ -662,42 +620,62 @@ export default function PlanSubscriptionSheet({
               </span>
             </label>
             <div className="h-px bg-border" />
-            <label className="flex items-start gap-3 rounded-2xl border border-border bg-white p-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.agreedPrivacy}
-                onChange={(e) => update('agreedPrivacy', e.target.checked)}
-                className="mt-1 accent-brand-promo-primary"
-              />
-              <span className="text-body-sm text-fg-secondary">
-                <span className="font-medium text-fg-primary">[필수]</span>{' '}
-                개인정보 수집 및 이용 동의
-              </span>
-            </label>
-            <label className="flex items-start gap-3 rounded-2xl border border-border bg-white p-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.agreedService}
-                onChange={(e) => update('agreedService', e.target.checked)}
-                className="mt-1 accent-brand-promo-primary"
-              />
-              <span className="text-body-sm text-fg-secondary">
-                <span className="font-medium text-fg-primary">[필수]</span> 통신
-                서비스 이용 약관 동의
-              </span>
-            </label>
-            <label className="flex items-start gap-3 rounded-2xl border border-border bg-white p-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.agreedMarketing}
-                onChange={(e) => update('agreedMarketing', e.target.checked)}
-                className="mt-1 accent-brand-promo-primary"
-              />
-              <span className="text-body-sm text-fg-secondary">
-                <span className="font-medium text-fg-primary">[선택]</span>{' '}
-                마케팅 정보 수신 동의
-              </span>
-            </label>
+
+            <TermAccordion
+              termKey="privacy"
+              label="[필수] 개인정보 수집 및 이용 동의"
+              checked={form.agreedPrivacy}
+              onCheck={(v) => update('agreedPrivacy', v)}
+              expanded={expandedTerm === 'privacy'}
+              onToggle={() =>
+                setExpandedTerm(expandedTerm === 'privacy' ? null : 'privacy')
+              }
+            >
+              에피라통신(주)은 요금제 가입 신청 처리를 위해 아래의 개인정보를
+              수집·이용합니다.
+              {'\n\n'}- 수집 항목: 이름, 휴대폰 번호, 이메일, 배송 주소(USIM
+              선택 시){'\n'}- 이용 목적: 가입 신청 접수, USIM 배송, 요금제 개통
+              안내{'\n'}- 보유 기간: 가입 신청 완료 후 1년간 보관 후 파기
+              {'\n\n'}
+              동의를 거부할 수 있으나, 거부 시 요금제 가입 신청이 불가능합니다.
+            </TermAccordion>
+
+            <TermAccordion
+              termKey="service"
+              label="[필수] 통신 서비스 이용 약관 동의"
+              checked={form.agreedService}
+              onCheck={(v) => update('agreedService', v)}
+              expanded={expandedTerm === 'service'}
+              onToggle={() =>
+                setExpandedTerm(expandedTerm === 'service' ? null : 'service')
+              }
+            >
+              제1조(목적) 본 약관은 에피라통신(주)이 제공하는 이동통신 서비스의
+              이용 조건 및 절차, 당사자 간 권리·의무·책임을 규정합니다.
+              {'\n\n'}
+              제2조(서비스 제공) 당사는 가입 신청 접수 후 순차에 따라 서비스를
+              개통하며, 개통 예정일은 별도로 안내합니다.
+              {'\n\n'}
+              제3조(요금) 월 정액 요금은 선택한 요금제 기준이며, 부가세 포함
+              여부는 요금제 안내를 따릅니다.
+            </TermAccordion>
+
+            <TermAccordion
+              termKey="marketing"
+              label="[선택] 마케팅 정보 수신 동의"
+              checked={form.agreedMarketing}
+              onCheck={(v) => update('agreedMarketing', v)}
+              expanded={expandedTerm === 'marketing'}
+              onToggle={() =>
+                setExpandedTerm(
+                  expandedTerm === 'marketing' ? null : 'marketing',
+                )
+              }
+            >
+              에피라통신(주)의 신규 요금제, 프로모션, 혜택 정보를 SMS·이메일로
+              수신하실 수 있습니다. 동의하지 않아도 가입 신청에 영향이 없으며,
+              언제든지 마이페이지에서 철회할 수 있습니다.
+            </TermAccordion>
           </section>
         )}
 
@@ -718,10 +696,18 @@ export default function PlanSubscriptionSheet({
               </p>
             </div>
             <div className="w-full rounded-2xl bg-surface-page p-4 text-body-sm text-fg-secondary space-y-2 text-left">
-              <InfoRow label="이름" value={form.name} />
-              <InfoRow label="생년월일" value={form.birth} />
-              <InfoRow label="휴대폰" value={form.phone} />
-              <InfoRow label="주소" value={form.address} />
+              <InfoRow label="이름" value={userInfo.name || '-'} />
+              <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
+              <InfoRow label="이메일" value={userInfo.email || '-'} />
+              {form.simType === 'usim' && (
+                <InfoRow
+                  label="주소"
+                  value={
+                    form.address +
+                    (form.addressDetail ? ` ${form.addressDetail}` : '')
+                  }
+                />
+              )}
               <InfoRow
                 label="가입 유형"
                 value={
@@ -742,6 +728,61 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between">
       <span className="text-fg-tertiary">{label}</span>
       <span className="font-medium text-fg-primary">{value}</span>
+    </div>
+  );
+}
+
+function TermAccordion({
+  label,
+  checked,
+  onCheck,
+  expanded,
+  onToggle,
+  children,
+}: {
+  termKey: string;
+  label: string;
+  checked: boolean;
+  onCheck: (checked: boolean) => void;
+  expanded: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-white overflow-hidden">
+      <div className="flex items-center gap-3 p-4">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onCheck(e.target.checked)}
+          className="mt-0 shrink-0 accent-brand-promo-primary"
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex flex-1 items-center justify-between text-left cursor-pointer"
+        >
+          <span className="text-body-sm text-fg-secondary">
+            <span className="font-medium text-fg-primary">
+              {label.split(' ')[0]}
+            </span>{' '}
+            {label.split(' ').slice(1).join(' ')}
+          </span>
+          <ChevronDown
+            size={16}
+            className={`shrink-0 text-fg-tertiary transition-transform duration-200 ${
+              expanded ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+      </div>
+      {expanded && (
+        <div className="border-t border-border bg-surface-page px-4 py-3">
+          <pre className="whitespace-pre-wrap text-caption text-fg-tertiary font-sans leading-relaxed">
+            {children}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
