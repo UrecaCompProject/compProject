@@ -9,13 +9,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 const meta = {
   title: 'plan-detail/PlanQuickSheet',
   component: PlanQuickSheet,
+  args: {
+    open: false,
+    onOpenChange: () => {},
+  },
 } satisfies Meta<typeof PlanQuickSheet>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// 챗인풋 연결 전, 이 시트 하나만 단독으로 열어서
-// 목록 -> 카드 클릭 -> 상세(헤더 "< 요금제 조회"로 전환) -> 뒤로가기 흐름을 확인한다.
 export const Interactive: Story = {
   render: () => {
     const [open, setOpen] = useState(false);

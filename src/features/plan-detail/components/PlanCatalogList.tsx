@@ -16,9 +16,6 @@ interface PlanCatalogListProps {
   onSelectPlan: (plan: PlanDetailItem) => void;
 }
 
-// 요금제 검색/필터/정렬 리스트 자체.
-// /plan 라우트(PlanPage)와 채팅 인풋의 요금제 퀵시트(PlanQuickSheet)가 이 컴포넌트를 공유한다.
-// 좌우 패딩은 안 넣어뒀으니, 감싸는 쪽에서 필요에 맞게 넣어줘야 한다.
 export default function PlanCatalogList({
   onSelectPlan,
 }: PlanCatalogListProps) {

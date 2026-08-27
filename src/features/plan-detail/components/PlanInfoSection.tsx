@@ -21,9 +21,6 @@ interface InfoRowData {
   badgeColor?: IconBadgeColor;
 }
 
-// Plan Info / Telecom처럼 한 카드 안에 여러 행이 묶여야 하는 곳.
-// 행 사이 구분선은 없고, Card 자체 패딩(16px) 안에서 행끼리 16px 간격만 준다
-// (행마다 또 패딩을 주면 카드 패딩과 겹쳐서 과하게 넓어짐).
 function InfoGroupCard({ rows }: { rows: InfoRowData[] }) {
   return (
     <Card border="default" radius="16" gap="16">

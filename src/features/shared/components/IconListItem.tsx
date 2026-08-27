@@ -7,7 +7,7 @@ type IconListItemVariant = 'plain' | 'badge' | 'bordered';
 interface IconListItemProps {
   icon: LucideIcon;
   label: string;
-  /** label 아래 보조 설명 한 줄. 넘기면 label(제목) + description(2줄) 구조로 렌더된다. */
+  /** label 아래 보조 설명 한 줄. 넘기면 label(제목) + description(2줄) 구조로 렌더 */
   description?: string;
   descriptionClassName?: string;
   variant?: IconListItemVariant;
@@ -18,7 +18,6 @@ interface IconListItemProps {
   iconSize?: number;
   textClassName?: string;
   className?: string;
-  /** 아이콘과 텍스트 사이 간격 클래스. 기본 gap-2(8px). */
   gapClassName?: string;
 }
 

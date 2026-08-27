@@ -23,6 +23,10 @@ const plans: PlanDetailItem[] = [
     benefits: ['데이터 쉐어링 20GB'],
     ottBenefits: ['넷플릭스 스탠다드'],
     addOns: [],
+    callAmountMin: null,
+    smsAmount: null,
+    contractPeriodMonths: null,
+    couponText: null,
   },
   {
     id: '2',
@@ -41,6 +45,10 @@ const plans: PlanDetailItem[] = [
     benefits: [],
     ottBenefits: [],
     addOns: [],
+    callAmountMin: null,
+    smsAmount: null,
+    contractPeriodMonths: null,
+    couponText: null,
   },
   {
     id: '3',
@@ -59,6 +67,10 @@ const plans: PlanDetailItem[] = [
     benefits: [],
     ottBenefits: [],
     addOns: [],
+    callAmountMin: null,
+    smsAmount: null,
+    contractPeriodMonths: null,
+    couponText: null,
   },
 ];
 

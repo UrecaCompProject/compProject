@@ -22,9 +22,6 @@ interface PlanDetailContentProps {
   error: string | null;
 }
 
-// 요금제 상세 콘텐츠 자체. BottomSheet를 직접 소유하지 않기 때문에
-// /plan/:id 라우트(PlanDetailPage)와 채팅 인풋의 요금제 퀵시트(PlanQuickSheet)가
-// 각자 자기 BottomSheet(+footer, 구독 시트) 안에 이 컴포넌트만 끼워 넣어 재사용한다.
 export default function PlanDetailContent({
   plan,
   isLoading,

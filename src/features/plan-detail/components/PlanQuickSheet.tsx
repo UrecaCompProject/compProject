@@ -34,9 +34,6 @@ function toRecommendedPlan(plan: PlanDetailItem): RecommendedPlan {
   };
 }
 
-// 요금제 전용 시트. RewardSheet와 동일한 패턴: 이 시트가 자기 BottomSheet를
-// 직접 소유하고 있어서, 목록 <-> 상세 전환에 따라 title/onBack을 자유롭게
-// 계산해서 넘길 수 있다. (라우팅도, 다른 시트 중첩도 없음)
 export default function PlanQuickSheet({
   open,
   onOpenChange,

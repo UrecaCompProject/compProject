@@ -20,6 +20,10 @@ const basePlan: PlanDetailItem = {
   benefits: ['데이터 쉐어링 20GB', '해외 로밍 데이터 무제한'],
   ottBenefits: ['넷플릭스 스탠다드'],
   addOns: ['U+ VIP 등급'],
+  callAmountMin: null,
+  smsAmount: null,
+  contractPeriodMonths: null,
+  couponText: null,
 };
 
 const meta = {
