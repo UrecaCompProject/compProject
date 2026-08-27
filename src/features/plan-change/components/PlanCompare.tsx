@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Check, CircleCheck } from 'lucide-react';
 
 import { Button } from '@/features/shared';
 import TicketCard from '@/features/shared/components/TicketCard';
 
+import PlanCompareBenefitRow, {
+  type BenefitOption,
+} from './PlanCompareBenefitRow';
 import PlanCompareRow from './PlanCompareRow';
 
 export interface PlanCompareData {
@@ -25,6 +28,19 @@ export interface PlanCompareData {
   selectedShareData: string;
   selectedVoice: string;
   selectedMessage: string;
+
+  /**
+   * 프리미엄플러스 / 데일리플러스 / 스마트기기처럼 로고+선택지 목록을 보여줘야 하는 혜택 행.
+   * 데이터가 없으면(RecommendedPlan에 아직 필드가 없는 경우 등) 해당 행은 렌더링하지 않는다.
+   */
+  benefitRows?: {
+    key: string;
+    label: string;
+    current: string;
+    selectedSummary: string;
+    selectedSubtext?: string;
+    selectedOptions?: BenefitOption[];
+  }[];
 }
 
 export interface PlanCompareProps {
@@ -35,6 +51,13 @@ export interface PlanCompareProps {
   className?: string;
 }
 
+interface SimpleRow {
+  key: string;
+  label: string;
+  current: string;
+  selected: string;
+}
+
 export default function PlanCompare({
   data,
   onDetailCurrent,
@@ -43,6 +66,73 @@ export default function PlanCompare({
   className,
 }: PlanCompareProps) {
   const [showDiffOnly, setShowDiffOnly] = useState(false);
+
+  const simpleRows: SimpleRow[] = useMemo(
+    () => [
+      {
+        key: 'planName',
+        label: '요금제명',
+        current: data.currentPlanName,
+        selected: data.selectedPlanName,
+      },
+      {
+        key: 'fee',
+        label: '월정액',
+        current: data.currentFee,
+        selected: data.selectedFee,
+      },
+      {
+        key: 'discount',
+        label: '할인 상세내역',
+        current: data.currentDiscount,
+        selected: data.selectedDiscount,
+      },
+      {
+        key: 'data',
+        label: '데이터',
+        current: data.currentData,
+        selected: data.selectedData,
+      },
+      {
+        key: 'tethering',
+        label: '테더링',
+        current: data.currentTethering,
+        selected: data.selectedTethering,
+      },
+      {
+        key: 'shareData',
+        label: '데이터 공유',
+        current: data.currentShareData,
+        selected: data.selectedShareData,
+      },
+      {
+        key: 'voice',
+        label: '음성 통화',
+        current: data.currentVoice,
+        selected: data.selectedVoice,
+      },
+      {
+        key: 'message',
+        label: '메세지',
+        current: data.currentMessage,
+        selected: data.selectedMessage,
+      },
+    ],
+    [data],
+  );
+
+  const visibleSimpleRows = showDiffOnly
+    ? simpleRows.filter((row) => row.current !== row.selected)
+    : simpleRows;
+
+  const benefitRows = data.benefitRows ?? [];
+  const visibleBenefitRows = showDiffOnly
+    ? benefitRows.filter(
+        (row) =>
+          row.current !== row.selectedSummary ||
+          (row.selectedOptions?.length ?? 0) > 0,
+      )
+    : benefitRows;
 
   return (
     <div className={`flex w-[358px] flex-col gap-3 ${className ?? ''}`}>
@@ -64,7 +154,7 @@ export default function PlanCompare({
         차이점만 모아보기
       </button>
 
-      <TicketCard radius={6} gap={10} startOffset={8}>
+      <TicketCard>
         {/* 헤더 */}
         <div className="grid grid-cols-2 gap-4 pb-3">
           <p className="text-left text-[14px] font-semibold text-fg-primary">
@@ -76,46 +166,31 @@ export default function PlanCompare({
         </div>
         <div className="border-b border-fg-primary" />
 
-        <PlanCompareRow
-          label="요금제명"
-          current={data.currentPlanName}
-          selected={data.selectedPlanName}
-        />
-        <PlanCompareRow
-          label="월정액"
-          current={data.currentFee}
-          selected={data.selectedFee}
-        />
-        <PlanCompareRow
-          label="할인 상세내역"
-          current={data.currentDiscount}
-          selected={data.selectedDiscount}
-        />
-        <PlanCompareRow
-          label="데이터"
-          current={data.currentData}
-          selected={data.selectedData}
-        />
-        <PlanCompareRow
-          label="테더링"
-          current={data.currentTethering}
-          selected={data.selectedTethering}
-        />
-        <PlanCompareRow
-          label="데이터 공유"
-          current={data.currentShareData}
-          selected={data.selectedShareData}
-        />
-        <PlanCompareRow
-          label="음성 통화"
-          current={data.currentVoice}
-          selected={data.selectedVoice}
-        />
-        <PlanCompareRow
-          label="메세지"
-          current={data.currentMessage}
-          selected={data.selectedMessage}
-        />
+        {visibleSimpleRows.map((row) => (
+          <PlanCompareRow
+            key={row.key}
+            label={row.label}
+            current={row.current}
+            selected={row.selected}
+          />
+        ))}
+
+        {visibleBenefitRows.map((row) => (
+          <PlanCompareBenefitRow
+            key={row.key}
+            label={row.label}
+            current={row.current}
+            selectedSummary={row.selectedSummary}
+            selectedSubtext={row.selectedSubtext}
+            selectedOptions={row.selectedOptions}
+          />
+        ))}
+
+        {visibleSimpleRows.length === 0 && visibleBenefitRows.length === 0 && (
+          <p className="py-6 text-center text-[13px] text-fg-tertiary">
+            차이가 있는 항목이 없어요.
+          </p>
+        )}
 
         {/* 상세보기 링크 */}
         <div className="grid grid-cols-2 gap-4 pt-3">
