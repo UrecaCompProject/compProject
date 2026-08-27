@@ -9,6 +9,10 @@
   --text-body-lg--line-height: 150%;
   --text-body-lg--font-weight: 500;
 
+  --text-semibold-16-130: 16px;
+  --text-semibold-16-130--line-height: 130%;
+  --text-semibold-16-130--font-weight: 600;
+
   --text-body: 15px;
   --text-body--line-height: 150%;
   --text-body--font-weight: 500;
@@ -21,13 +25,17 @@
   --text-caption--line-height: 150%;
   --text-caption--font-weight: 500;
 
+  --text-regular-14-130: 14px;
+  --text-regular-14-130--line-height: 130%;
+  --text-regular-14-130--font-weight: 400;
+
   --text-chip: 14px;
   --text-chip--line-height: 130%;
   --text-chip--font-weight: 600;
 
   --text-regular-12-130: 12px;
   --text-regular-12-130--line-height: 130%;
-  --text-regular-12-130--font-weight: 500;
+  --text-regular-12-130--font-weight: 400;
 
   --text-medium-12-130: 12px;
   --text-medium-12-130--line-height: 130%;

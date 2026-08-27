@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react';
+import type { HTMLAttributes, Ref } from 'react';
 
 type BorderVariant = 'none' | 'default' | 'primary';
 type GapVariant = 'none' | '8' | '12' | '16';
@@ -9,6 +9,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
   radius?: RadiusVariant;
   gap?: GapVariant;
   shadow?: boolean;
+  ref?: Ref<HTMLDivElement>;
 }
 
 const CardBorderVariants: Record<BorderVariant, string> = {
@@ -37,11 +38,13 @@ export default function Card({
   gap = '12',
   shadow = false,
   className = '',
+  ref,
   ...props
 }: CardProps) {
   return (
     <div
-      className={`p-4 rounded-2xl flex flex-col bg-white 
+      ref={ref}
+      className={`p-4 rounded-2xl flex flex-col bg-white
         ${border ? CardBorderVariants[border] : ''}
         ${radius ? CardRadiusVariants[radius] : ''}
         ${gap ? CardGapVariants[gap] : ''}
