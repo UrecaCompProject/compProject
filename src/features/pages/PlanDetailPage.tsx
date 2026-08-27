@@ -79,7 +79,7 @@ export default function PlanDetailPage() {
         onBack={backToList}
         title={plan?.name ?? '요금제'}
         size="large"
-        bodyClassName="px-5 bg-surface-page"
+        bodyClassName="px-0 bg-surface-page"
         footer={
           plan && (
             <div className="flex w-full gap-2">

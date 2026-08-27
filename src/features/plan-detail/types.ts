@@ -18,6 +18,7 @@ export interface PlanDetailItem {
   ottBenefits: string[];
   addOns: string[];
   contractPeriodMonths: number | null;
+  couponText?: string | null;
 }
 
 export type PriceRangeKey = 'all' | 'under5' | '5to10' | '10to20' | '20to30';

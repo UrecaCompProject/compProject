@@ -8,58 +8,39 @@ import {
   Wifi,
 } from 'lucide-react';
 
-import { Card, IconBadge } from '@/features/shared';
+import { Card, IconListItem } from '@/features/shared';
+import type { IconBadgeColor } from '@/features/shared';
 
 import type { PlanDetailItem } from '../types';
 import type { LucideIcon } from 'lucide-react';
 
-interface InfoRowProps {
+interface InfoRowData {
   icon: LucideIcon;
   title: string;
   description?: string;
+  badgeColor?: IconBadgeColor;
 }
 
-// Plan Info / Telecom 처럼 한 카드 안에 여러 행이 묶여야 하는 곳에서 쓰는, 자체 테두리 없는 행.
-function InfoRow({ icon: Icon, title, description }: InfoRowProps) {
+// Plan Info / Telecom처럼 한 카드 안에 여러 행이 묶여야 하는 곳.
+// 행 사이 구분선은 없고, Card 자체 패딩(16px) 안에서 행끼리 16px 간격만 준다
+// (행마다 또 패딩을 주면 카드 패딩과 겹쳐서 과하게 넓어짐).
+function InfoGroupCard({ rows }: { rows: InfoRowData[] }) {
   return (
-    <div className="flex items-start gap-3 p-4">
-      <IconBadge icon={Icon} size={36} />
-      <div className="flex flex-col gap-0.5">
-        <p className="text-body font-semibold text-fg-primary">{title}</p>
-        {description && (
-          <p className="text-caption text-fg-tertiary">{description}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function InfoGroupCard({ rows }: { rows: InfoRowProps[] }) {
-  return (
-    <Card
-      border="default"
-      radius="16"
-      gap="none"
-      className="divide-y divide-border p-0"
-    >
+    <Card border="default" radius="16" gap="16">
       {rows.map((row) => (
-        <InfoRow key={row.title} {...row} />
+        <IconListItem
+          key={row.title}
+          icon={row.icon}
+          label={row.title}
+          description={row.description}
+          variant="badge"
+          badgeColor={row.badgeColor}
+          badgeSize={28}
+          gapClassName="gap-3"
+          textClassName="text-body font-semibold text-fg-primary"
+          descriptionClassName="text-caption text-fg-tertiary"
+        />
       ))}
-    </Card>
-  );
-}
-
-// Plan Benefits는 항목마다 따로 떨어진 카드로 보여준다.
-function BenefitCard({ icon, title }: InfoRowProps) {
-  return (
-    <Card
-      border="default"
-      radius="16"
-      gap="8"
-      className="flex-row items-center"
-    >
-      <IconBadge icon={icon} size={36} />
-      <p className="text-body font-semibold text-fg-primary">{title}</p>
     </Card>
   );
 }
@@ -75,8 +56,10 @@ export default function PlanInfoSection({ plan }: PlanInfoSectionProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="flex flex-col gap-3">
-        <h3 className="text-title text-fg-primary">Plan Info</h3>
+      <section className="flex flex-col gap-2.5">
+        <h3 className="text-[16px] font-semibold text-fg-secondary">
+          Plan Info
+        </h3>
         <InfoGroupCard
           rows={[
             {
@@ -85,28 +68,45 @@ export default function PlanInfoSection({ plan }: PlanInfoSectionProps) {
               description: plan.notes,
             },
             { icon: Wifi, title: '테더링', description: plan.tethering },
-            { icon: Repeat, title: '데이터 공유', description: plan.shareData },
+            {
+              icon: Repeat,
+              title: '데이터 공유',
+              description: plan.shareData,
+            },
           ]}
         />
       </section>
 
       {allBenefits.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <h3 className="text-title text-fg-primary">Plan Benefits</h3>
-          <div className="flex flex-col gap-2">
+        <section className="flex flex-col gap-2.5">
+          <h3 className="text-[16px] font-semibold text-fg-secondary">
+            Plan Benefits
+          </h3>
+          <div className="flex flex-col gap-[10px]">
             {allBenefits.map((benefit, index) => (
-              <BenefitCard
+              <Card
                 key={benefit}
-                icon={BENEFIT_ICONS[index % BENEFIT_ICONS.length]}
-                title={benefit}
-              />
+                border="default"
+                radius="16"
+                gap="8"
+                className="flex-row items-center"
+              >
+                <IconListItem
+                  icon={BENEFIT_ICONS[index % BENEFIT_ICONS.length]}
+                  label={benefit}
+                  variant="badge"
+                  badgeSize={28}
+                  gapClassName="gap-3"
+                  textClassName="text-body font-semibold text-fg-primary"
+                />
+              </Card>
             ))}
           </div>
         </section>
       )}
 
-      <section className="flex flex-col gap-3">
-        <h3 className="text-title text-fg-primary">Telecom</h3>
+      <section className="flex flex-col gap-2.5">
+        <h3 className="text-[16px] font-semibold text-fg-secondary">Telecom</h3>
         <InfoGroupCard
           rows={[
             {
@@ -115,6 +115,7 @@ export default function PlanInfoSection({ plan }: PlanInfoSectionProps) {
               description: plan.callAmountMin
                 ? `기본 제공 (월 ${plan.callAmountMin}분)`
                 : plan.voice,
+              badgeColor: 'accent-purple',
             },
             {
               icon: MessageSquare,
@@ -122,13 +123,16 @@ export default function PlanInfoSection({ plan }: PlanInfoSectionProps) {
               description: plan.smsAmount
                 ? `기본 제공 (월 ${plan.smsAmount}건)`
                 : plan.message,
+              badgeColor: 'accent-primary',
             },
           ]}
         />
       </section>
 
       {plan.notes && (
-        <p className="text-caption text-fg-disabled">· {plan.notes}</p>
+        <p className="mb-4 text-[10px] font-normal text-fg-tertiary">
+          · {plan.notes}
+        </p>
       )}
     </div>
   );

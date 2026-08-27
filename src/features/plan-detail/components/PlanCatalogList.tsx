@@ -76,7 +76,7 @@ export default function PlanCatalogList({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col min-h-full gap-4">
       <PlanSearchBar
         sort={sort}
         onOpenFilter={handleOpenFilter}
