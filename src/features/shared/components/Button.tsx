@@ -23,7 +23,7 @@ const ButtonColorVariants: Record<ButtonVariant, string> = {
 const ButtonSizeVariants: Record<ButtonSize, string> = {
   chip: 'px-3 py-2 text-caption rounded-full text-chip',
   icon: 'p-3',
-  sm: 'h-8 px-3 text-caption',
+  sm: 'h-8 px-3 rounded-[8px] text-caption leading-[130%]',
   md: 'h-[45px] px-5 py-3 text-body rounded-[8px]',
   lg: 'h-[50px] px-6 py-4 text-body-lg rounded-[12px]',
 };
