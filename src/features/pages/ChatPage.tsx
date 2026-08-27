@@ -11,10 +11,14 @@ export default function ChatPage() {
     input,
     setInput,
     isLoading,
+    isGeneratingReport,
     handleSend,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
+    handlePlanCompare,
+    handleSelectCurrentPlan,
+    handleSelectTargetPlan,
     profile,
     subscriptionOpen,
     subscriptionPlan,
@@ -37,10 +41,14 @@ export default function ChatPage() {
       <ChatMessageList
         messages={messages}
         isLoading={isLoading}
+        isGeneratingReport={isGeneratingReport}
         onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
         onPlanSubscribe={openSubscription}
+        onPlanCompare={handlePlanCompare}
+        onSelectCurrentPlan={handleSelectCurrentPlan}
+        onSelectTargetPlan={handleSelectTargetPlan}
         onGenerateReport={handleGenerateReport}
         subscriptionOpen={subscriptionOpen}
         subscriptionPlan={subscriptionPlan}

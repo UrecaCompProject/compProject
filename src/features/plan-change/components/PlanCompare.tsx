@@ -32,6 +32,7 @@ export interface PlanCompareProps {
   onDetailCurrent?: () => void;
   onDetailSelected?: () => void;
   onChangePlan?: () => void;
+  className?: string;
 }
 
 export default function PlanCompare({
@@ -39,11 +40,12 @@ export default function PlanCompare({
   onDetailCurrent,
   onDetailSelected,
   onChangePlan,
+  className,
 }: PlanCompareProps) {
   const [showDiffOnly, setShowDiffOnly] = useState(false);
 
   return (
-    <div className="flex w-[358px] flex-col gap-3">
+    <div className={`flex w-[358px] flex-col gap-3 ${className ?? ''}`}>
       <button
         type="button"
         onClick={() => setShowDiffOnly((prev) => !prev)}

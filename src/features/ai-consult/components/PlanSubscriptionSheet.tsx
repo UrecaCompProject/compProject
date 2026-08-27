@@ -20,6 +20,7 @@ const initialForm: SubscriptionForm = {
   birth: '',
   phone: '',
   address: '',
+  addressDetail: '',
   simType: '',
   agreedPrivacy: false,
   agreedService: false,
@@ -596,6 +597,13 @@ export default function PlanSubscriptionSheet({
                   도로명 검색
                 </Button>
               </div>
+              <Input
+                value={form.addressDetail}
+                onChange={(e) => update('addressDetail', e.target.value)}
+                placeholder="상세 주소"
+                variant={fieldErrors.address ? 'error' : 'default'}
+                className="mt-2"
+              />
               {fieldErrors.address && (
                 <p className="mt-1 text-caption text-error">
                   주소를 5자 이상 입력해주세요

@@ -1,7 +1,7 @@
 import type { RecommendedPlan } from '@/lib/aiConsult';
 import { supabaseAnon } from '@/lib/supabaseClient';
 
-type PlanRow = {
+export type PlanRow = {
   id: number;
   name: string;
   carrier: string;
@@ -27,7 +27,7 @@ type PlanRow = {
   sort_order: number;
 };
 
-function toRecommendedPlan(row: PlanRow): RecommendedPlan {
+export function toRecommendedPlan(row: PlanRow): RecommendedPlan {
   return {
     planId: String(row.id),
     planName: row.name,

@@ -17,6 +17,8 @@ export async function saveReport(report: ReportOutput) {
       analysis_input: {
         usageType: report.usageType,
         currentPlan: report.currentPlan,
+        recommendedPlans: report.recommendedPlans,
+        monthlySavingAmount: report.monthlySavingAmount,
         recommendationReason: report.recommendationReason,
         importantConditions: report.importantConditions,
       },

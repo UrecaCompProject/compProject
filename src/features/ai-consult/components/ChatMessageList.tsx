@@ -5,24 +5,31 @@ import type { ConsultInput, RecommendedPlan } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
 import ChatQuizMessage from './ChatQuizMessage';
+import CompareResultSheet from './CompareResultSheet';
 import MyChat from './MyChat';
+import PlanSelector from './PlanSelector';
 import PlanSubscriptionSheet from './PlanSubscriptionSheet';
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
+import ReportCard from './ReportCard';
 
 import type { ChatMessage, QuizQuestionMessage } from '../types';
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
+  isGeneratingReport?: boolean;
   onSignupFinished?: () => void;
   onFormSubmit?: (values: Partial<ConsultInput>) => void;
   formDefaults?: Partial<ConsultInput>;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  onPlanCompare?: (plan: RecommendedPlan) => void;
+  onSelectCurrentPlan?: (planName: string) => void;
+  onSelectTargetPlan?: (planName: string) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
-  onSubscriptionClose?: () => void;
+  onSubscriptionClose?: (open: boolean) => void;
   onQuizOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
   onQuizMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onQuizMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
@@ -32,10 +39,14 @@ interface ChatMessageListProps {
 export default function ChatMessageList({
   messages,
   isLoading = false,
+  isGeneratingReport = false,
   onSignupFinished,
   onFormSubmit,
   formDefaults,
   onPlanSubscribe,
+  onPlanCompare,
+  onSelectCurrentPlan,
+  onSelectTargetPlan,
   onGenerateReport,
   subscriptionOpen = false,
   subscriptionPlan,
@@ -107,43 +118,41 @@ export default function ChatMessageList({
 
             {message.type === 'ai' &&
               message.recommendations &&
-              message.recommendations.length > 0 &&
-              index === lastIndex && (
+              message.recommendations.length > 0 && (
                 <RecommendationCards
                   plans={message.recommendations}
                   onPlanSubscribe={onPlanSubscribe}
+                  onPlanCompare={onPlanCompare}
                   onGenerateReport={onGenerateReport}
                   isLoading={isLoading}
+                  isGeneratingReport={isGeneratingReport}
                 />
               )}
 
-            {message.type === 'ai' && message.report && index === lastIndex && (
-              <div className="mt-3 rounded-2xl bg-surface-page p-4 border border-border space-y-3">
-                <h4 className="text-body font-semibold text-fg-primary">
-                  상담 레포트
-                </h4>
-                <div className="space-y-2 text-body-sm text-fg-secondary">
-                  {message.report.currentPlan && (
-                    <p>현재 요금제: {message.report.currentPlan}</p>
-                  )}
-                  {message.report.recommendedPlans.length > 0 && (
-                    <p>
-                      추천 요금제: {message.report.recommendedPlans.join(', ')}
-                    </p>
-                  )}
-                  {message.report.monthlySavingAmount > 0 && (
-                    <p>
-                      예상 월 절감액:{' '}
-                      {message.report.monthlySavingAmount.toLocaleString()}원
-                    </p>
-                  )}
-                  {message.report.importantConditions.length > 0 && (
-                    <p>
-                      주요 조건: {message.report.importantConditions.join(', ')}
-                    </p>
-                  )}
-                </div>
-              </div>
+            {message.type === 'ai' && message.report && (
+              <ReportCard report={message.report} />
+            )}
+
+            {message.type === 'ai' && message.compareResult && (
+              <CompareResultSheet
+                result={message.compareResult}
+                onSubscribe={() =>
+                  message.compareResult &&
+                  onPlanSubscribe?.(message.compareResult.planB)
+                }
+              />
+            )}
+
+            {message.type === 'ai' && message.planSelector && (
+              <PlanSelector
+                mode={message.planSelectorMode ?? 'current'}
+                onSelect={(planName) =>
+                  message.planSelectorMode === 'target'
+                    ? onSelectTargetPlan?.(planName)
+                    : onSelectCurrentPlan?.(planName)
+                }
+                disabled={isLoading}
+              />
             )}
 
             {message.type === 'ai' &&

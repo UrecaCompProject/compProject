@@ -78,9 +78,9 @@ export default function PlanCard({
       <Line />
 
       <div className="flex flex-col gap-2 flex-1">
-        {benefits.map((benefit) => (
+        {benefits.map((benefit, index) => (
           <IconListItem
-            key={benefit.label}
+            key={`${benefit.label}-${index}`}
             icon={benefit.icon}
             label={benefit.label}
             iconSize={14}
@@ -104,9 +104,9 @@ export default function PlanCard({
           label={couponText}
           variant="bordered"
           iconSize={16}
-          iconColor="text-[#f5b31f]"
-          textClassName="text-[12px] font-semibold text-[#f5b31f] leading-[140%]"
-          className="rounded-lg border-[#f5b31f] bg-[#fff8e9] items-center"
+          iconColor="text-coupon-primary"
+          textClassName="text-[12px] font-semibold text-coupon-primary"
+          className="rounded-lg border-coupon-primary bg-coupon-soft"
         />
       )}
 

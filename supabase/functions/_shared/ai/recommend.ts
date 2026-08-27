@@ -3,6 +3,7 @@
 import { loadPlans } from './data.ts';
 import type { Plan } from './data.ts';
 import {
+  comparePromptText,
   noticePromptText,
   reasonPromptText,
   reportPromptText,
@@ -10,6 +11,7 @@ import {
 import { chatOpenAI } from './openai.ts';
 import type {
   ChatMode,
+  CompareResult,
   ConsultForm,
   ConsultInput,
   RecommendOutput,
@@ -232,22 +234,33 @@ function scoreCandidates(candidates: Plan[], input: ConsultInput): Plan[] {
 
 // 사용자 조건에 맞는 상위 후보 요금제만 추려 prompt 길이를 줄임.
 function filterRecommendPlans(plans: Plan[], input: ConsultInput): Plan[] {
+  // "다른 요금제 보기" 재질의 시 이미 추천한 요금제를 제외
+  const excludeIds = new Set(
+    (input.excludePlanIds ?? []).map((id) => String(id)),
+  );
+  const availablePlans =
+    excludeIds.size > 0
+      ? plans.filter((p) => !excludeIds.has(String(p.id)))
+      : plans;
+
   const filters = buildCandidateFilters(input);
   let candidates: Plan[] = [];
 
   for (const filter of filters) {
-    candidates = plans.filter(filter);
+    candidates = availablePlans.filter(filter);
     if (candidates.length >= 3) break;
   }
 
   if (candidates.length === 0) {
-    candidates = plans.filter((p) => ageMatches(input.ageGroup, p.target_age));
+    candidates = availablePlans.filter((p) =>
+      ageMatches(input.ageGroup, p.target_age),
+    );
   }
 
   const ott = input.ott;
   if (ott && ott.length > 0) {
     const seen = new Set(candidates.map((p) => p.id));
-    for (const p of plans) {
+    for (const p of availablePlans) {
       if (
         ageMatches(input.ageGroup, p.target_age) &&
         hasOttMatch(ott, p.benefits) &&
@@ -486,6 +499,138 @@ function buildCompareResponse(isLoggedIn: boolean): RecommendOutput {
   };
 }
 
+// Plan을 RecommendedPlan으로 변환.
+function planToRecommendedPlan(plan: Plan): RecommendedPlan {
+  return {
+    planId: String(plan.id),
+    planName: plan.name,
+    reason: '',
+    savingAmount: 0,
+    monthlyFee: plan.monthly_fee,
+    data: plan.data,
+    benefits: plan.benefits,
+    category: plan.category,
+    targetAge: plan.target_age,
+    dataSpeedAfter: plan.data_speed_after,
+    voice: plan.voice,
+    message: plan.message,
+    shareData: plan.share_data,
+    tethering: plan.tethering,
+    notes: plan.notes,
+  };
+}
+
+// 사용자 메시지에서 요금제 이름 두 개를 식별.
+function parseComparePlanNames(
+  message: string,
+  plans: Plan[],
+): [string, string] | undefined {
+  const found = plans.filter((p) => message.includes(p.name));
+  if (found.length >= 2) return [found[0].name, found[1].name];
+  return undefined;
+}
+
+// LLM 실패 시 코드 기반 fallback 비교 결과 생성.
+function buildCodeCompareResult(planA: Plan, planB: Plan): CompareResult {
+  const feeDiff = planA.monthly_fee - planB.monthly_fee;
+  const summary = `${planA.name}과(와) ${planB.name}을(를) 비교한 결과입니다.`;
+  const planAAdvantage =
+    feeDiff > 0
+      ? `${planB.name}보다 월 ${feeDiff.toLocaleString()}원 비싸지만, ${planA.data} 데이터를 제공해요.`
+      : `${planB.name}보다 월 ${(-feeDiff).toLocaleString()}원 저렴해요.`;
+  const planBAdvantage =
+    feeDiff < 0
+      ? `${planA.name}보다 월 ${(-feeDiff).toLocaleString()}원 비싸지만, ${planB.data} 데이터를 제공해요.`
+      : `${planA.name}보다 월 ${feeDiff.toLocaleString()}원 저렴해요.`;
+
+  return {
+    summary,
+    planAAdvantage,
+    planBAdvantage,
+    recommendedPlanId: feeDiff <= 0 ? String(planA.id) : String(planB.id),
+    reason:
+      feeDiff <= 0
+        ? `${planA.name}이(가) 더 저렴해요.`
+        : `${planB.name}이(가) 더 저렴해요.`,
+    planA: planToRecommendedPlan(planA),
+    planB: planToRecommendedPlan(planB),
+  };
+}
+
+// 두 요금제를 LLM으로 비교한 결과를 반환.
+async function comparePlans(
+  input: ConsultInput,
+  plans: Plan[],
+  planAName: string,
+  planBName: string,
+): Promise<RecommendOutput> {
+  const planA = plans.find(
+    (p) => p.name === planAName || String(p.id) === planAName,
+  );
+  const planB = plans.find(
+    (p) => p.name === planBName || String(p.id) === planBName,
+  );
+
+  if (!planA || !planB) {
+    return {
+      recommendations: [],
+      notice: '요금제를 찾을 수 없어요. 정확한 요금제 이름을 입력해주세요.',
+      quickReplies: [
+        '현재 요금제와 비교',
+        '요금제 이름 직접 입력',
+        '메뉴로 돌아가기',
+      ],
+      mode: 'compare',
+    };
+  }
+
+  const userProfile = `연령대: ${input.ageGroup ?? '미제공'}, 예산: ${input.budget ? input.budget.toLocaleString() + '원' : '제한 없음'}`;
+  const usageAnalysis = `월 데이터 사용량: ${input.dataUsage ?? '미제공'}GB, 우선순위: ${input.priority ?? 'budget'}`;
+
+  const filledPrompt = fillTemplate(comparePromptText, {
+    userProfile,
+    usageAnalysis,
+    planA: formatPlanForPrompt(planA),
+    planB: formatPlanForPrompt(planB),
+  });
+
+  const compareSystemPrompt =
+    '당신은 통신 요금제를 비교하는 AI 상담원입니다. 제공된 요금제 정보만 사용해 JSON 형식으로 비교 결과를 작성하세요. 존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.';
+
+  try {
+    const raw = await chatOpenAI(compareSystemPrompt, filledPrompt);
+    const parsed = safeJsonParse<{
+      summary: string;
+      planAAdvantage: string;
+      planBAdvantage: string;
+      recommendedPlanId: string;
+      reason: string;
+    }>(raw);
+
+    if (parsed && parsed.summary) {
+      return {
+        recommendations: [],
+        compareResult: {
+          ...parsed,
+          planA: planToRecommendedPlan(planA),
+          planB: planToRecommendedPlan(planB),
+        },
+        mode: 'compare',
+        quickReplies: ['요금제 가입하기', '메뉴로 돌아가기'],
+      };
+    }
+  } catch {
+    // LLM 실패 시 코드 fallback
+  }
+
+  return {
+    recommendations: [],
+    compareResult: buildCodeCompareResult(planA, planB),
+    mode: 'compare',
+    quickReplies: ['요금제 가입하기', '메뉴로 돌아가기'],
+  };
+}
+
 // 요금제 가입 기초 응답. 비로그인 시 회원가입을 먼저 유도.
 function buildSubscribeResponse(isLoggedIn: boolean): RecommendOutput {
   return {
@@ -559,8 +704,21 @@ export async function recommendPlan(
 ): Promise<RecommendOutput> {
   const mode = resolveNextMode(input);
   if (mode === 'menu') return buildMenuResponse(input.isLoggedIn ?? false);
-  if (mode === 'compare')
+  if (mode === 'compare') {
+    // 비교할 두 요금제가 명시적으로 지정된 경우 실제 비교 수행
+    if (input.comparePlanA && input.comparePlanB) {
+      const plans = await loadPlans();
+      return comparePlans(input, plans, input.comparePlanA, input.comparePlanB);
+    }
+    // 사용자 메시지에서 요금제 이름 두 개를 파싱 시도
+    const plans = await loadPlans();
+    const parsedNames = parseComparePlanNames(input.userMessage ?? '', plans);
+    if (parsedNames) {
+      return comparePlans(input, plans, parsedNames[0], parsedNames[1]);
+    }
+    // 비교할 요금제가 지정되지 않았으면 안내 메시지
     return buildCompareResponse(input.isLoggedIn ?? false);
+  }
   if (mode === 'subscribe')
     return buildSubscribeResponse(input.isLoggedIn ?? false);
   if (mode === 'general')
@@ -643,6 +801,8 @@ export async function generateQuickReplies(
     ];
   }
   if (mode === 'compare') {
+    // 비교 결과가 있으면 comparePlans에서 설정한 quickReplies 유지
+    if (result.compareResult) return result.quickReplies ?? [];
     return ['현재 요금제와 비교', '요금제 이름 직접 입력', '메뉴로 돌아가기'];
   }
   if (mode === 'subscribe') {
@@ -699,6 +859,7 @@ export async function generateQuickReplies(
       }
       idx++;
     }
+    qs.push('메뉴로 돌아가기');
     return qs;
   }
 
@@ -716,7 +877,8 @@ export async function generateQuickReplies(
       qs.push('더 저렴한 요금제 보기');
       qs.push('OTT 포함 요금제 보기');
     }
-    return qs.slice(0, 3);
+    qs.push('메뉴로 돌아가기');
+    return [...qs.slice(0, 3), '메뉴로 돌아가기'];
   }
 
   if (!isMaxData) qs.push('데이터가 더 큰 요금제 보기');
@@ -725,7 +887,7 @@ export async function generateQuickReplies(
   if (hasOtt) qs.push('OTT 혜택 없는 요금제 보기');
   if (input.ageGroup !== '청소년') qs.push('청소년 요금제도 보기');
 
-  return qs.slice(0, 3);
+  return [...qs.slice(0, 3), '메뉴로 돌아가기'];
 }
 
 const reportSystemPrompt = `
@@ -753,13 +915,28 @@ export async function generateReport(
     // LLM 실패 시 아래 기본값으로 fallback
   }
 
+  // LLM 실패 시 추천 결과 텍스트에서 최소한의 요금제 이름과 절감액을 추출
+  const fallbackPlans = recommendationResult
+    .split('\n')
+    .map((line) => {
+      const match = line.match(/^(.+?)\s*\(/);
+      return match ? match[1].trim() : line.trim();
+    })
+    .filter((line) => line.length > 0);
+
+  const savingMatch = recommendationResult.match(/절감액\s+([\d,]+)원/);
+  const fallbackSaving = savingMatch
+    ? parseInt(savingMatch[1].replace(/,/g, ''), 10)
+    : 0;
+
   return {
     summary: '요금제 추천 상담 내용을 요약한 레포트입니다.',
     usageType: '',
     currentPlan: currentPlan || '미등록',
-    recommendedPlans: [],
-    recommendationReason: '',
-    monthlySavingAmount: 0,
+    recommendedPlans: fallbackPlans,
+    recommendationReason:
+      recommendationResult || '추천된 요금제를 확인해주세요.',
+    monthlySavingAmount: Number.isNaN(fallbackSaving) ? 0 : fallbackSaving,
     importantConditions: [],
   };
 }

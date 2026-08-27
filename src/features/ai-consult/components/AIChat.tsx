@@ -17,7 +17,7 @@ export default function AIChat({ sentence, variant = 'default' }: AIChatProps) {
   return (
     <div className="flex gap-2">
       <div className="rounded-full w-7 h-7 bg-gray-300">
-        <img src="bot_profile.png" alt="bot-profile" />
+        <img src="/bot_profile.png" alt="bot-profile" />
       </div>
       <div
         className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 mt-2 max-w-[70%] whitespace-pre-line ${AIChatBubbleVariants[variant]}`}
