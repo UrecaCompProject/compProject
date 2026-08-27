@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react';
 
-import { CheckCircle2, ChevronDown, UserCheck } from 'lucide-react';
+import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { getPlanCatalog } from '@/features/plan-catalog/api/getPlanCatalog';
@@ -427,7 +427,7 @@ export default function PlanSubscriptionSheet({
       onBack={
         step !== 'planSelect' && step !== 'complete' ? handlePrev : undefined
       }
-      size="large"
+      size={step === 'complete' ? 'content' : 'large'}
     >
       <div className="space-y-5 pb-2">
         <StepIndicator current={step} onChange={setStep} />
@@ -470,30 +470,36 @@ export default function PlanSubscriptionSheet({
             <PlanSummary plan={selectedPlan} />
             <div>
               <h5 className="text-body font-semibold text-fg-primary mb-3">
-                가입 유형을 선택해주세요
+                가입 유형을 선택해 주세요
               </h5>
-              <div className="flex gap-3">
+              <div className="space-y-3">
                 {typeOptions.map((option) => {
                   const selected = form.type === option.value;
                   return (
-                    <button
+                    <label
                       key={option.value}
-                      type="button"
-                      onClick={() => update('type', option.value)}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-2xl border p-4 transition-colors cursor-pointer ${
+                      className={`flex items-center gap-3 rounded-2xl border p-4 transition-colors cursor-pointer ${
                         selected
-                          ? 'border-brand-promo-primary bg-brand-promo-primary/5 text-brand-promo-primary'
-                          : 'border-border bg-white text-fg-secondary hover:bg-surface-page'
+                          ? 'border-brand-promo-primary bg-brand-promo-primary/5'
+                          : 'border-border bg-white hover:bg-surface-page'
                       }`}
                     >
-                      <UserCheck
-                        size={20}
-                        className={selected ? 'opacity-100' : 'opacity-40'}
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => update('type', option.value)}
+                        className="size-5 shrink-0 accent-brand-promo-primary"
                       />
-                      <span className="text-body-sm font-medium">
+                      <span
+                        className={`text-body-sm font-medium ${
+                          selected
+                            ? 'text-brand-promo-primary'
+                            : 'text-fg-secondary'
+                        }`}
+                      >
                         {option.label}
                       </span>
-                    </button>
+                    </label>
                   );
                 })}
               </div>
@@ -580,16 +586,22 @@ export default function PlanSubscriptionSheet({
           <section className="space-y-4">
             {/* 본인정보 확인 패널 — 로그인된 사용자 정보를 읽기 전용으로 표시 */}
             <div className="rounded-2xl border border-border bg-surface-page p-4 space-y-2">
-              <h6 className="text-body-sm font-semibold text-fg-primary">
-                신청자 정보 확인
-              </h6>
+              <div className="flex items-center justify-between">
+                <h6 className="text-body-sm font-semibold text-fg-primary">
+                  신청자 정보 확인
+                </h6>
+                <span className="text-caption text-semantic-success font-medium">
+                  본인 인증 완료
+                </span>
+              </div>
               <div className="text-body-sm text-fg-secondary space-y-1">
                 <InfoRow label="이름" value={userInfo.name || '-'} />
                 <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
                 <InfoRow label="이메일" value={userInfo.email || '-'} />
               </div>
               <p className="text-caption text-fg-tertiary">
-                로그인된 계정 정보가 자동 적용됩니다.
+                로그인된 계정 정보가 자동 적용되었습니다. 정보가 다르다면
+                마이페이지에서 수정 후 신청해 주세요.
               </p>
             </div>
 

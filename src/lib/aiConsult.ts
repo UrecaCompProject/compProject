@@ -7,7 +7,8 @@ export type ChatMode =
   | 'subscribe'
   | 'general'
   | 'game'
-  | 'attendance';
+  | 'attendance'
+  | 'report';
 
 export interface ConsultInput {
   currentPlan?: string;

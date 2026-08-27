@@ -473,14 +473,7 @@ function buildMenuResponse(isLoggedIn: boolean): RecommendOutput {
           '출석체크',
           '기타 상담',
         ]
-      : [
-          '회원 가입하기',
-          '요금제 추천받기',
-          '요금제 비교하기',
-          '게임 하기',
-          '출석체크',
-          '기타 상담',
-        ],
+      : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
     mode: 'menu',
   };
 }
@@ -683,6 +676,19 @@ function buildAttendanceResponse(): RecommendOutput {
   };
 }
 
+// 레포트 생성 안내 응답.
+// 채팅 입력으로 "레포트 생성"을 시도한 경우, 추천 결과가 있어야 생성 가능함을 안내.
+// 실제 레포트 생성은 추천 카드의 "레포트 생성" 버튼을 통해 프론트엔드에서 직접 호출됨.
+function buildReportResponse(): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '상담 리포트는 요금제 추천을 먼저 받은 후 생성할 수 있어요. 추천받기 메뉴를 선택해 요금제를 먼저 추천받아 주세요. 추천 결과가 나오면 카드 아래의 "레포트 생성" 버튼으로 리포트를 만들 수 있어요.',
+    quickReplies: ['요금제 추천받기', '메뉴로 돌아가기'],
+    mode: 'report',
+  };
+}
+
 function fillTemplate(
   template: string,
   values: Record<string, string>,
@@ -725,6 +731,7 @@ export async function recommendPlan(
     return buildGeneralResponse(input.isLoggedIn ?? false);
   if (mode === 'game') return buildGameResponse();
   if (mode === 'attendance') return buildAttendanceResponse();
+  if (mode === 'report') return buildReportResponse();
 
   const missingInfo = buildInfoRequest(input);
   if (missingInfo)
@@ -791,14 +798,17 @@ export async function generateQuickReplies(
   const mode = result.mode ?? input.mode ?? 'menu';
 
   if (mode === 'menu') {
-    return [
-      '요금제 추천받기',
-      '요금제 비교하기',
-      '요금제 가입하기',
-      '게임 하기',
-      '출석체크',
-      '기타 상담',
-    ];
+    // 비회원에게는 게임/출석체크(로그인 필요) 메뉴를 노출하지 않음
+    return input.isLoggedIn
+      ? [
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '요금제 가입하기',
+          '게임 하기',
+          '출석체크',
+          '기타 상담',
+        ]
+      : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'];
   }
   if (mode === 'compare') {
     // 비교 결과가 있으면 comparePlans에서 설정한 quickReplies 유지
@@ -821,6 +831,10 @@ export async function generateQuickReplies(
   }
   if (mode === 'attendance') {
     return ['오늘 출석 등록', '출석 현황 보기', '메뉴로 돌아가기'];
+  }
+  if (mode === 'report') {
+    // buildReportResponse에서 설정한 quickReplies 유지
+    return result.quickReplies ?? ['요금제 추천받기', '메뉴로 돌아가기'];
   }
 
   // recommend 모드: 기존 추천 후속 질문 로직
