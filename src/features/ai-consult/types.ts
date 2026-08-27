@@ -14,10 +14,7 @@ export type MessageType =
   'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result';
 
 export interface SubscriptionForm {
-  type: 'new' | 'portability' | 'device' | 'change';
-  name: string;
-  birth: string;
-  phone: string;
+  type: 'new' | 'change';
   address: string;
   addressDetail: string;
   simType: 'usim' | 'esim' | '';
