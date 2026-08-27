@@ -23,6 +23,9 @@ export interface ConsultInput {
   isLoggedIn?: boolean;
   conversation?: string;
   recommendationResult?: string;
+  // 요금제 비교 모드에서 비교할 두 요금제 이름
+  comparePlanA?: string;
+  comparePlanB?: string;
 }
 
 export interface ReportInput {
@@ -69,6 +72,7 @@ export interface ConsultResponse {
   mode?: ChatMode;
   form?: ConsultForm;
   report?: ReportOutput;
+  compareResult?: CompareResult;
 }
 
 export interface ReportOutput {
@@ -79,6 +83,16 @@ export interface ReportOutput {
   recommendationReason: string;
   monthlySavingAmount: number;
   importantConditions: string[];
+}
+
+export interface CompareResult {
+  summary: string;
+  planAAdvantage: string;
+  planBAdvantage: string;
+  recommendedPlanId: string;
+  reason: string;
+  planA: RecommendedPlan;
+  planB: RecommendedPlan;
 }
 
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.

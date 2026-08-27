@@ -4,6 +4,9 @@ import type { ConsultResponse } from '@/lib/aiConsult';
 export function formatResponse(response: ConsultResponse): string {
   const parts: string[] = [];
   if (response.notice) parts.push(response.notice);
+  if (response.compareResult) {
+    parts.push(response.compareResult.summary);
+  }
   if (response.recommendations.length > 0) {
     parts.push('입력하신 정보를 바탕으로 다음과 같은 요금제를 추천드립니다.');
   }

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 import { useIsLoggedIn } from '@/features/auth';
+import type { QuizKind } from '@/features/chat-quiz';
 import { MyPage, PlanPage } from '@/features/pages';
 import { RewardSheet } from '@/features/reward';
 import {
@@ -30,6 +31,7 @@ interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: (text: string) => void;
+  onStartQuiz?: (quizType: QuizKind) => void;
   disabled?: boolean;
 }
 
@@ -37,6 +39,7 @@ export default function ChatInput({
   value,
   onChange,
   onSend,
+  onStartQuiz,
   disabled = false,
 }: ChatInputProps) {
   const isLogin = useIsLoggedIn();
@@ -152,7 +155,11 @@ export default function ChatInput({
         {activeSheet?.content}
       </BottomSheet>
 
-      <RewardSheet open={rewardOpen} onOpenChange={setRewardOpen} />
+      <RewardSheet
+        open={rewardOpen}
+        onOpenChange={setRewardOpen}
+        onStartQuiz={onStartQuiz}
+      />
     </div>
   );
 }

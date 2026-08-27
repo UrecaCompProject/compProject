@@ -4,12 +4,17 @@ import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { saveReport } from '@/features/ai-consult/api/saveReport';
 import { formatResponse } from '@/features/ai-consult/utils/formatResponse';
 import { useIsLoggedIn } from '@/features/auth';
+import type { QuizKind } from '@/features/chat-quiz';
 import { generateReport, requestConsult } from '@/lib/aiConsult';
 import type {
   ConsultInput,
   RecommendedPlan,
   ReportOutput,
 } from '@/lib/aiConsult';
+
+import { useSubscriptionStore } from '../store/useSubscriptionStore';
+
+import { useChatQuiz } from './useChatQuiz';
 
 import type { ChatMessage } from '../types';
 
@@ -36,6 +41,38 @@ function getWelcomeQuickReplies(isLoggedIn: boolean): string[] {
       ];
 }
 
+function getQuizIntent(message: string): QuizKind | null {
+  const normalized = message.toLowerCase().replace(/\s+/g, '');
+  const shortOxReplies = new Set([
+    'ox',
+    '오엑스',
+    'ox퀴즈',
+    '오엑스퀴즈',
+    'ox게임',
+    '보안퀴즈',
+    '보안ox퀴즈',
+  ]);
+  const shortMultipleChoiceReplies = new Set([
+    '통신퀴즈',
+    '통신상식퀴즈',
+    '통신보안퀴즈',
+    '사지선다',
+    '사지선다퀴즈',
+  ]);
+
+  if (shortOxReplies.has(normalized)) return 'ox';
+  if (shortMultipleChoiceReplies.has(normalized)) return 'multiple-choice';
+
+  const wantsToStart = /(할래|할게|하자|해줘|해볼래|시작|진행)/.test(
+    normalized,
+  );
+  if (!wantsToStart) return null;
+
+  if (/(ox|오엑스|보안).*(퀴즈|게임)/.test(normalized)) return 'ox';
+  if (/통신.*(퀴즈|게임)/.test(normalized)) return 'multiple-choice';
+  return null;
+}
+
 function formatFormSummary(values: Partial<ConsultInput>): string {
   const parts: string[] = [];
   if (values.ageGroup) parts.push(`연령대: ${values.ageGroup}`);
@@ -51,6 +88,11 @@ function formatFormSummary(values: Partial<ConsultInput>): string {
 function findLastRecommendedPlan(
   messages: ChatMessage[],
 ): RecommendedPlan | null {
+  const last = findLastRecommendations(messages);
+  return last.length > 0 ? last[0] : null;
+}
+
+function findLastRecommendations(messages: ChatMessage[]): RecommendedPlan[] {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     if (
@@ -58,10 +100,10 @@ function findLastRecommendedPlan(
       message.recommendations &&
       message.recommendations.length > 0
     ) {
-      return message.recommendations[0];
+      return message.recommendations;
     }
   }
-  return null;
+  return [];
 }
 
 function buildConversationLog(messages: ChatMessage[]): string {
@@ -69,9 +111,7 @@ function buildConversationLog(messages: ChatMessage[]): string {
     .filter((m) => m.type === 'ai' || m.type === 'user')
     .map((m) => {
       const role = m.type === 'ai' ? 'AI' : '사용자';
-      const text =
-        typeof m.sentence === 'string' ? m.sentence : '[입력 폼/카드 UI]';
-      return `${role}: ${text}`;
+      return `${role}: ${m.sentence}`;
     })
     .join('\n');
 }
@@ -95,6 +135,13 @@ export function useChat() {
       quickReplies: getWelcomeQuickReplies(isLoggedIn),
     },
   ]);
+  const {
+    startQuiz,
+    answerOx,
+    selectMultipleChoice,
+    confirmMultipleChoice,
+    nextQuestion,
+  } = useChatQuiz({ setMessages });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<ConsultInput>({
@@ -104,6 +151,21 @@ export function useChat() {
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
+  // 레포트 생성 중 상태를 일반 로딩과 분리해, 비교 로딩 시 레포트 버튼이
+  // "생성 중..."으로 잘못 표시되는 문제를 방지
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  // 비교 요청 시 현재 요금제가 없으면 드랍다운 선택 후 비교를 이어가기 위해
+  // 대기 중인 비교 대상 요금제명을 보관
+  const pendingComparePlanRef = useRef<string | null>(null);
+  // "요금제 비교하기" 메뉴에서 현재 요금제 선택 후 비교 대상 선택으로 넘어가는 2단계 플로우
+  const [compareFlow, setCompareFlow] = useState<
+    'idle' | 'selectingCurrent' | 'selectingTarget'
+  >('idle');
+  // 2단계 플로우에서 선택된 현재 요금제명 (fetchCompare에 명시적으로 전달)
+  const selectedCurrentPlanRef = useRef<string | null>(null);
+
+  const subscribedCurrentPlan = useSubscriptionStore((s) => s.currentPlan);
+  const loadCurrentPlan = useSubscriptionStore((s) => s.loadCurrentPlan);
 
   const wasLoggedInRef = useRef(isLoggedIn);
 
@@ -137,6 +199,19 @@ export function useChat() {
     }
     wasLoggedInRef.current = isLoggedIn;
   }, [isLoggedIn, resetChat]);
+
+  // 로그인 시 DB에서 현재 요금제를 로드해 구독 스토어에 반영
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadCurrentPlan().catch(() => {
+        // 미가입 사용자 등 조회 실패는 무시
+      });
+    }
+  }, [isLoggedIn, loadCurrentPlan]);
+
+  // 사용자가 직접 입력한 currentPlan이 우선, 없으면 구독 스토어의 값을 사용
+  const effectiveCurrentPlan =
+    profile.currentPlan ?? subscribedCurrentPlan?.planName;
 
   const openSubscription = (plan: RecommendedPlan | null) => {
     if (!isLoggedIn) {
@@ -182,6 +257,112 @@ export function useChat() {
     ]);
   };
 
+  const fetchCompare = async (planBName: string, planAName?: string) => {
+    setIsLoading(true);
+    try {
+      // planAName이 명시적으로 전달되면(드랍다운 선택 직후) 그 값을 우선 사용하고,
+      // 아니면 현재 profile/구독 스토어에서 파생된 effectiveCurrentPlan을 사용
+      const comparePlanA = planAName ?? effectiveCurrentPlan;
+      const request: ConsultInput = {
+        ...profile,
+        userMessage: '현재 요금제와 비교',
+        mode: 'compare',
+        isLoggedIn,
+        comparePlanA,
+        comparePlanB: planBName,
+      };
+      const response = await requestConsult(request);
+      const mergedProfile: ConsultInput = {
+        ...request,
+        mode: response.mode ?? 'compare',
+      };
+      setProfile(mergedProfile);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence: formatResponse(response),
+          quickReplies: response.quickReplies,
+          form: response.form,
+          compareResult: response.compareResult,
+        },
+      ]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : '비교 요청 중 문제가 발생했어요. 다시 시도해주세요.';
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: 'ai', sentence: message },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePlanCompare = (plan: RecommendedPlan) => {
+    if (!effectiveCurrentPlan) {
+      pendingComparePlanRef.current = plan.planName;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence: '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+          planSelector: true,
+          quickReplies: ['메뉴로 돌아가기'],
+        },
+      ]);
+      return;
+    }
+    fetchCompare(plan.planName);
+  };
+
+  // PlanSelector 드랍다운에서 요금제를 선택했을 때 호출
+  // setProfile은 비동기 상태 업데이트라 fetchCompare 클로저에 반영되지 않으므로,
+  // 선택한 요금제명을 fetchCompare에 명시적으로 전달
+  const handleSelectCurrentPlan = (planName: string) => {
+    setProfile((prev) => ({ ...prev, currentPlan: planName }));
+
+    // "요금제 비교하기" 메뉴의 2단계 플로우: 현재 요금제 선택 → 비교 대상 선택
+    if (compareFlow === 'selectingCurrent') {
+      selectedCurrentPlanRef.current = planName;
+      setCompareFlow('selectingTarget');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence: '비교할 대상 요금제를 아래에서 선택해주세요.',
+          planSelector: true,
+          planSelectorMode: 'target',
+          quickReplies: ['메뉴로 돌아가기'],
+        },
+      ]);
+      return;
+    }
+
+    // "현재 요금제와 비교" 또는 추천 카드의 비교 버튼에서 온 경우:
+    // 대기 중인 비교 대상이 있으면 선택 즉시 비교를 이어감
+    const pendingPlan = pendingComparePlanRef.current;
+    pendingComparePlanRef.current = null;
+    if (pendingPlan) {
+      fetchCompare(pendingPlan, planName);
+    }
+  };
+
+  // 비교 대상 요금제 선택 시 호출 (2단계 플로우의 두 번째 단계)
+  const handleSelectTargetPlan = (planName: string) => {
+    const currentPlan = selectedCurrentPlanRef.current;
+    selectedCurrentPlanRef.current = null;
+    setCompareFlow('idle');
+    if (currentPlan) {
+      fetchCompare(planName, currentPlan);
+    }
+  };
+
   const handleSend = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
@@ -191,6 +372,12 @@ export function useChat() {
       { id: Date.now(), type: 'user', sentence: trimmed },
     ]);
     setInput('');
+
+    const quizIntent = getQuizIntent(trimmed);
+    if (quizIntent) {
+      startQuiz(quizIntent, { includeUserMessage: false });
+      return;
+    }
 
     // 회원가입 흐름
     if (trimmed === '회원 가입하기') {
@@ -219,6 +406,73 @@ export function useChat() {
       return;
     }
 
+    // 현재 요금제와 마지막 추천 요금제 비교
+    if (trimmed === '현재 요금제와 비교') {
+      const lastPlan = findLastRecommendedPlan(messages);
+      if (!lastPlan) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: 'ai',
+            sentence:
+              '비교할 추천 요금제가 없어요. 먼저 요금제 추천을 받아주세요.',
+            quickReplies: ['요금제 추천받기', '메뉴로 돌아가기'],
+          },
+        ]);
+        return;
+      }
+      if (!effectiveCurrentPlan) {
+        pendingComparePlanRef.current = lastPlan.planName;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: 'ai',
+            sentence: '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+            planSelector: true,
+            quickReplies: ['메뉴로 돌아가기'],
+          },
+        ]);
+        return;
+      }
+      await fetchCompare(lastPlan.planName);
+      return;
+    }
+
+    // 요금제 비교하기 메뉴 - 현재 요금제가 없으면 드랍다운으로 선택
+    if (trimmed === '요금제 비교하기') {
+      if (!effectiveCurrentPlan) {
+        setCompareFlow('selectingCurrent');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: 'ai',
+            sentence: '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+            planSelector: true,
+            planSelectorMode: 'current',
+            quickReplies: ['메뉴로 돌아가기'],
+          },
+        ]);
+        return;
+      }
+      // 현재 요금제가 있으면 비교 대상 선택 단계로 진행
+      setCompareFlow('selectingTarget');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          type: 'ai',
+          sentence: '비교할 대상 요금제를 아래에서 선택해주세요.',
+          planSelector: true,
+          planSelectorMode: 'target',
+          quickReplies: ['메뉴로 돌아가기'],
+        },
+      ]);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -241,6 +495,7 @@ export function useChat() {
           quickReplies: response.quickReplies,
           form: response.form,
           recommendations: response.recommendations,
+          compareResult: response.compareResult,
         },
       ]);
     } catch (error) {
@@ -294,6 +549,7 @@ export function useChat() {
           quickReplies: response.quickReplies,
           form: response.form,
           recommendations: response.recommendations,
+          compareResult: response.compareResult,
         },
       ]);
     } catch (error) {
@@ -313,13 +569,14 @@ export function useChat() {
   const handleGenerateReport = async (
     recommendations: RecommendedPlan[],
   ): Promise<ReportOutput | undefined> => {
-    if (isLoading || recommendations.length === 0) return;
+    if (isLoading || isGeneratingReport || recommendations.length === 0) return;
+    setIsGeneratingReport(true);
     setIsLoading(true);
 
     try {
       const report = await generateReport({
         conversation: buildConversationLog(messages),
-        currentPlan: profile.currentPlan || '미등록',
+        currentPlan: effectiveCurrentPlan || '미등록',
         recommendationResult: buildRecommendationResult(recommendations),
       });
       await saveReport(report);
@@ -345,6 +602,7 @@ export function useChat() {
       ]);
     } finally {
       setIsLoading(false);
+      setIsGeneratingReport(false);
     }
   };
 
@@ -353,15 +611,24 @@ export function useChat() {
     input,
     setInput,
     isLoading,
+    isGeneratingReport,
     handleSend,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
+    handlePlanCompare,
+    handleSelectCurrentPlan,
+    handleSelectTargetPlan,
     profile,
     subscriptionOpen,
     subscriptionPlan,
     openSubscription,
     closeSubscription,
     isLoggedIn,
+    startQuiz,
+    answerOx,
+    selectMultipleChoice,
+    confirmMultipleChoice,
+    nextQuestion,
   };
 }

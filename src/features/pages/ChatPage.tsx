@@ -11,16 +11,25 @@ export default function ChatPage() {
     input,
     setInput,
     isLoading,
+    isGeneratingReport,
     handleSend,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
+    handlePlanCompare,
+    handleSelectCurrentPlan,
+    handleSelectTargetPlan,
     profile,
     subscriptionOpen,
     subscriptionPlan,
     openSubscription,
     closeSubscription,
     isLoggedIn,
+    startQuiz,
+    answerOx,
+    selectMultipleChoice,
+    confirmMultipleChoice,
+    nextQuestion,
   } = useChat();
 
   const lastMessage = messages[messages.length - 1];
@@ -32,14 +41,22 @@ export default function ChatPage() {
       <ChatMessageList
         messages={messages}
         isLoading={isLoading}
+        isGeneratingReport={isGeneratingReport}
         onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
         onPlanSubscribe={openSubscription}
+        onPlanCompare={handlePlanCompare}
+        onSelectCurrentPlan={handleSelectCurrentPlan}
+        onSelectTargetPlan={handleSelectTargetPlan}
         onGenerateReport={handleGenerateReport}
         subscriptionOpen={subscriptionOpen}
         subscriptionPlan={subscriptionPlan}
         onSubscriptionClose={closeSubscription}
+        onQuizOxAnswer={answerOx}
+        onQuizMultipleChoiceSelect={selectMultipleChoice}
+        onQuizMultipleChoiceConfirm={confirmMultipleChoice}
+        onQuizNext={nextQuestion}
       />
       <QuickReplies
         replies={quickReplies}
@@ -51,6 +68,7 @@ export default function ChatPage() {
         value={input}
         onChange={setInput}
         onSend={handleSend}
+        onStartQuiz={startQuiz}
         disabled={isLoading}
       />
     </div>

@@ -1,4 +1,4 @@
-import badgeImage from '@/assets/images/badge.png';
+import SmallBadge from './SmallBadge';
 
 import type { RewardProduct } from '../types';
 
@@ -9,7 +9,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ product, onSelect }: ProductCardProps) {
   const className = `
-    flex min-h-[233px] w-full max-w-[171px]
+    flex min-h-[241px] min-w-[179px] w-full max-w-[171px]
     flex-col items-center gap-2 rounded-[20px]
     border-0 bg-white px-1 py-2
     font-inherit
@@ -22,7 +22,7 @@ export default function ProductCard({ product, onSelect }: ProductCardProps) {
         className="
           flex aspect-square w-full max-w-[163px]
           items-center justify-center
-          rounded-[8px]
+          rounded-2xl
           bg-[#F9F9F9]
         "
       >
@@ -33,18 +33,14 @@ export default function ProductCard({ product, onSelect }: ProductCardProps) {
         />
       </div>
 
-      <h2 className="h-[21px] w-full shrink-0 truncate px-1 text-center text-[16px] font-medium leading-[21px] text-fg-primary">
+      <h2 className="h-[21px] w-[163px] shrink-0 truncate px-1 text-center text-body-lg font-medium leading-[21px] text-fg-primary">
         {product.brand} {product.name}
       </h2>
 
-      <div
-        aria-label={`필요 배지 ${product.badgeCost}개`}
-        className="inline-flex h-5 items-center gap-1 rounded-full border border-reward-locked bg-surface-card px-2 text-[12px] font-semibold leading-none text-brand-promo-primary"
-      >
-        <img src={badgeImage} alt="" className="block h-3 w-3 shrink-0" />
-
-        {product.badgeCost.toLocaleString()}
-      </div>
+      <SmallBadge
+        value={product.badgeCost}
+        ariaLabel={`필요 배지 ${product.badgeCost}개`}
+      />
     </>
   );
 

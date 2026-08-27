@@ -12,7 +12,13 @@ export default function ProductGrid({ products, onSelect }: ProductGridProps) {
     return <p>검색 결과가 없습니다.</p>;
   }
   return (
-    <section className="mx-auto grid w-full max-w-[350px] grid-cols-2 gap-x-2 gap-y-5">
+    <section
+      className="
+    mx-auto grid w-full min-w-[288px] max-w-[350px]
+    grid-cols-2 gap-x-2 gap-y-[18px]
+    sm:max-w-[529px] sm:grid-cols-3
+  "
+    >
       {products.map((product) => (
         <ProductCard key={product.id} product={product} onSelect={onSelect} />
       ))}

@@ -11,28 +11,33 @@ export default function RewardShortcuts({
   onCouponClick,
 }: RewardShortcutsProps) {
   return (
-    <section className="grid grid-cols-2 gap-2 px-4 py-3">
+    <section
+      className="
+    grid grid-cols-[minmax(0,386fr)_minmax(0,344fr)]
+    items-center gap-1 px-4 py-3
+  "
+    >
       <button
         type="button"
         onClick={onStoreClick}
-        className="overflow-hidden rounded-xl"
+        className="overflow-hidden rounded-xl "
       >
         <img
           src={storeBannerImage}
           alt="모은 배지로 교환하는 상점 바로가기"
-          className="block h-auto w-full"
+          className="block h-auto w-full shadow-shadow"
         />
       </button>
 
       <button
         type="button"
         onClick={onCouponClick}
-        className="overflow-hidden rounded-xl"
+        className="overflow-hidden rounded-xl "
       >
         <img
           src={couponBannerImage}
           alt="교환한 혜택을 확인하는 나의 쿠폰함"
-          className="block h-auto w-full"
+          className="block h-auto w-full shadow-shadow"
         />
       </button>
     </section>
