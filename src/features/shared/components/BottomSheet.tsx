@@ -74,17 +74,27 @@ export default function BottomSheet({
 
           <div className="flex min-h-0 flex-1 flex-col">
             <header className="shrink-0 px-5 pb-3 pt-4">
-              <div className="flex h-8 items-center gap-2">
-                {onBack && (
+              <div className="flex h-8 items-center">
+                <span
+                  className={`h-8 overflow-hidden transition-[width,margin-left,margin-right] duration-300 ${
+                    onBack ? '-ml-3 w-8 mr-1' : 'ml-0 w-0 mr-0'
+                  }`}
+                >
                   <button
                     type="button"
                     aria-label="이전 화면으로 돌아가기"
+                    aria-hidden={!onBack}
+                    tabIndex={onBack ? 0 : -1}
                     onClick={onBack}
-                    className="inline-flex h-8 w-8 items-center justify-center"
+                    className={`inline-flex h-8 w-8 items-center justify-center transition-[transform,opacity] duration-300 ${
+                      onBack
+                        ? 'translate-x-0 opacity-100'
+                        : 'pointer-events-none translate-x-3 opacity-0'
+                    }`}
                   >
                     <ChevronLeft size={24} />
                   </button>
-                )}
+                </span>
 
                 <Drawer.Title className="text-title text-fg-primary">
                   {title}
