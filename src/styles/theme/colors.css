@@ -50,6 +50,10 @@
   --color-accent-purple-soft: #f1e9fb;
   --color-accent-purple-primary: #955be0;
 
+  /* Coupon */
+  --color-coupon-primary: #f5b31f;
+  --color-coupon-soft: #fff8e9;
+
   /* Semantic */
   --color-semantic-error: #c9455f;
   --color-semantic-warning: #8c6415;
