@@ -1,12 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 
+import { Timer } from 'lucide-react';
+
 import introImage from '@/assets/images/reaction-time-intro.png';
-import tabImage from '@/assets/images/reaction-time-tab.png';
-import { Button } from '@/features/shared';
+import { Button, IconBadge, useModalStore } from '@/features/shared';
 
 import type { GameComponentProps } from '../types';
 
-type GamePhase = 'intro' | 'waiting' | 'ready' | 'result' | 'early';
+type GamePhase = 'intro' | 'ready' | 'result';
+
+type ReactionTimeGameProps = GameComponentProps & {
+  initialPhase?: GamePhase;
+  initialReactionTime?: number | null;
+  initialEarnedReward?: number | null;
+};
 
 const STEPS = [
   {
@@ -23,77 +30,172 @@ const STEPS = [
   },
 ];
 
+const TARGET_TIME = 10000;
+const THREE_BADGE_MIN_TIME = 9500;
+const THREE_BADGE_MAX_TIME = 10500;
+const COUNTDOWN_START = 3;
+
+function calculateReward(elapsedTime: number) {
+  if (elapsedTime === TARGET_TIME) return 5;
+
+  if (
+    elapsedTime >= THREE_BADGE_MIN_TIME &&
+    elapsedTime <= THREE_BADGE_MAX_TIME
+  ) {
+    return 3;
+  }
+
+  return 1;
+}
+
+function PhaseDots() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const indicatorTimer = window.setInterval(() => {
+      setActiveIndex((currentIndex) => (currentIndex + 1) % 5);
+    }, 300);
+
+    return () => window.clearInterval(indicatorTimer);
+  }, []);
+
+  return (
+    <div className="flex justify-center gap-2" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => (
+        <span
+          key={index}
+          className={`h-2 w-2 rounded-full transition-all duration-200 ${
+            index === activeIndex
+              ? 'scale-125 bg-brand-promo-primary'
+              : 'bg-reward-locked'
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function StartCountdown({ onComplete }: { onComplete: () => void }) {
+  const [countdown, setCountdown] = useState(COUNTDOWN_START);
+
+  useEffect(() => {
+    let remainingCountdown = COUNTDOWN_START;
+
+    const countdownTimer = window.setInterval(() => {
+      remainingCountdown -= 1;
+
+      if (remainingCountdown > 0) {
+        setCountdown(remainingCountdown);
+        return;
+      }
+
+      window.clearInterval(countdownTimer);
+      onComplete();
+    }, 1000);
+
+    return () => window.clearInterval(countdownTimer);
+  }, [onComplete]);
+
+  return (
+    <div className="flex flex-col items-center pb-2 pt-1 text-center">
+      <IconBadge
+        icon={Timer}
+        color="accent-purple"
+        size={52}
+        radius="full"
+        iconSize={28}
+      />
+      <strong className="mt-5 text-[48px] font-bold leading-none text-brand-promo-primary">
+        {countdown}
+      </strong>
+      <p className="mt-4 text-caption text-fg-tertiary">
+        화면을 보고 준비해주세요.
+      </p>
+      <div className="mt-4">
+        <PhaseDots />
+      </div>
+    </div>
+  );
+}
+
 export default function ReactionTimeGame({
-  reward = 5,
   onWin,
   onClose,
-}: GameComponentProps) {
-  const [phase, setPhase] = useState<GamePhase>('intro');
-  const [reactionTime, setReactionTime] = useState<number | null>(null);
+  initialPhase = 'intro',
+  initialReactionTime = null,
+  initialEarnedReward = null,
+}: ReactionTimeGameProps) {
+  const [phase, setPhase] = useState<GamePhase>(initialPhase);
+  const [reactionTime, setReactionTime] = useState<number | null>(
+    initialReactionTime,
+  );
+  const [earnedReward, setEarnedReward] = useState<number | null>(
+    initialEarnedReward,
+  );
+  const openModal = useModalStore((state) => state.open);
+  const closeModal = useModalStore((state) => state.close);
 
-  /* 시작 시간, 타이머 ref */
   const startTimeRef = useRef<number | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rewardedRef = useRef(false);
-  /* 게임 시작 로직 */
-  const handleStart = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    rewardedRef.current = false;
-    startTimeRef.current = null;
+  const animationFrameRef = useRef<number | null>(null);
 
-    setReactionTime(null);
-    setPhase('waiting');
+  const stopTimer = () => {
+    if (animationFrameRef.current === null) return;
 
-    const delay = Math.floor(Math.random() * 2000) + 1500;
-
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      startTimeRef.current = performance.now();
-      setPhase('ready');
-    }, delay);
+    cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = null;
   };
 
-  /* 화면 클릭 로직 */
+  const updateTimer = (currentTime: number) => {
+    if (startTimeRef.current === null) return;
+
+    const elapsed = Math.round(currentTime - startTimeRef.current);
+    setReactionTime(elapsed);
+    animationFrameRef.current = requestAnimationFrame(updateTimer);
+  };
+
+  const startTimer = () => {
+    stopTimer();
+    setReactionTime(0);
+    setEarnedReward(null);
+    setPhase('ready');
+    startTimeRef.current = performance.now();
+    animationFrameRef.current = requestAnimationFrame(updateTimer);
+  };
+
+  const handleCountdownComplete = () => {
+    closeModal();
+    startTimer();
+  };
+
+  const handleOpenStartModal = () => {
+    openModal({
+      title: '잠시 뒤에 게임이 시작합니다',
+      content: <StartCountdown onComplete={handleCountdownComplete} />,
+      dismissible: false,
+    });
+  };
+
   const handleTap = () => {
-    if (phase === 'waiting') {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-
-      setPhase('early');
-      return;
-    }
-
-    if (phase !== 'ready' || startTimeRef.current === null) {
-      return;
-    }
+    if (phase !== 'ready' || startTimeRef.current === null) return;
 
     const elapsed = Math.round(performance.now() - startTimeRef.current);
+    const nextReward = calculateReward(elapsed);
 
+    stopTimer();
+    startTimeRef.current = null;
     setReactionTime(elapsed);
+    setEarnedReward(nextReward);
     setPhase('result');
-
-    if (!rewardedRef.current) {
-      rewardedRef.current = true;
-      onWin?.(reward);
-    }
+    onWin?.(nextReward);
   };
 
-  /* 타이머 정리 */
   useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
+    return () => stopTimer();
   }, []);
 
   if (phase === 'intro') {
     return (
-      <div className="flex flex-col items-center h-full px-10 py-5 text-center">
+      <div className="flex h-full flex-col items-center px-10 py-5 text-center">
         <div className="relative flex h-[200px] w-[200px] shrink-0 items-center justify-center">
           <div
             className="absolute left-1/2 top-1/2 h-[160px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
@@ -139,48 +241,83 @@ export default function ReactionTimeGame({
           ))}
         </ol>
 
-        <Button className="mt-[60px] w-full" size="lg" onClick={handleStart}>
+        <Button
+          className="mt-[60px] w-full"
+          size="lg"
+          onClick={handleOpenStartModal}
+        >
           게임 시작
         </Button>
       </div>
     );
   }
 
-  if (phase === 'waiting') {
-    return (
-      <button type="button" className="h-full w-full" onClick={handleTap}>
-        신호를 기다려주세요
-      </button>
-    );
-  }
-
-  if (phase === 'early') {
-    return (
-      <div className="flex h-full flex-col items-center justify-center">
-        <p>너무 일찍 눌렀어요!</p>
-        <Button onClick={handleStart}>다시 하기</Button>
-      </div>
-    );
-  }
-
   if (phase === 'result') {
+    const resultInSeconds = ((reactionTime ?? 0) / 1000).toFixed(3);
+
     return (
-      <div className="flex h-full flex-col items-center justify-center">
-        <p>{reactionTime}ms</p>
-        <Button onClick={handleStart}>다시 하기</Button>
-        <Button variant="secondary" onClick={onClose}>
-          닫기
-        </Button>
-      </div>
+      <section className="mx-auto flex h-full w-full max-w-[390px] flex-col px-5 pb-6">
+        <div className="mt-[12%] flex flex-col items-center text-center">
+          <h2 className="text-title text-fg-primary">최고 기록 달성!</h2>
+          <div className="mt-5 flex min-h-[112px] min-w-[190px] flex-col items-center justify-center rounded-xl border border-accent-purple-soft bg-surface-card px-6">
+            <p className="text-[32px] font-bold text-accent-purple-primary">
+              {resultInSeconds}초
+            </p>
+            <span className="mt-2 rounded-full bg-accent-soft px-2 py-0.5 text-medium-12-130 text-accent-primary">
+              NEW BEST!
+            </span>
+            <span className="mt-2 text-medium-12-130 text-brand-promo-primary">
+              배지 {earnedReward ?? 1}개 획득
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-auto">
+          <Button className="mt-4 w-full" onClick={onClose}>
+            미션 종료
+          </Button>
+        </div>
+      </section>
     );
   }
+
   return (
-    <button type="button" className="h-full w-full" onClick={handleTap}>
-      <img
-        src={tabImage}
-        alt=""
-        className="flex h-full flex-col items-center justify-center object-contain"
-      />
-    </button>
+    <div className="mx-auto flex h-full w-full max-w-[390px] flex-col items-center px-5 pb-6">
+      <div className="mt-6 w-full rounded-xl border border-border-brand bg-surface-page px-5 py-4 text-center">
+        <p className="text-regular-12-130 text-fg-tertiary">목표 10.000초</p>
+        <p className="mt-1 text-[32px] font-bold text-brand-promo-primary">
+          {((reactionTime ?? 0) / 1000).toFixed(3)}초
+        </p>
+      </div>
+
+      <h2 className="mt-7 text-title text-fg-primary">
+        10.000초에 맞춰 버튼을 누르세요!
+      </h2>
+
+      <div className="mt-5 flex w-full justify-center">
+        <div className="flex h-[280px] w-[280px] items-center justify-center rounded-full bg-accent-purple-soft">
+          <div className="flex h-[250px] w-[250px] items-center justify-center rounded-full border border-border-brand bg-surface-card">
+            <Button
+              type="button"
+              size="icon"
+              round
+              className="h-[228px] w-[228px] bg-accent-purple-primary p-0 text-[60px] font-bold text-white hover:bg-accent-purple-primary"
+              onClick={handleTap}
+            >
+              TAP!!
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-auto flex flex-col items-center">
+        <p className="text-regular-12-130 text-accent-purple-primary">
+          10.000초에 가까울수록 더 많은 배지를 받을 수 있어요!
+        </p>
+        <div className="mt-4">
+          <PhaseDots />
+        </div>
+      </div>
+    </div>
   );
 }
