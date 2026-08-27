@@ -26,6 +26,8 @@ export interface ConsultInput {
   // 요금제 비교 모드에서 비교할 두 요금제 이름
   comparePlanA?: string;
   comparePlanB?: string;
+  // "다른 요금제 보기" 재질의 시 이미 추천한 요금제 planId 배열
+  excludePlanIds?: string[];
 }
 
 export interface ReportInput {

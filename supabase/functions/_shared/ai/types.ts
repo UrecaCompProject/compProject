@@ -24,6 +24,9 @@ export interface ConsultInput {
   // 프론트엔드에서 "현재 요금제와 비교" 시 currentPlan + 추천 요금제 이름을 설정.
   comparePlanA?: string;
   comparePlanB?: string;
+  // "다른 요금제 보기" 재질의 시 이미 추천한 요금제 planId 배열.
+  // filterRecommendPlans에서 제외해 새로운 요금제가 추천되도록 함.
+  excludePlanIds?: string[];
 }
 
 export interface RecommendedPlan {

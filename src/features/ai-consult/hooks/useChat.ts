@@ -154,6 +154,9 @@ export function useChat() {
   // 레포트 생성 중 상태를 일반 로딩과 분리해, 비교 로딩 시 레포트 버튼이
   // "생성 중..."으로 잘못 표시되는 문제를 방지
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  // 가입 완료 후 onComplete 호출 표시 — closeSubscription에서 메뉴 복귀
+  // 메시지 중복 추가를 방지하기 위해 사용
+  const subscriptionCompletedRef = useRef(false);
   // 비교 요청 시 현재 요금제가 없으면 드랍다운 선택 후 비교를 이어가기 위해
   // 대기 중인 비교 대상 요금제명을 보관
   const pendingComparePlanRef = useRef<string | null>(null);
@@ -231,11 +234,29 @@ export function useChat() {
     setSubscriptionOpen(true);
   };
 
-  const closeSubscription = () => {
+  // 가입 시트 닫기 — 단순 닫기(swipe/X) 시 메뉴 복귀 퀵리플라이를 추가.
+  // 가입 완료(onComplete) 후에는 handleSignupFinished가 이미 메시지를 추가하므로
+  // subscriptionCompletedRef 플래그로 중복을 방지
+  const closeSubscription = (open: boolean) => {
+    if (open) return;
     setSubscriptionOpen(false);
+    if (!subscriptionCompletedRef.current) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai',
+          sentence:
+            '가입을 취소했어요. 다른 도움이 필요하시면 아래에서 선택해주세요.',
+          quickReplies: getWelcomeQuickReplies(isLoggedIn),
+        },
+      ]);
+    }
+    subscriptionCompletedRef.current = false;
   };
 
   const handleSignupFinished = () => {
+    subscriptionCompletedRef.current = true;
     setMessages((prev) => [
       ...prev,
       {
@@ -470,6 +491,119 @@ export function useChat() {
           quickReplies: ['메뉴로 돌아가기'],
         },
       ]);
+      return;
+    }
+
+    // 이미 추천받은 상태에서 '요금제 추천받기' 재탭 — 새 조건 수집 또는 다른 요금제 분기
+    if (trimmed === '요금제 추천받기') {
+      const lastRecs = findLastRecommendations(messages);
+      if (lastRecs.length > 0) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now() + 1,
+            type: 'ai',
+            sentence:
+              '이미 요금제를 추천받으셨어요. 새로운 조건으로 다시 추천받거나, 방금 본 요금제와 다른 요금제를 확인할 수 있어요.',
+            quickReplies: [
+              '새 조건으로 다시 추천받기',
+              '다른 요금제 보기',
+              '메뉴로 돌아가기',
+            ],
+          },
+        ]);
+        return;
+      }
+      // 추천받은 적이 없으면 일반 추천 플로우로 진행 (postQuestion으로 fall-through)
+    }
+
+    // '다른 요금제 보기' — 이전 추천 planId를 제외하고 같은 조건으로 재추천
+    if (trimmed === '다른 요금제 보기') {
+      const lastRecs = findLastRecommendations(messages);
+      const excludePlanIds = lastRecs.map((r) => r.planId);
+      setIsLoading(true);
+      try {
+        const request: ConsultInput = {
+          ...profile,
+          userMessage: '다른 요금제 보기',
+          mode: 'recommend',
+          isLoggedIn,
+          excludePlanIds,
+        };
+        const response = await requestConsult(request);
+        const mergedProfile: ConsultInput = {
+          ...request,
+          mode: response.mode ?? 'recommend',
+        };
+        setProfile(mergedProfile);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            type: 'ai',
+            sentence: formatResponse(response),
+            quickReplies: response.quickReplies,
+            form: response.form,
+            recommendations: response.recommendations,
+          },
+        ]);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now(), type: 'ai', sentence: message },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // '새 조건으로 다시 추천받기' — profile을 리셋하고 폼으로 새 조건 수집
+    if (trimmed === '새 조건으로 다시 추천받기') {
+      const resetProfile: ConsultInput = {
+        mode: 'recommend',
+        isLoggedIn,
+      };
+      setProfile(resetProfile);
+      setIsLoading(true);
+      try {
+        const request: ConsultInput = {
+          ...resetProfile,
+          userMessage: '새 조건으로 다시 추천받기',
+        };
+        const response = await requestConsult(request);
+        const mergedProfile: ConsultInput = {
+          ...request,
+          mode: response.mode ?? 'recommend',
+        };
+        setProfile(mergedProfile);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            type: 'ai',
+            sentence: formatResponse(response),
+            quickReplies: response.quickReplies,
+            form: response.form,
+            recommendations: response.recommendations,
+          },
+        ]);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now(), type: 'ai', sentence: message },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 

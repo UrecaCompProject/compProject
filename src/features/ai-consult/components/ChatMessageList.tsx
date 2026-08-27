@@ -29,7 +29,7 @@ interface ChatMessageListProps {
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
-  onSubscriptionClose?: () => void;
+  onSubscriptionClose?: (open: boolean) => void;
   onQuizOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
   onQuizMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onQuizMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
