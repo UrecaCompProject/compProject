@@ -52,6 +52,13 @@ export default function RewardSheet({
       return;
     }
 
+    if (mission.id === 'reaction') {
+      openGame('reaction-time', {
+        reward: mission.reward,
+      });
+      return;
+    }
+
     const quizTypeByMissionId: Partial<Record<string, QuizKind>> = {
       'security-quiz': 'ox',
       'telecom-quiz': 'multiple-choice',
