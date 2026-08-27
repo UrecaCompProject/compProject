@@ -31,9 +31,10 @@ function toRecommendedPlan(plan: PlanDetailItem): RecommendedPlan {
   };
 }
 
-// BottomSheet를 또 열지 않는다. 이 페이지가 어디에 놓이든(/plan 라우트,
-// 혹은 채팅 인풋이 이미 열어둔 BottomSheet 안) 바깥 껍데기는 그대로 두고
-// 이 컴포넌트의 콘텐츠(목록 <-> 상세)만 그 자리에서 갈아끼운다.
+// 챗인풋 쪽 BottomSheet(진짜 헤더)는 전혀 건드리지 않는다.
+// 목록: 뒤로가기 없음 (챗인풋이 준 "요금제" 타이틀 그대로 노출)
+// 상세: 이 컴포넌트가 콘텐츠 맨 위에 "< 요금제 조회" 줄을 직접 그려서
+//       진짜 헤더처럼 보이게 하고, 뒤로가기는 selectedPlan을 null로 되돌릴 뿐이다.
 export default function PlanPage() {
   const [selectedPlan, setSelectedPlan] = useState<PlanDetailItem | null>(null);
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
@@ -41,44 +42,37 @@ export default function PlanPage() {
   if (selectedPlan) {
     return (
       <div className="flex flex-col bg-surface-page">
-        <div className="sticky top-0 z-10 flex items-center gap-2 px-4 h-14 bg-surface-page">
+        <div className="sticky top-0 z-10 px-5 pt-4 pb-3 bg-surface-card">
           <button
             type="button"
-            aria-label="이전 화면으로 돌아가기"
             onClick={() => setSelectedPlan(null)}
-            className="inline-flex items-center justify-center w-8 h-8"
+            className="inline-flex items-center h-8 gap-2"
           >
             <ChevronLeft size={24} />
+            <span className="text-title text-fg-primary">요금제 조회</span>
           </button>
-          <h2 className="text-title text-fg-primary">{selectedPlan.name}</h2>
         </div>
 
-        <div className="px-4">
+        <div className="flex flex-col gap-4 px-4 py-4">
           <PlanDetailContent
             plan={selectedPlan}
             isLoading={false}
             error={null}
           />
-        </div>
 
-        <div
-          className="
-            sticky bottom-0 flex gap-2 border-t border-border
-            bg-surface-card px-4 pt-4
-            pb-[calc(20px+env(safe-area-inset-bottom))]
-          "
-        >
-          <Button variant="outline" size="lg" className="flex-1">
-            비교 하기
-          </Button>
-          <Button
-            variant="primary"
-            size="lg"
-            className="flex-1"
-            onClick={() => setIsSubscribeOpen(true)}
-          >
-            신청 하기
-          </Button>
+          <div className="flex gap-2 pt-4 border-t border-border">
+            <Button variant="outline" size="lg" className="flex-1">
+              비교 하기
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              className="flex-1"
+              onClick={() => setIsSubscribeOpen(true)}
+            >
+              신청 하기
+            </Button>
+          </div>
         </div>
 
         <PlanSubscriptionSheet
