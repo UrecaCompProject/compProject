@@ -12,6 +12,7 @@ import {
 
 import { useIsLoggedIn } from '@/features/auth';
 import type { QuizKind } from '@/features/chat-quiz';
+import { ReportSheet } from '@/features/consult-report';
 import { MyPage, PlanPage } from '@/features/pages';
 import { RewardSheet } from '@/features/reward';
 import {
@@ -25,6 +26,7 @@ import {
 interface ActiveSheet {
   title: string;
   content: ReactNode;
+  description?: string;
 }
 
 interface ChatInputProps {
@@ -47,7 +49,9 @@ export default function ChatInput({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [rewardOpen, setRewardOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
+
   const handleSend = () => {
     onSend(value);
   };
@@ -56,8 +60,10 @@ export default function ChatInput({
     setIsSheetOpen(true);
   };
 
-  useClickOutside(containerRef, isMenuOpen && !isSheetOpen && !rewardOpen, () =>
-    setIsMenuOpen(false),
+  useClickOutside(
+    containerRef,
+    isMenuOpen && !isSheetOpen && !rewardOpen && !reportOpen,
+    () => setIsMenuOpen(false),
   );
 
   return (
@@ -137,7 +143,13 @@ export default function ChatInput({
               <div>혜택/이벤트</div>
             </div>
 
-            <div className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer">
+            <div
+              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
+              onClick={() => {
+                setIsMenuOpen(false);
+                setReportOpen(true);
+              }}
+            >
               <IconBadge icon={FileSpreadsheet} size={52} radius={16} />
               <div>상담 리포트</div>
             </div>
@@ -151,6 +163,7 @@ export default function ChatInput({
         size="full"
         bodyClassName="p-0"
         title={activeSheet?.title ?? ''}
+        description={activeSheet?.description ?? ''}
       >
         {activeSheet?.content}
       </BottomSheet>
@@ -160,6 +173,8 @@ export default function ChatInput({
         onOpenChange={setRewardOpen}
         onStartQuiz={onStartQuiz}
       />
+
+      <ReportSheet open={reportOpen} onOpenChange={setReportOpen} />
     </div>
   );
 }
