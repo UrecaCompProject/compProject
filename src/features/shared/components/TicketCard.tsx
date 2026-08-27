@@ -47,7 +47,7 @@ function buildPunchedPath(
 }
 
 export default function TicketCard({
-  radius = 6,
+  radius = 7,
   gap = 24,
   startOffset,
   fill = 'var(--color-surface-card)',

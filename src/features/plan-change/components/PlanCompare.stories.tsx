@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import disney from '@/assets/images/benefit-plus-disneyplus.svg';
 import genie from '@/assets/images/benefit-plus-genie.svg';
 import millie from '@/assets/images/benefit-plus-millie.svg';
@@ -75,5 +77,50 @@ export const WithoutBenefitRows: Story = {
       ...meta.args.data,
       benefitRows: undefined,
     },
+  },
+};
+
+const samplePlanOptions = [
+  { id: 'p1', name: '요금 걱정없는 5G 20GB' },
+  { id: 'p2', name: '데이터 플랜 31GB(유쓰혜택)' },
+  { id: 'p3', name: '요금 걱정없는 5G 27GB' },
+  { id: 'p4', name: '5G 심플+' },
+  { id: 'p5', name: '유쓰 5G 슬림+' },
+];
+
+export const QuickReplyEntry: Story = {
+  render: (args) => {
+    const [currentPlanId, setCurrentPlanId] = useState('p1');
+    const [selectedPlanId, setSelectedPlanId] = useState('p2');
+
+    return (
+      <PlanCompare
+        {...args}
+        planOptions={samplePlanOptions}
+        currentPlanId={currentPlanId}
+        selectedPlanId={selectedPlanId}
+        onSelectCurrentPlan={setCurrentPlanId}
+        onSelectSelectedPlan={setSelectedPlanId}
+      />
+    );
+  },
+};
+
+export const PlanDetailCompareEntry: Story = {
+  render: (args) => {
+    const [currentPlanId, setCurrentPlanId] = useState('p3');
+    const [selectedPlanId, setSelectedPlanId] = useState('p2');
+
+    return (
+      <PlanCompare
+        {...args}
+        currentLabel="선택한 요금제"
+        planOptions={samplePlanOptions}
+        currentPlanId={currentPlanId}
+        selectedPlanId={selectedPlanId}
+        onSelectCurrentPlan={setCurrentPlanId}
+        onSelectSelectedPlan={setSelectedPlanId}
+      />
+    );
   },
 };

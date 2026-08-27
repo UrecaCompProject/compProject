@@ -8,6 +8,9 @@ import TicketCard from '@/features/shared/components/TicketCard';
 import PlanCompareBenefitRow, {
   type BenefitOption,
 } from './PlanCompareBenefitRow';
+import PlanCompareHeaderSelect, {
+  type PlanCompareOption,
+} from './PlanCompareHeaderSelect';
 import PlanCompareRow from './PlanCompareRow';
 
 export interface PlanCompareData {
@@ -29,10 +32,6 @@ export interface PlanCompareData {
   selectedVoice: string;
   selectedMessage: string;
 
-  /**
-   * 프리미엄플러스 / 데일리플러스 / 스마트기기처럼 로고+선택지 목록을 보여줘야 하는 혜택 행.
-   * 데이터가 없으면(RecommendedPlan에 아직 필드가 없는 경우 등) 해당 행은 렌더링하지 않는다.
-   */
   benefitRows?: {
     key: string;
     label: string;
@@ -45,6 +44,17 @@ export interface PlanCompareData {
 
 export interface PlanCompareProps {
   data: PlanCompareData;
+  /** 기본 '이용중인 요금제'. 상세요금제 화면의 '비교하기'로 들어온 경우처럼
+   *  왼쪽 컬럼이 실사용 요금제가 아닐 때 '선택한 요금제' 등으로 바꿔서 사용. */
+  currentLabel?: string;
+  /** 기본 '선택한 요금제' */
+  selectedLabel?: string;
+  /** 드롭다운에 띄울 전체 요금제 목록. 없으면 헤더는 화살표 없이 텍스트만 표시. */
+  planOptions?: PlanCompareOption[];
+  currentPlanId?: string;
+  selectedPlanId?: string;
+  onSelectCurrentPlan?: (planId: string) => void;
+  onSelectSelectedPlan?: (planId: string) => void;
   onDetailCurrent?: () => void;
   onDetailSelected?: () => void;
   onChangePlan?: () => void;
@@ -60,6 +70,13 @@ interface SimpleRow {
 
 export default function PlanCompare({
   data,
+  currentLabel = '이용중인 요금제',
+  selectedLabel = '선택한 요금제',
+  planOptions,
+  currentPlanId,
+  selectedPlanId,
+  onSelectCurrentPlan,
+  onSelectSelectedPlan,
   onDetailCurrent,
   onDetailSelected,
   onChangePlan,
@@ -157,12 +174,20 @@ export default function PlanCompare({
       <TicketCard>
         {/* 헤더 */}
         <div className="grid grid-cols-2 gap-4 pb-3">
-          <p className="text-left text-[14px] font-semibold text-fg-primary">
-            이용중인 요금제
-          </p>
-          <p className="text-left text-[14px] font-semibold text-reward-active">
-            선택한 요금제
-          </p>
+          <PlanCompareHeaderSelect
+            label={currentLabel}
+            options={planOptions}
+            activeId={currentPlanId}
+            onSelect={onSelectCurrentPlan}
+            colorClassName="text-fg-primary"
+          />
+          <PlanCompareHeaderSelect
+            label={selectedLabel}
+            options={planOptions}
+            activeId={selectedPlanId}
+            onSelect={onSelectSelectedPlan}
+            colorClassName="text-reward-active"
+          />
         </div>
         <div className="border-b border-fg-primary" />
 
@@ -192,36 +217,38 @@ export default function PlanCompare({
           </p>
         )}
 
-        {/* 상세보기 링크 */}
-        <div className="grid grid-cols-2 gap-4 pt-3">
-          <button
-            type="button"
-            onClick={onDetailCurrent}
-            className="text-left text-[13px] font-medium text-fg-tertiary"
+        {/* 상세보기 링크 / 안내 문구 / 변경 버튼 — 16px 간격 고정 */}
+        <div className="flex flex-col gap-4 pt-3">
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              type="button"
+              onClick={onDetailCurrent}
+              className="text-left text-[13px] font-medium text-fg-tertiary"
+            >
+              요금제 상세보기 &gt;
+            </button>
+            <button
+              type="button"
+              onClick={onDetailSelected}
+              className="text-left text-[13px] font-medium text-reward-active"
+            >
+              요금제 상세보기 &gt;
+            </button>
+          </div>
+
+          <p className="text-[10px] font-normal text-fg-disabled">
+            · 요금제를 낮추면 혜택이 달라질 수 있습니다.
+          </p>
+
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
+            onClick={onChangePlan}
           >
-            요금제 상세보기 &gt;
-          </button>
-          <button
-            type="button"
-            onClick={onDetailSelected}
-            className="text-left text-[13px] font-medium text-reward-active"
-          >
-            요금제 상세보기 &gt;
-          </button>
+            요금제 변경하기
+          </Button>
         </div>
-
-        <p className="pt-3 text-[10px] font-normal text-fg-disabled">
-          · 요금제를 낮추면 혜택이 달라질 수 있습니다.
-        </p>
-
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-full mt-4"
-          onClick={onChangePlan}
-        >
-          요금제 변경하기
-        </Button>
       </TicketCard>
     </div>
   );
