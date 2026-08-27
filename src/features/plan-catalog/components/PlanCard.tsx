@@ -12,7 +12,7 @@ export interface PlanCardBenefit {
 type PlanCardContext = 'chat' | 'report';
 
 const contextWidth: Record<PlanCardContext, string> = {
-  chat: 'w-fit',
+  chat: 'w-fit min-w-[240px]',
   report: 'w-[350px]',
 };
 
@@ -47,36 +47,37 @@ export default function PlanCard({
     <Card
       border="primary"
       shadow
-      gap="16"
-      style={{ borderWidth: '1.5px' }}
-      className={`flex flex-col ${contextWidth[context]} ${className}`}
+      gap="12"
+      // style={{ borderWidth: '1.5px' }}
+      className={`flex flex-col border-[1.5px] ${contextWidth[context]} ${className}`}
     >
-      <div className="flex items-start justify-between">
-        <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
-        {onSaveToggle && (
-          <button
-            type="button"
-            onClick={onSaveToggle}
-            aria-label={saved ? '저장 취소' : '요금제 저장'}
-            className="shrink-0"
-          >
-            <Anchor
-              size={22}
-              className={
-                saved ? 'text-brand-promo-primary' : 'text-fg-disabled'
-              }
-            />
-          </button>
-        )}
+      <div>
+        <div className="flex items-start justify-between">
+          <h3 className="text-[16px] font-semibold text-fg-primary">{title}</h3>
+          {onSaveToggle && (
+            <button
+              type="button"
+              onClick={onSaveToggle}
+              aria-label={saved ? '저장 취소' : '요금제 저장'}
+              className="shrink-0"
+            >
+              <Anchor
+                size={22}
+                className={
+                  saved ? 'text-brand-promo-primary' : 'text-fg-disabled'
+                }
+              />
+            </button>
+          )}
+        </div>
+        <p className="text-[16px] font-bold text-brand-promo-secondary mt-1">
+          월 {price.toLocaleString()}원
+        </p>
       </div>
-
-      <p className="text-[16px] font-bold text-brand-promo-secondary">
-        월 {price.toLocaleString()}원
-      </p>
 
       <Line />
 
-      <div className="flex flex-col gap-3 flex-1">
+      <div className="flex flex-col gap-2 flex-1">
         {benefits.map((benefit) => (
           <IconListItem
             key={benefit.label}
@@ -104,12 +105,12 @@ export default function PlanCard({
           variant="bordered"
           iconSize={16}
           iconColor="text-[#f5b31f]"
-          textClassName="text-[12px] font-semibold text-[#f5b31f]"
-          className="rounded-lg border-[#f5b31f] bg-[#fff8e9]"
+          textClassName="text-[12px] font-semibold text-[#f5b31f] leading-[140%]"
+          className="rounded-lg border-[#f5b31f] bg-[#fff8e9] items-center"
         />
       )}
 
-      <div className="flex gap-2 pt-1 mt-auto">
+      <div className="flex gap-2 mt-auto">
         <Button
           variant="secondary"
           size="sm"
