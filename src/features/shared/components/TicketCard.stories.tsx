@@ -18,7 +18,6 @@ const meta = {
   args: {
     radius: 6,
     gap: 24,
-    startOffset: 8,
   },
   argTypes: {
     radius: {
@@ -31,7 +30,8 @@ const meta = {
     },
     startOffset: {
       control: { type: 'range', min: 0, max: 40, step: 1 },
-      description: '첫 펀칭이 시작되는 좌측 오프셋(px)',
+      description:
+        '첫/마지막 펀칭이 좌우 끝에서 떨어진 거리(px). 안 넘기면 gap과 같은 값이 기본으로 적용됨.',
     },
     fill: {
       control: 'color',
@@ -73,7 +73,6 @@ export const CustomFill: Story = {
   },
 };
 
-/** PlanCompare에서 실제로 쓰는 값(radius=6, gap=10, startOffset=8)에 가까운 사용 예시 */
 export const PlanCompareUsage: Story = {
   args: {
     children: (

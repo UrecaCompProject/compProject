@@ -15,11 +15,6 @@ interface Size {
   height: number;
 }
 
-/**
- * 상단/하단 가장자리에 반원 구멍이 뚫린(티켓 펀칭) 사각형 path를 만든다.
- * CSS mask-image 대신 SVG path + fill-rule="evenodd"로 직접 도형을 그려서
- * 브라우저의 CSS Masking 지원 여부와 무관하게 항상 렌더링되도록 한다.
- */
 function buildPunchedPath(
   { width, height }: Size,
   radius: number,
@@ -30,9 +25,14 @@ function buildPunchedPath(
 
   const rect = `M0,0 H${width} V${height} H0 Z`;
   const d = radius * 2;
-  const circles: string[] = [];
 
-  for (let cx = startOffset + gap / 2; cx < width + radius; cx += gap) {
+  const usable = Math.max(width - startOffset * 2, 0);
+  const count = Math.max(1, Math.round(usable / gap) + 1);
+  const step = count > 1 ? usable / (count - 1) : 0;
+
+  const circles: string[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const cx = startOffset + step * i;
     // 위쪽 가장자리 펀칭
     circles.push(
       `M${cx - radius},0 a${radius},${radius} 0 1,0 ${d},0 a${radius},${radius} 0 1,0 ${-d},0 Z`,
@@ -49,7 +49,7 @@ function buildPunchedPath(
 export default function TicketCard({
   radius = 6,
   gap = 24,
-  startOffset = 8,
+  startOffset,
   fill = 'var(--color-surface-card)',
   className = '',
   children,
@@ -70,7 +70,8 @@ export default function TicketCard({
     return () => observer.disconnect();
   }, []);
 
-  const pathData = buildPunchedPath(size, radius, gap, startOffset);
+  const effectiveStartOffset = startOffset ?? gap;
+  const pathData = buildPunchedPath(size, radius, gap, effectiveStartOffset);
 
   return (
     <div ref={wrapperRef} className={`relative ${className}`}>
@@ -85,7 +86,7 @@ export default function TicketCard({
         {pathData && <path d={pathData} fill={fill} fillRule="evenodd" />}
       </svg>
 
-      <div className="relative px-4 py-4">{children}</div>
+      <div className="relative px-4 py-8">{children}</div>
     </div>
   );
 }

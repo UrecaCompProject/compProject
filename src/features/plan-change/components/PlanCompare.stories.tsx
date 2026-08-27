@@ -1,3 +1,11 @@
+import disney from '@/assets/images/benefit-plus-disneyplus.svg';
+import genie from '@/assets/images/benefit-plus-genie.svg';
+import millie from '@/assets/images/benefit-plus-millie.svg';
+import netflix from '@/assets/images/benefit-plus-netflix.svg';
+import sam from '@/assets/images/benefit-plus-sam.svg';
+import tving from '@/assets/images/benefit-plus-tving.svg';
+import youtube from '@/assets/images/benefit-plus-youtube.svg';
+
 import PlanCompare from './PlanCompare';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -24,6 +32,34 @@ const meta = {
       selectedShareData: '월 제공량 내 차감',
       selectedVoice: '기본 제공 (월 300분)',
       selectedMessage: '기본 제공 (월 300건)',
+
+      benefitRows: [
+        {
+          key: 'premiumPlus',
+          label: '프리미엄플러스',
+          current: '해당없음',
+          selectedSummary: '총 13개\n최대 35,000원',
+          selectedSubtext: '(1개 선택)',
+          selectedOptions: [
+            { imageUrl: disney, label: '디즈니+' },
+            { imageUrl: netflix, label: '넷플릭스' },
+            { imageUrl: tving, label: '티빙' },
+            { imageUrl: youtube, label: '유튜브 프리미엄' },
+          ],
+        },
+        {
+          key: 'dailyPlus',
+          label: '데일리플러스',
+          current: '해당없음',
+          selectedSummary: '총 5개\n최대 15,000원',
+          selectedSubtext: '(1개 선택)',
+          selectedOptions: [
+            { imageUrl: millie, label: '밀리의 서재' },
+            { imageUrl: sam, label: '교보문고 sam' },
+            { imageUrl: genie, label: '지니뮤직(genie)' },
+          ],
+        },
+      ],
     },
   },
 } satisfies Meta<typeof PlanCompare>;
@@ -32,3 +68,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+
+export const WithoutBenefitRows: Story = {
+  args: {
+    data: {
+      ...meta.args.data,
+      benefitRows: undefined,
+    },
+  },
+};
