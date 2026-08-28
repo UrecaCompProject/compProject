@@ -14,7 +14,7 @@ type ExchangeContentProps = {
   onGoToCoupon: () => void;
 };
 
-export default function ExchangeContent({
+export default function ExchangeCouponModal({
   product,
   onGoToCoupon,
 }: ExchangeContentProps) {

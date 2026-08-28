@@ -195,7 +195,14 @@ export default function RecommendationForm({
                         type="checkbox"
                         value={option}
                         checked={selected}
-                        onChange={() => handleOttToggle(field.name, option)}
+                        onChange={(e) => {
+                          handleOttToggle(field.name, option);
+                          // 체크박스가 포커스를 유지하면 모바일 브라우저가
+                          // 화면에 보이지 않는 sr-only 요소를 뷰포트 안으로
+                          // 끌어오려 스크롤을 튕겨 페이지가 엉뚱한 위치로
+                          // 점프한다. 토글 직후 바로 blur해 방지한다.
+                          e.target.blur();
+                        }}
                         disabled={disabled}
                         className="sr-only"
                       />

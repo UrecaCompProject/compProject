@@ -1,25 +1,29 @@
+import { missions } from '../mocks/missions';
+
+import Badge from './Badge';
 import MissionItem from './MissionItem';
-import SmallBadge from './SmallBadge';
 
 import type { Mission } from '../types';
 
 type MissionListProps = {
-  missions: Mission[];
   badgeBalance?: number;
   onAction?: (mission: Mission) => void;
 };
 
+// 게임 보여주는 리스트 컴포넌트
 export default function MissionList({
-  missions,
   badgeBalance = 100,
   onAction,
 }: MissionListProps) {
   return (
     <section className="bg-surface-page px-4 pb-4 pt-3">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-chip font-bold text-fg-primary">배지 미션</h2>
+        <div className="text-semibold-16-130 text-fg-primary ml-1">
+          배지 미션
+        </div>
 
-        <SmallBadge
+        <Badge
+          size="small"
           value={badgeBalance}
           ariaLabel={`보유 배지 ${badgeBalance}개`}
         />

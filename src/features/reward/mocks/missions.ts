@@ -10,7 +10,7 @@ export const missions: Mission[] = [
   },
   {
     id: 'reaction',
-    title: '버튼 시간 맞추기',
+    title: '반응속도 탭 게임',
     reward: 5,
     actionLabel: '시작',
     icon: 'timer',

@@ -1,17 +1,19 @@
-import SmallBadge from './SmallBadge';
+import Badge from './Badge';
 
-import type { RewardProduct } from '../types';
+import type { RewardProduct, Coupon } from '../types';
 
-type ProductCardProps = {
-  product: RewardProduct;
-  onSelect?: (product: RewardProduct) => void;
+type ProductCardProps<T extends RewardProduct | Coupon> = {
+  product: T;
+  onSelect?: (product: T) => void;
 };
 
-export default function ProductCard({ product, onSelect }: ProductCardProps) {
+export default function ProductCard<T extends RewardProduct | Coupon>({
+  product,
+  onSelect,
+}: ProductCardProps<T>) {
   const className = `
-    flex min-h-[241px] min-w-[179px] w-full max-w-[171px]
-    flex-col items-center gap-2 rounded-[20px]
-    border-0 bg-white px-1 py-2
+    flex w-full
+    flex-col items-center gap-2 rounded-2xl bg-white p-2
     font-inherit
     ${onSelect ? 'transition-transform active:scale-[0.98]' : ''}
   `;
@@ -19,28 +21,28 @@ export default function ProductCard({ product, onSelect }: ProductCardProps) {
   const content = (
     <>
       <div
+        style={{ backgroundImage: `url(${product.imageUrl})` }}
         className="
-          flex aspect-square w-full max-w-[163px]
-          items-center justify-center
-          rounded-2xl
-          bg-[#F9F9F9]
+          aspect-square w-full
+          rounded-lg bg-[#F9F9F9] bg-size-[80%] bg-center bg-no-repeat
         "
-      >
-        <img
-          src={product.imageUrl}
-          alt=""
-          className="h-[77px] w-[124px] object-contain"
-        />
-      </div>
+      />
 
-      <h2 className="h-[21px] w-[163px] shrink-0 truncate px-1 text-center text-body-lg font-medium leading-[21px] text-fg-primary">
+      <h2 className=" shrink-0 truncate w-full px-1 text-center font-medium leading-[130%]">
         {product.brand} {product.name}
       </h2>
 
-      <SmallBadge
-        value={product.badgeCost}
-        ariaLabel={`필요 배지 ${product.badgeCost}개`}
-      />
+      {'badgeCost' in product ? (
+        <Badge
+          size="small"
+          value={product.badgeCost}
+          ariaLabel={`필요 배지 ${product.badgeCost}개`}
+        />
+      ) : (
+        <div className="text-[14px] text-fg-tertiary">
+          유효기간 : {product.expiresAt}
+        </div>
+      )}
     </>
   );
 

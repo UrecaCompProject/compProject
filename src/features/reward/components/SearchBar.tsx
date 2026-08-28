@@ -9,7 +9,7 @@ type SearchBarProps = {
 
 export default function SearchBar({ value, onChange }: SearchBarProps) {
   return (
-    <div className="relative drop-shadow-sm">
+    <div className="relative rounded-full">
       <Input
         type="search"
         value={value}
@@ -17,7 +17,7 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
           onChange(event.target.value);
         }}
         placeholder="상품명 검색..."
-        className="border-white bg-surface-card pr-11 text-caption focus:border-brand-promo-primary"
+        className="border border-border bg-white pr-11 text-caption focus:border-brand-promo-primary"
       />
 
       <Search

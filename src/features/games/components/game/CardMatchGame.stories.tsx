@@ -2,11 +2,11 @@ import { useState } from 'react';
 
 import { BottomSheet, Button } from '@/features/shared';
 
-import { useActiveGameMeta } from '../hooks/useActiveGameMeta';
-import { useGameStore } from '../store/useGameStore';
+import { useActiveGameMeta } from '../../hooks/useActiveGameMeta';
+import { useGameStore } from '../../store/useGameStore';
+import GameLayer from '../GameLayer';
 
 import CardMatchGame from './CardMatchGame';
-import GameLayer from './GameLayer';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
