@@ -8,7 +8,8 @@ export type ChatMode =
   | 'general'
   | 'game'
   | 'attendance'
-  | 'report';
+  | 'report'
+  | 'out_of_scope';
 
 export interface ConsultInput {
   currentPlan?: string;
@@ -98,6 +99,10 @@ export interface CompareResult {
   planB: RecommendedPlan;
 }
 
+// Edge Function 응답 대기 최대 시간 (밀리초)
+const CONSULT_TIMEOUT_MS = 30_000;
+const REPORT_TIMEOUT_MS = 60_000;
+
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.
 export async function requestConsult(
   input: ConsultInput,
@@ -106,6 +111,7 @@ export async function requestConsult(
     'ai-consult',
     {
       body: input,
+      timeout: CONSULT_TIMEOUT_MS,
     },
   );
 
@@ -129,6 +135,7 @@ export async function generateReport(
     mode: 'report';
   }>('ai-consult', {
     body: { ...input, mode: 'report' },
+    timeout: REPORT_TIMEOUT_MS,
   });
 
   if (error) {

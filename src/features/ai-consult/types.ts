@@ -66,6 +66,8 @@ export type ChatMessage =
       planSelector?: boolean;
       // planSelector 렌더링 모드: 'current' = 현재 요금제 선택, 'target' = 비교 대상 선택
       planSelectorMode?: 'current' | 'target';
+      // 에러 메시지 여부 — AIChat에 error variant 적용 + 재시도 퀵리플라이 표시
+      isError?: boolean;
     }
   | { id: number; type: 'user'; sentence: string }
   | { id: number; type: 'signup' }

@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
+
 import {
   ChatInput,
   ChatMessageList,
   QuickReplies,
 } from '@/features/ai-consult';
 import { useChat } from '@/features/ai-consult/hooks/useChat';
+import { preloadLottiePlayer } from '@/features/ai-consult/utils/preloadLottie';
 
 export default function ChatPage() {
   const {
@@ -31,6 +34,12 @@ export default function ChatPage() {
     confirmMultipleChoice,
     nextQuestion,
   } = useChat();
+
+  // 채팅 페이지 진입 즉시 Lottie 청크를 백그라운드에서 미리 로드
+  // 사용자가 첫 메시지를 보내 로딩 인디케이터가 표시될 때 청크가 이미 캐시되어 있도록
+  useEffect(() => {
+    preloadLottiePlayer();
+  }, []);
 
   const lastMessage = messages[messages.length - 1];
   const quickReplies =

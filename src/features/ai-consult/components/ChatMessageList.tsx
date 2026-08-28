@@ -4,6 +4,7 @@ import { SignupChat } from '@/features/auth';
 import type { ConsultInput, RecommendedPlan } from '@/lib/aiConsult';
 
 import AIChat from './AIChat';
+import ChatLoadingIndicator from './ChatLoadingIndicator';
 import ChatQuizMessage from './ChatQuizMessage';
 import CompareResultSheet from './CompareResultSheet';
 import MyChat from './MyChat';
@@ -14,6 +15,83 @@ import RecommendationForm from './RecommendationForm';
 import ReportCard from './ReportCard';
 
 import type { ChatMessage, QuizQuestionMessage } from '../types';
+
+// AI 메시지의 말풍선 이외 부가 콘텐츠(추천 카드, 레포트, 비교 결과, 요금제 선택기, 폼)를 렌더링
+// ChatMessageList의 message.type === 'ai' 반복 조건을 하나로 통합해 가독성 향상
+interface AIChatExtrasProps {
+  message: Extract<ChatMessage, { type: 'ai' }>;
+  isLast: boolean;
+  isLoading: boolean;
+  isGeneratingReport: boolean;
+  onPlanSubscribe?: (plan: RecommendedPlan) => void;
+  onPlanCompare?: (plan: RecommendedPlan) => void;
+  onSelectCurrentPlan?: (planName: string) => void;
+  onSelectTargetPlan?: (planName: string) => void;
+  onGenerateReport?: (plans: RecommendedPlan[]) => void;
+  onFormSubmit?: (values: Partial<ConsultInput>) => void;
+  formDefaults?: Partial<ConsultInput>;
+}
+
+function AIChatExtras({
+  message,
+  isLast,
+  isLoading,
+  isGeneratingReport,
+  onPlanSubscribe,
+  onPlanCompare,
+  onSelectCurrentPlan,
+  onSelectTargetPlan,
+  onGenerateReport,
+  onFormSubmit,
+  formDefaults,
+}: AIChatExtrasProps) {
+  return (
+    <>
+      {message.recommendations && message.recommendations.length > 0 && (
+        <RecommendationCards
+          plans={message.recommendations}
+          onPlanSubscribe={onPlanSubscribe}
+          onPlanCompare={onPlanCompare}
+          onGenerateReport={onGenerateReport}
+          isLoading={isLoading}
+          isGeneratingReport={isGeneratingReport}
+        />
+      )}
+
+      {message.report && <ReportCard report={message.report} />}
+
+      {message.compareResult && (
+        <CompareResultSheet
+          result={message.compareResult}
+          onSubscribe={() => onPlanSubscribe?.(message.compareResult!.planB)}
+        />
+      )}
+
+      {message.planSelector && (
+        <PlanSelector
+          mode={message.planSelectorMode ?? 'current'}
+          onSelect={(planName) =>
+            message.planSelectorMode === 'target'
+              ? onSelectTargetPlan?.(planName)
+              : onSelectCurrentPlan?.(planName)
+          }
+          disabled={isLoading}
+        />
+      )}
+
+      {message.form && isLast && onFormSubmit && (
+        <div className="mt-3">
+          <RecommendationForm
+            form={message.form}
+            onSubmit={onFormSubmit}
+            defaultValues={formDefaults}
+            disabled={isLoading}
+          />
+        </div>
+      )}
+    </>
+  );
+}
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
@@ -112,7 +190,27 @@ export default function ChatMessageList({
             key={message.id}
             ref={index === lastIndex ? lastMessageRef : undefined}
           >
-            {message.type === 'ai' && <AIChat sentence={message.sentence} />}
+            {message.type === 'ai' && (
+              <>
+                <AIChat
+                  sentence={message.sentence}
+                  variant={message.isError ? 'error' : 'default'}
+                />
+                <AIChatExtras
+                  message={message}
+                  isLast={index === lastIndex}
+                  isLoading={isLoading}
+                  isGeneratingReport={isGeneratingReport}
+                  onPlanSubscribe={onPlanSubscribe}
+                  onPlanCompare={onPlanCompare}
+                  onSelectCurrentPlan={onSelectCurrentPlan}
+                  onSelectTargetPlan={onSelectTargetPlan}
+                  onGenerateReport={onGenerateReport}
+                  onFormSubmit={onFormSubmit}
+                  formDefaults={formDefaults}
+                />
+              </>
+            )}
             {message.type === 'user' && (
               <div className="flex justify-end">
                 <MyChat sentence={message.sentence} />
@@ -133,66 +231,9 @@ export default function ChatMessageList({
                 onNext={onQuizNext}
               />
             )}
-
-            {message.type === 'ai' &&
-              message.recommendations &&
-              message.recommendations.length > 0 && (
-                <RecommendationCards
-                  plans={message.recommendations}
-                  onPlanSubscribe={onPlanSubscribe}
-                  onPlanCompare={onPlanCompare}
-                  onGenerateReport={onGenerateReport}
-                  isLoading={isLoading}
-                  isGeneratingReport={isGeneratingReport}
-                />
-              )}
-
-            {message.type === 'ai' && message.report && (
-              <ReportCard report={message.report} />
-            )}
-
-            {message.type === 'ai' && message.compareResult && (
-              <CompareResultSheet
-                result={message.compareResult}
-                onSubscribe={() =>
-                  message.compareResult &&
-                  onPlanSubscribe?.(message.compareResult.planB)
-                }
-              />
-            )}
-
-            {message.type === 'ai' && message.planSelector && (
-              <PlanSelector
-                mode={message.planSelectorMode ?? 'current'}
-                onSelect={(planName) =>
-                  message.planSelectorMode === 'target'
-                    ? onSelectTargetPlan?.(planName)
-                    : onSelectCurrentPlan?.(planName)
-                }
-                disabled={isLoading}
-              />
-            )}
-
-            {message.type === 'ai' &&
-              message.form &&
-              index === lastIndex &&
-              onFormSubmit && (
-                <div className="mt-3">
-                  <RecommendationForm
-                    form={message.form}
-                    onSubmit={onFormSubmit}
-                    defaultValues={formDefaults}
-                    disabled={isLoading}
-                  />
-                </div>
-              )}
           </div>
         ))}
-        {isLoading && (
-          <div className="text-caption text-fg-disabled">
-            해리가 생각 중이에요...
-          </div>
-        )}
+        {isLoading && <ChatLoadingIndicator />}
       </div>
 
       <PlanSubscriptionSheet

@@ -7,7 +7,8 @@ export type ChatMode =
   | 'general'
   | 'game'
   | 'attendance'
-  | 'report';
+  | 'report'
+  | 'out_of_scope';
 
 export interface ConsultInput {
   currentPlan?: string;
