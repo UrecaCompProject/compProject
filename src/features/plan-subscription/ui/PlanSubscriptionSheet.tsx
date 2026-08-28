@@ -1,13 +1,13 @@
-import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { Fragment, type ReactNode, useMemo, useState } from 'react';
 
 import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
-import { getPlanCatalog } from '@/entities/plan';
+import { usePlanCatalog } from '@/entities/plan';
 import { useAuth } from '@/entities/user';
 import { BottomSheet, Button, Input } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
-import { useSubscriptionStore } from '../model/useSubscriptionStore';
+import { useSubmitSubscription } from '../model/useSubmitSubscription';
 
 import type { SubscriptionForm } from '../types';
 
@@ -200,15 +200,23 @@ export default function PlanSubscriptionSheet({
     plan,
   );
   const [form, setForm] = useState<SubscriptionForm>(initialForm);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [planList, setPlanList] = useState<RecommendedPlan[]>([]);
-  const [isPlanListLoading, setIsPlanListLoading] = useState(true);
-  const [planListError, setPlanListError] = useState<string | null>(null);
   const [expandedTerm, setExpandedTerm] = useState<string | null>(null);
-  const submitApplication = useSubscriptionStore(
-    (state) => state.submitApplication,
-  );
+
+  // 요금제 카탈로그 — TanStack Query로 캐싱·로딩·에러 상태 관리
+  const {
+    data: planList = [],
+    isLoading: isPlanListLoading,
+    error: planListError,
+  } = usePlanCatalog();
+
+  // 가입 신청 뮤테이션 — 성공 시 현재 요금제 캐시 자동 무효화
+  const submitMutation = useSubmitSubscription();
+  const isSubmitting = submitMutation.isPending;
+  const submitError = submitMutation.error
+    ? submitMutation.error instanceof Error
+      ? submitMutation.error.message
+      : '가입 신청 중 문제가 발생했어요. 다시 시도해주세요.'
+    : null;
 
   // 로그인된 사용자 정보 — 본인 입력 단계 없이 확인용으로 표시
   const user = useAuth().user;
@@ -221,34 +229,6 @@ export default function PlanSubscriptionSheet({
       email: user?.email || '',
     };
   }, [user]);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    getPlanCatalog()
-      .then((plans) => {
-        if (!cancelled) {
-          setPlanList(plans);
-          setPlanListError(null);
-        }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setPlanList([]);
-          setPlanListError(
-            error instanceof Error
-              ? error.message
-              : '요금제 목록을 불러오지 못했습니다.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsPlanListLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
 
   const update = <K extends keyof SubscriptionForm>(
     field: K,
@@ -308,20 +288,12 @@ export default function PlanSubscriptionSheet({
 
     if (step === 'agreement') {
       if (!selectedPlan) return;
-      setIsSubmitting(true);
-      setSubmitError(null);
-      try {
-        await submitApplication(selectedPlan, form);
-        setStep('complete');
-      } catch (error) {
-        setSubmitError(
-          error instanceof Error
-            ? error.message
-            : '가입 신청 중 문제가 발생했어요. 다시 시도해주세요.',
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
+      submitMutation.mutate(
+        { plan: selectedPlan, form },
+        {
+          onSuccess: () => setStep('complete'),
+        },
+      );
       return;
     }
 
@@ -444,7 +416,9 @@ export default function PlanSubscriptionSheet({
             )}
             {!isPlanListLoading && planListError && (
               <p className="text-center text-caption text-semantic-error py-8">
-                {planListError}
+                {planListError instanceof Error
+                  ? planListError.message
+                  : '요금제 목록을 불러오지 못했습니다.'}
               </p>
             )}
             {!isPlanListLoading && !planListError && planList.length === 0 && (

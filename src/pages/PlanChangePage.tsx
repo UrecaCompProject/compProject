@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
+import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router';
 
-import { getPlanCatalog } from '@/entities/plan';
+import { getPlanCatalog, useCurrentPlan } from '@/entities/plan';
+import { useIsLoggedIn } from '@/entities/user';
 import PlanCompare, {
   type PlanCompareData,
 } from '@/features/plan-change/ui/PlanCompare';
-import {
-  PlanSubscriptionSheet,
-  useSubscriptionStore,
-} from '@/features/plan-subscription';
+import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
 function toFeeText(monthlyFee: number | undefined): string {
@@ -44,54 +43,28 @@ function toPlanCompareData(
 
 export default function PlanChangePage() {
   const { id } = useParams<{ id: string }>();
-  const currentPlan = useSubscriptionStore((s) => s.currentPlan);
-  const loadCurrentPlan = useSubscriptionStore((s) => s.loadCurrentPlan);
-  const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
-    null,
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const isLoggedIn = useIsLoggedIn();
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ['plans', 'catalog'],
+    queryFn: getPlanCatalog,
+  });
+  const { data: currentPlan = null } = useCurrentPlan(isLoggedIn);
+
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const [plans] = await Promise.all([
-          getPlanCatalog(),
-          loadCurrentPlan(),
-        ]);
-        if (cancelled || !id) return;
-        const found = plans.find((p) => p.planId === id);
-        if (!found) {
-          setError('요금제를 찾을 수 없습니다.');
-          return;
-        }
-        setSelectedPlan(found);
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : '요금제 조회에 실패했어요.',
-          );
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [id, loadCurrentPlan]);
+  // id와 plans가 모두 준비되면 해당 요금제를 찾아 selectedPlan으로 사용
+  const selectedPlan = useMemo(() => {
+    if (!id || plans.length === 0) return null;
+    return plans.find((p) => p.planId === id) ?? null;
+  }, [id, plans]);
 
   const compareData = useMemo(() => {
     if (!selectedPlan) return null;
     return toPlanCompareData(currentPlan, selectedPlan);
   }, [currentPlan, selectedPlan]);
 
-  if (isLoading) {
+  if (!selectedPlan) {
     return (
       <main className="flex flex-1 items-center justify-center px-4">
         <p className="text-body-sm text-fg-tertiary">
@@ -101,11 +74,11 @@ export default function PlanChangePage() {
     );
   }
 
-  if (error || !compareData) {
+  if (!compareData) {
     return (
       <main className="flex flex-1 items-center justify-center px-4">
         <p className="text-body-sm text-error">
-          {error || '요금제 정보를 불러올 수 없어요.'}
+          요금제 정보를 불러올 수 없어요.
         </p>
       </main>
     );
