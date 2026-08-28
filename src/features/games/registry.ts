@@ -26,6 +26,12 @@ export const GAME_REGISTRY: Record<GameId, GameDefinition> = {
     title: '출석 룰렛',
     component: RuletteGame,
   },
+
+  //   'reaction-time': {
+  //     title: '반응속도 게임',
+  //     component: ReactionTimeGame,
+
+  //   },
 };
 
 export function isGameId(id: string): id is GameId {
