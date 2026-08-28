@@ -1,5 +1,5 @@
-import type { RecommendedPlan } from '@/lib/aiConsult';
-import { supabase } from '@/lib/supabaseClient';
+import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import { supabase } from '@/shared/lib/supabaseClient';
 
 import { toRecommendedPlan, type PlanRow } from './getPlanCatalog';
 

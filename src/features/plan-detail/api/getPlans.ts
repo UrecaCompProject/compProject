@@ -1,4 +1,4 @@
-import { supabaseAnon } from '@/lib/supabaseClient';
+import { supabaseAnon } from '@/shared/lib/supabaseClient';
 
 import type { PlanDetailItem } from '../types';
 

@@ -1,29 +1,9 @@
-export type MissionIcon =
-  'card' | 'timer' | 'roulette' | 'scratch' | 'security' | 'telecom' | 'share';
-
-export type Mission = {
-  id: string;
-  title: string;
-  reward: number;
-  actionLabel: '시작' | '공유';
-  icon: MissionIcon;
-};
-
-export type RewardProduct = {
-  id: number;
-  brand: string;
-  name: string;
-  imageUrl: string;
-  badgeCost: number;
-};
-
-export type CouponStatus = 'available' | 'used' | 'expired';
-
-export type Coupon = {
-  id: string;
-  name: string;
-  brand: string;
-  imageUrl: string;
-  expiresAt: string;
-  status: CouponStatus;
-};
+// reward 타입은 entities/reward로 이관됨
+// 하위 호환을 위해 entities/reward에서 re-export
+export type {
+  MissionIcon,
+  Mission,
+  RewardProduct,
+  CouponStatus,
+  Coupon,
+} from '@/entities/reward';

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/shared/lib/supabaseClient';
 
 // 본인인증(OTP)은 SMS Provider(Twilio 등) 연동 비용이 들어, 현재는 mock으로
 // 처리한다. 인증번호는 어떤 값을 입력해도 통과되도록 하고, 실제 Provider 연결

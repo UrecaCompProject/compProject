@@ -1,5 +1,5 @@
-import gs25Image from '@/assets/images/gs25-10000.png';
-import lguImage from '@/assets/images/lgu-data-5gb.png';
+import gs25Image from '@/shared/assets/images/gs25-10000.png';
+import lguImage from '@/shared/assets/images/lgu-data-5gb.png';
 
 import type { Coupon } from '../types';
 

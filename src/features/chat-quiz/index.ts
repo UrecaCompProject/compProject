@@ -1,9 +1,12 @@
-export { default as MultipleChoiceQuiz } from './components/MultipleChoiceQuiz';
-export { default as OxQuiz } from './components/OxQuiz';
-export { default as QuizResult } from './components/QuizResult';
+export { default as MultipleChoiceQuiz } from './ui/MultipleChoiceQuiz';
+export { default as OxQuiz } from './ui/OxQuiz';
+export { default as QuizResult } from './ui/QuizResult';
+export { default as ChatQuizMessage } from './ui/ChatQuizMessage';
 
 export { multipleChoiceQuestions } from './data/multipleChoiceQuestions';
 export { oxQuestions } from './data/oxQuestions';
+
+export { useChatQuiz } from './model/useChatQuiz';
 
 export type {
   QuizKind,
@@ -12,4 +15,6 @@ export type {
   OxQuestion,
   QuizOption,
   QuizResult as QuizResultData,
+  QuizQuestionMessage,
+  QuizResultMessage,
 } from './type';

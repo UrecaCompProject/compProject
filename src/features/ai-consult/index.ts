@@ -1,10 +1,19 @@
-export { default as AIChat } from './components/AIChat';
-export { default as ChatInput } from './components/ChatInput';
-export { default as ChatMessageList } from './components/ChatMessageList';
-export { default as CompareResultSheet } from './components/CompareResultSheet';
-export { default as MyChat } from './components/MyChat';
-export { default as QuickReplies } from './components/QuickReplies';
-export { default as RecommendationCards } from './components/RecommendationCards';
-export { default as RecommendationForm } from './components/RecommendationForm';
-export { default as ReportCard } from './components/ReportCard';
+export { default as AIChat } from './ui/AIChat';
+export { default as ChatInput } from './ui/ChatInput';
+export { default as ChatMessageList } from './ui/ChatMessageList';
+export { default as MyChat } from './ui/MyChat';
+export { default as QuickReplies } from './ui/QuickReplies';
+export { default as RecommendationCards } from './ui/RecommendationCards';
+export { default as RecommendationForm } from './ui/RecommendationForm';
+
+// 분리된 feature에서 re-export (하위 호환)
+export { CompareResultSheet } from '@/features/plan-compare';
+export { ReportCard } from '@/features/consult-report';
+export {
+  PlanSubscriptionSheet,
+  PlanSelector,
+  useSubscriptionStore,
+} from '@/features/plan-subscription';
+export type { SubscriptionForm } from '@/features/plan-subscription';
+
 export * from './types';

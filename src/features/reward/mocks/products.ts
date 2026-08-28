@@ -1,8 +1,8 @@
-import elevenstreetImage from '@/assets/images/11street-addon.png';
-import sevenelevenImage from '@/assets/images/7eleven-coupon.png';
-import gs25Image from '@/assets/images/gs25-10000.png';
-import lguDataImage from '@/assets/images/lgu-data-5gb.png';
-import wavveImage from '@/assets/images/wavve-1month.png';
+import elevenstreetImage from '@/shared/assets/images/11street-addon.png';
+import sevenelevenImage from '@/shared/assets/images/7eleven-coupon.png';
+import gs25Image from '@/shared/assets/images/gs25-10000.png';
+import lguDataImage from '@/shared/assets/images/lgu-data-5gb.png';
+import wavveImage from '@/shared/assets/images/wavve-1month.png';
 
 import type { RewardProduct } from '../types';
 

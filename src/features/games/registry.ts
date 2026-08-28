@@ -1,7 +1,7 @@
-import CardMatchGame from './components/game/CardMatchGame';
-import RuletteGame from './components/game/RuletteGame';
-import ScratchGame from './components/game/ScratchGame';
-import SpeedGame from './components/game/SpeedGame';
+import CardMatchGame from './ui/game/CardMatchGame';
+import RuletteGame from './ui/game/RuletteGame';
+import ScratchGame from './ui/game/ScratchGame';
+import SpeedGame from './ui/game/SpeedGame';
 
 // import CardMatchGame from './components/CardMatchGame';
 // import { default as ReactionTimeGame } from './components/ReactionTimeGame';

@@ -1,5 +1,9 @@
-import { requestConsult } from '@/lib/aiConsult';
-import type { ChatMode, ConsultInput, ConsultResponse } from '@/lib/aiConsult';
+import { requestConsult } from '@/shared/lib/aiConsult';
+import type {
+  ChatMode,
+  ConsultInput,
+  ConsultResponse,
+} from '@/shared/lib/aiConsult';
 
 import { TELECOM_KEYWORDS } from '../constants/telecomKeywords';
 

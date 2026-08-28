@@ -1,6 +1,6 @@
-import introImage from '@/assets/images/card-match-intro.svg';
-import rouletteImage from '@/assets/images/roulette-game-intro.svg';
-import speedImage from '@/assets/images/speed-game-intro.svg';
+import introImage from '@/shared/assets/images/card-match-intro.svg';
+import rouletteImage from '@/shared/assets/images/roulette-game-intro.svg';
+import speedImage from '@/shared/assets/images/speed-game-intro.svg';
 
 import type { GameRuleContent } from '../types';
 

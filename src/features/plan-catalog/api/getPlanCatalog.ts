@@ -1,5 +1,5 @@
-import type { RecommendedPlan } from '@/lib/aiConsult';
-import { supabaseAnon } from '@/lib/supabaseClient';
+import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import { supabaseAnon } from '@/shared/lib/supabaseClient';
 
 export type PlanRow = {
   id: number;
