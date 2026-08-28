@@ -8,6 +8,7 @@ import type { QuizKind } from '@/features/chat-quiz';
 import { generateReport, requestConsult } from '@/lib/aiConsult';
 import type {
   ConsultInput,
+  ConsultResponse,
   RecommendedPlan,
   ReportOutput,
 } from '@/lib/aiConsult';
@@ -118,6 +119,40 @@ function buildRecommendationResult(recommendations: RecommendedPlan[]): string {
     .join('\n');
 }
 
+// 에러 메시지 추출 — Error 인스턴스면 message, 아니면 기본 문구 사용
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
+}
+
+// 에러 AI 메시지 객체 생성 — isError 플래그로 빨간 말풍선 + 재시도 퀵리플라이 적용
+function buildErrorMessage(error: unknown, fallback: string) {
+  return {
+    id: Date.now(),
+    type: 'ai' as const,
+    sentence: getErrorMessage(error, fallback),
+    isError: true,
+    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+  };
+}
+
+// 간단한 AI 안내 메시지 객체 생성 — handleSend 내 quick reply 분기에서 공통 사용
+function buildAIMessage(
+  sentence: string,
+  quickReplies?: string[],
+  extra?: Partial<{
+    planSelector: boolean;
+    planSelectorMode: 'current' | 'target';
+  }>,
+) {
+  return {
+    id: Date.now() + 1,
+    type: 'ai' as const,
+    sentence,
+    quickReplies,
+    ...extra,
+  };
+}
+
 export function useChat() {
   const isLoggedIn = useIsLoggedIn();
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -159,6 +194,38 @@ export function useChat() {
   >('idle');
   // 2단계 플로우에서 선택된 현재 요금제명 (fetchCompare에 명시적으로 전달)
   const selectedCurrentPlanRef = useRef<string | null>(null);
+  // 에러 발생 시 재시도를 위해 마지막 사용자 입력을 보관
+  const lastUserInputRef = useRef<string | null>(null);
+
+  // AI 응답을 메시지 목록에 추가하고 profile을 갱신하는 공통 헬퍼
+  // fetchCompare, 다른 요금제 보기, 새 조건 추천, 일반 입력, 폼 제출에서 공통 사용
+  const addAIResponse = useCallback(
+    (
+      response: ConsultResponse,
+      request: ConsultInput,
+      defaultMode: ConsultInput['mode'],
+    ) => {
+      const mergedProfile: ConsultInput = {
+        ...request,
+        mode: response.mode ?? defaultMode,
+        isLoggedIn,
+      };
+      setProfile(mergedProfile);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          type: 'ai' as const,
+          sentence: formatResponse(response),
+          quickReplies: response.quickReplies,
+          form: response.form,
+          recommendations: response.recommendations,
+          compareResult: response.compareResult,
+        },
+      ]);
+    },
+    [isLoggedIn],
+  );
 
   const subscribedCurrentPlan = useSubscriptionStore((s) => s.currentPlan);
   const loadCurrentPlan = useSubscriptionStore((s) => s.loadCurrentPlan);
@@ -213,13 +280,10 @@ export function useChat() {
     if (!isLoggedIn) {
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence:
-            '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
-          quickReplies: ['회원 가입하기', '기타 상담'],
-        },
+        buildAIMessage(
+          '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
+          ['회원 가입하기', '기타 상담'],
+        ),
       ]);
       return;
     }
@@ -274,30 +338,14 @@ export function useChat() {
         comparePlanB: planBName,
       };
       const response = await requestConsult(request);
-      const mergedProfile: ConsultInput = {
-        ...request,
-        mode: response.mode ?? 'compare',
-      };
-      setProfile(mergedProfile);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence: formatResponse(response),
-          quickReplies: response.quickReplies,
-          form: response.form,
-          compareResult: response.compareResult,
-        },
-      ]);
+      addAIResponse(response, request, 'compare');
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : '비교 요청 중 문제가 발생했어요. 다시 시도해주세요.';
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), type: 'ai', sentence: message },
+        buildErrorMessage(
+          error,
+          '비교 요청 중 문제가 발생했어요. 다시 시도해주세요.',
+        ),
       ]);
     } finally {
       setIsLoading(false);
@@ -309,13 +357,11 @@ export function useChat() {
       pendingComparePlanRef.current = plan.planName;
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence: '현재 이용 중인 요금제를 아래에서 선택해주세요.',
-          planSelector: true,
-          quickReplies: ['메뉴로 돌아가기'],
-        },
+        buildAIMessage(
+          '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+          ['메뉴로 돌아가기'],
+          { planSelector: true },
+        ),
       ]);
       return;
     }
@@ -334,14 +380,11 @@ export function useChat() {
       setCompareFlow('selectingTarget');
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence: '비교할 대상 요금제를 아래에서 선택해주세요.',
-          planSelector: true,
-          planSelectorMode: 'target',
-          quickReplies: ['메뉴로 돌아가기'],
-        },
+        buildAIMessage(
+          '비교할 대상 요금제를 아래에서 선택해주세요.',
+          ['메뉴로 돌아가기'],
+          { planSelector: true, planSelectorMode: 'target' },
+        ),
       ]);
       return;
     }
@@ -369,11 +412,32 @@ export function useChat() {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
+    // "다시 시도" 퀵리플라이 — 마지막 사용자 입력을 재전송
+    if (trimmed === '다시 시도') {
+      const lastInput = lastUserInputRef.current;
+      if (lastInput) {
+        lastUserInputRef.current = null;
+        // 에러 메시지를 제거하고 재시도
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.type === 'ai' && last.isError) {
+            return prev.slice(0, -1);
+          }
+          return prev;
+        });
+        handleSend(lastInput);
+      }
+      return;
+    }
+
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), type: 'user', sentence: trimmed },
     ]);
     setInput('');
+
+    // 재시도를 위해 마지막 사용자 입력 보관
+    lastUserInputRef.current = trimmed;
 
     const quizIntent = getQuizIntent(trimmed);
     if (quizIntent) {
@@ -392,13 +456,10 @@ export function useChat() {
       if (!isLoggedIn) {
         setMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 1,
-            type: 'ai',
-            sentence:
-              '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
-            quickReplies: ['회원 가입하기', '기타 상담'],
-          },
+          buildAIMessage(
+            '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
+            ['회원 가입하기', '기타 상담'],
+          ),
         ]);
         return;
       }
@@ -414,13 +475,10 @@ export function useChat() {
       if (!lastPlan) {
         setMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 1,
-            type: 'ai',
-            sentence:
-              '비교할 추천 요금제가 없어요. 먼저 요금제 추천을 받아주세요.',
-            quickReplies: ['요금제 추천받기', '메뉴로 돌아가기'],
-          },
+          buildAIMessage(
+            '비교할 추천 요금제가 없어요. 먼저 요금제 추천을 받아주세요.',
+            ['요금제 추천받기', '메뉴로 돌아가기'],
+          ),
         ]);
         return;
       }
@@ -428,13 +486,11 @@ export function useChat() {
         pendingComparePlanRef.current = lastPlan.planName;
         setMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 1,
-            type: 'ai',
-            sentence: '현재 이용 중인 요금제를 아래에서 선택해주세요.',
-            planSelector: true,
-            quickReplies: ['메뉴로 돌아가기'],
-          },
+          buildAIMessage(
+            '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+            ['메뉴로 돌아가기'],
+            { planSelector: true },
+          ),
         ]);
         return;
       }
@@ -448,14 +504,11 @@ export function useChat() {
         setCompareFlow('selectingCurrent');
         setMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 1,
-            type: 'ai',
-            sentence: '현재 이용 중인 요금제를 아래에서 선택해주세요.',
-            planSelector: true,
-            planSelectorMode: 'current',
-            quickReplies: ['메뉴로 돌아가기'],
-          },
+          buildAIMessage(
+            '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+            ['메뉴로 돌아가기'],
+            { planSelector: true, planSelectorMode: 'current' },
+          ),
         ]);
         return;
       }
@@ -463,14 +516,11 @@ export function useChat() {
       setCompareFlow('selectingTarget');
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now() + 1,
-          type: 'ai',
-          sentence: '비교할 대상 요금제를 아래에서 선택해주세요.',
-          planSelector: true,
-          planSelectorMode: 'target',
-          quickReplies: ['메뉴로 돌아가기'],
-        },
+        buildAIMessage(
+          '비교할 대상 요금제를 아래에서 선택해주세요.',
+          ['메뉴로 돌아가기'],
+          { planSelector: true, planSelectorMode: 'target' },
+        ),
       ]);
       return;
     }
@@ -481,17 +531,14 @@ export function useChat() {
       if (lastRecs.length > 0) {
         setMessages((prev) => [
           ...prev,
-          {
-            id: Date.now() + 1,
-            type: 'ai',
-            sentence:
-              '이미 요금제를 추천받으셨어요. 새로운 조건으로 다시 추천받거나, 방금 본 요금제와 다른 요금제를 확인할 수 있어요.',
-            quickReplies: [
+          buildAIMessage(
+            '이미 요금제를 추천받으셨어요. 새로운 조건으로 다시 추천받거나, 방금 본 요금제와 다른 요금제를 확인할 수 있어요.',
+            [
               '새 조건으로 다시 추천받기',
               '다른 요금제 보기',
               '메뉴로 돌아가기',
             ],
-          },
+          ),
         ]);
         return;
       }
@@ -512,30 +559,14 @@ export function useChat() {
           excludePlanIds,
         };
         const response = await requestConsult(request);
-        const mergedProfile: ConsultInput = {
-          ...request,
-          mode: response.mode ?? 'recommend',
-        };
-        setProfile(mergedProfile);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            type: 'ai',
-            sentence: formatResponse(response),
-            quickReplies: response.quickReplies,
-            form: response.form,
-            recommendations: response.recommendations,
-          },
-        ]);
+        addAIResponse(response, request, 'recommend');
       } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
         setMessages((prev) => [
           ...prev,
-          { id: Date.now(), type: 'ai', sentence: message },
+          buildErrorMessage(
+            error,
+            '요청 중 문제가 발생했어요. 다시 시도해주세요.',
+          ),
         ]);
       } finally {
         setIsLoading(false);
@@ -557,30 +588,14 @@ export function useChat() {
           userMessage: '새 조건으로 다시 추천받기',
         };
         const response = await requestConsult(request);
-        const mergedProfile: ConsultInput = {
-          ...request,
-          mode: response.mode ?? 'recommend',
-        };
-        setProfile(mergedProfile);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now(),
-            type: 'ai',
-            sentence: formatResponse(response),
-            quickReplies: response.quickReplies,
-            form: response.form,
-            recommendations: response.recommendations,
-          },
-        ]);
+        addAIResponse(response, request, 'recommend');
       } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
         setMessages((prev) => [
           ...prev,
-          { id: Date.now(), type: 'ai', sentence: message },
+          buildErrorMessage(
+            error,
+            '요청 중 문제가 발생했어요. 다시 시도해주세요.',
+          ),
         ]);
       } finally {
         setIsLoading(false);
@@ -595,32 +610,14 @@ export function useChat() {
         ...profile,
         isLoggedIn,
       });
-      const mergedProfile: ConsultInput = {
-        ...nextProfile,
-        mode: response.mode ?? nextProfile.mode,
-        isLoggedIn,
-      };
-      setProfile(mergedProfile);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence: formatResponse(response),
-          quickReplies: response.quickReplies,
-          form: response.form,
-          recommendations: response.recommendations,
-          compareResult: response.compareResult,
-        },
-      ]);
+      addAIResponse(response, nextProfile, nextProfile.mode);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), type: 'ai', sentence: message },
+        buildErrorMessage(
+          error,
+          '요청 중 문제가 발생했어요. 다시 시도해주세요.',
+        ),
       ]);
     } finally {
       setIsLoading(false);
@@ -650,31 +647,14 @@ export function useChat() {
         isLoggedIn,
       };
       const response = await requestConsult(merged);
-      const mergedProfile: ConsultInput = {
-        ...merged,
-        mode: response.mode ?? merged.mode,
-      };
-      setProfile(mergedProfile);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'ai',
-          sentence: formatResponse(response),
-          quickReplies: response.quickReplies,
-          form: response.form,
-          recommendations: response.recommendations,
-          compareResult: response.compareResult,
-        },
-      ]);
+      addAIResponse(response, merged, 'recommend');
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : '요청 중 문제가 발생했어요. 다시 시도해주세요.';
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), type: 'ai', sentence: message },
+        buildErrorMessage(
+          error,
+          '요청 중 문제가 발생했어요. 다시 시도해주세요.',
+        ),
       ]);
     } finally {
       setIsLoading(false);
@@ -707,13 +687,12 @@ export function useChat() {
       ]);
       return report;
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : '레포트 생성 중 문제가 발생했어요. 다시 시도해주세요.';
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), type: 'ai', sentence: message },
+        buildErrorMessage(
+          error,
+          '레포트 생성 중 문제가 발생했어요. 다시 시도해주세요.',
+        ),
       ]);
     } finally {
       setIsLoading(false);

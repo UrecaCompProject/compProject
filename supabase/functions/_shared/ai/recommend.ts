@@ -439,6 +439,75 @@ function buildNotice(plans: Plan[], input: ConsultInput): string | undefined {
   return '예산 범위 내에 데이터 용량을 만족하는 요금제가 없어 가격 내에서 가장 용량이 큰 순서대로 추천해드리겠습니다.';
 }
 
+// 통신 요금제 상담과 관련된 키워드 목록 — 상담 외 입력 감지에 사용
+// 주의: 이 배열은 src/features/ai-consult/constants/telecomKeywords.ts에서 자동 생성됩니다.
+// 직접 수정하지 말고 프론트엔드 소스를 수정 후 npm run sync:keywords를 실행하세요.
+const TELECOM_KEYWORDS = [
+  '요금제',
+  '데이터',
+  '통화',
+  '문자',
+  'SMS',
+  '예산',
+  '비용',
+  '요금',
+  '가입',
+  '해지',
+  '변경',
+  '신청',
+  '추천',
+  '비교',
+  '할인',
+  '혜택',
+  'OTT',
+  '넷플릭스',
+  '유튜브',
+  '디즈니',
+  '왓챠',
+  '웨이브',
+  '쿠팡',
+  'USIM',
+  '유심',
+  'eSIM',
+  '번호이동',
+  '기기변경',
+  '신규',
+  '5G',
+  'LTE',
+  '무제한',
+  '기가',
+  'GB',
+  '청소년',
+  '어르신',
+  '시니어',
+  '월정액',
+  '부가통화',
+  '데이터공유',
+  '테더링',
+  '속도',
+  '레포트',
+  '리포트',
+  '상담',
+  '문의',
+  '메뉴',
+  '처음',
+  '돌아가기',
+  '게임',
+  '퀴즈',
+  '출석',
+  '출첵',
+  '안녕',
+  '도움',
+];
+
+// 사용자 입력이 통신 상담과 관련 있는지 판별
+function isTelecomRelated(text: string): boolean {
+  const normalized = text.toLowerCase().replace(/\s+/g, '');
+  return TELECOM_KEYWORDS.some((kw) =>
+    normalized.includes(kw.toLowerCase().replace(/\s+/g, '')),
+  );
+}
+
 // 사용자 메시지와 이전 모드에서 다음 단계 모드를 결정합니다.
 function resolveNextMode(input: ConsultInput): ChatMode {
   const t = (input.userMessage || '').trim();
@@ -453,6 +522,11 @@ function resolveNextMode(input: ConsultInput): ChatMode {
   if (/게임|미니게임/.test(t)) return 'game';
   if (/출석|출첵|출석체크/.test(t)) return 'attendance';
   if (/레포트|리포트|레포트\s*생성|리포트\s*생성/.test(t)) return 'report';
+
+  // 메뉴 상태에서 통신과 무관한 입력은 상담 외 주제로 분기
+  if (current === 'menu' && t.length > 0 && !isTelecomRelated(t)) {
+    return 'out_of_scope';
+  }
 
   // 이전 모드를 유지하며, 메뉴라면 추천으로 전진시킵니다.
   if (current === 'menu' && t.length > 0) return 'recommend';
@@ -638,6 +712,19 @@ function buildSubscribeResponse(isLoggedIn: boolean): RecommendOutput {
   };
 }
 
+// 상담 외 주제 응답 — 통신 요금제와 무관한 질문을 안내하고 메뉴로 유도
+function buildOutOfScopeResponse(isLoggedIn: boolean): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '죄송해요, 저는 통신 요금제 상담 도우미예요. 요금제 추천, 비교, 가입, 혜택 등 통신 관련 질문만 도와드릴 수 있어요. 아래 메뉴에서 원하는 항목을 선택해 주세요.',
+    quickReplies: isLoggedIn
+      ? ['요금제 추천받기', '요금제 비교하기', '요금제 가입하기', '기타 상담']
+      : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
+    mode: 'out_of_scope',
+  };
+}
+
 // 일반 상담 기초 응답. 로그인 여부에 따라 가입 버튼을 다르게 노출.
 function buildGeneralResponse(isLoggedIn: boolean): RecommendOutput {
   return {
@@ -727,6 +814,8 @@ export async function recommendPlan(
   }
   if (mode === 'subscribe')
     return buildSubscribeResponse(input.isLoggedIn ?? false);
+  if (mode === 'out_of_scope')
+    return buildOutOfScopeResponse(input.isLoggedIn ?? false);
   if (mode === 'general')
     return buildGeneralResponse(input.isLoggedIn ?? false);
   if (mode === 'game') return buildGameResponse();
@@ -817,6 +906,11 @@ export async function generateQuickReplies(
   }
   if (mode === 'subscribe') {
     return ['온라인 가입', '영업점 방문', '메뉴로 돌아가기'];
+  }
+  if (mode === 'out_of_scope') {
+    return input.isLoggedIn
+      ? ['요금제 추천받기', '요금제 비교하기', '요금제 가입하기', '기타 상담']
+      : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'];
   }
   if (mode === 'general') {
     return [
