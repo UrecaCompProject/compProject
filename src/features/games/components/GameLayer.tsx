@@ -18,7 +18,9 @@ export default function GameLayer({ children }: GameLayerProps) {
 
   return (
     <div className="relative h-full">
-      <div className={`h-full ${revealed ? 'z-0' : 'z-10'}`}>{children}</div>
+      <div className={`h-full overflow-y-auto ${revealed ? 'z-0' : 'z-10'}`}>
+        {children}
+      </div>
 
       {GameComponent && (
         <div

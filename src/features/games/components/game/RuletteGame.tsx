@@ -75,7 +75,6 @@ export default function RuletteGame({
           title="오늘의 혜택 획득!"
           description="내일 또 출석하고 룰렛을 돌려보세요."
           rewardCount={wonReward}
-          onRetry={handleStart}
           onClose={onClose}
         />
       }

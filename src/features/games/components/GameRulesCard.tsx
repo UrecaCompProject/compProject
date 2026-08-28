@@ -16,26 +16,22 @@ export default function GameRulesCard({
 }: GameRulesCardProps) {
   return (
     <div className="flex flex-col items-center h-full px-10 py-5 text-center">
-      <div className="relative flex h-[200px] w-[200px] shrink-0 items-center justify-center">
+      <div className="relative flex h-50 w-50 shrink-0 items-center justify-center">
         <div
-          className="absolute left-1/2 top-1/2 h-[160px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
+          className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
           style={{ backgroundColor: 'rgba(91, 127, 224, 0.3)' }}
         />
-        <img
-          src={image}
-          alt=""
-          className="relative z-10 h-[200px] w-[200px] object-contain"
-        />
+        <img src={image} alt="" className="z-10 w-full h-full object-contain" />
       </div>
 
-      <div className="mt-[30px]">
+      <div className="mt-7.5">
         <h3 className="text-[20px] font-bold text-fg-primary">{title}</h3>
         <p className="mt-1 text-[14px] font-medium text-fg-tertiary">
           {subtitle}
         </p>
       </div>
 
-      <ol className="mt-[30px] flex w-full flex-col items-start text-left">
+      <ol className="mt-7.5 flex w-full flex-col items-start text-left">
         {steps.map((step, index) => (
           <li key={step.title} className="flex flex-col w-full">
             <div className="flex gap-3">
@@ -53,13 +49,13 @@ export default function GameRulesCard({
             </div>
 
             {index < steps.length - 1 && (
-              <div className="my-2 ml-3 h-[30px] w-[2px] rounded-[10px] bg-surface-pressed" />
+              <div className="my-2 ml-3 h-7.5 w-0.5 rounded-[10px] bg-surface-pressed" />
             )}
           </li>
         ))}
       </ol>
 
-      <Button className="mt-[60px] w-full" size="lg" onClick={onStart}>
+      <Button className="mt-15 w-full" size="lg" onClick={onStart}>
         {ctaLabel}
       </Button>
     </div>

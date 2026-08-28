@@ -3,7 +3,7 @@ import { useState } from 'react';
 import couponExchangeImage from '@/assets/images/coupon-exchange.svg';
 import { Button, useModalStore } from '@/features/shared';
 
-import ProductCard from '../ProductCard';
+import ProductCard from '../shared/ProductCard';
 
 import type { RewardProduct } from '../../types';
 

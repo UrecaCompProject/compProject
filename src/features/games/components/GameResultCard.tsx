@@ -5,9 +5,7 @@ type GameResultCardProps = {
   title: string;
   description: string;
   rewardCount?: number;
-  retryLabel?: string;
   closeLabel?: string;
-  onRetry: () => void;
   onClose?: () => void;
 };
 
@@ -16,9 +14,7 @@ export default function GameResultCard({
   title,
   description,
   rewardCount,
-  retryLabel = '다시 하기',
-  closeLabel = '닫기',
-  onRetry,
+  closeLabel = '확인',
   onClose,
 }: GameResultCardProps) {
   return (
@@ -48,10 +44,7 @@ export default function GameResultCard({
         </p>
       )}
 
-      <div className="flex w-full gap-2 mt-auto">
-        <Button variant="secondary" className="flex-1" onClick={onRetry}>
-          {retryLabel}
-        </Button>
+      <div className="flex w-full mt-auto">
         <Button className="flex-1" onClick={onClose}>
           {closeLabel}
         </Button>

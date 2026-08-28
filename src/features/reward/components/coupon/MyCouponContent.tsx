@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
 import { coupons } from '../../mocks/coupons';
-import ProductCard from '../ProductCard';
-import SearchBar from '../SearchBar';
+import ProductCard from '../shared/ProductCard';
+import SearchBar from '../shared/SearchBar';
 
 export default function CouponBox() {
   const [query, setQuery] = useState('');

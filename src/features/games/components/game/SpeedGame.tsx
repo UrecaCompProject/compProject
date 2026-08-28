@@ -10,22 +10,36 @@ import GameShell from '../GameShell';
 import type { GamePhase } from '../../types';
 
 const TARGET_SECONDS = 10;
-const SUCCESS_THRESHOLD_SECONDS = 0.3; // 목표 시간과 이 이내로 차이 나면 성공
+const CLOSE_RANGE_SECONDS = 0.5; // 9.500~10.500초 범위
+const TIME_LIMIT_SECONDS = 15; // 이 시간까지 안 누르면 자동으로 실패 처리
+const DISPLAY_PRECISION = 3;
+
+const PERFECT_REWARD = 5; // 정확히 10.000초
+const CLOSE_REWARD = 3; // 9.500~10.500초 (10.000초 제외)
+const DEFAULT_REWARD = 1; // 그 외
+
+function roundTo(value: number, precision: number) {
+  const factor = 10 ** precision;
+  return Math.round(value * factor) / factor;
+}
+
+function getReward(diff: number): number {
+  if (diff === 0) return PERFECT_REWARD;
+  if (diff <= CLOSE_RANGE_SECONDS) return CLOSE_REWARD;
+  return DEFAULT_REWARD;
+}
 
 type SpeedGameProps = {
-  reward?: number;
   onWin?: (reward: number) => void;
   onClose?: () => void;
 };
 
-export default function SpeedGame({
-  reward = 5,
-  onWin,
-  onClose,
-}: SpeedGameProps) {
+export default function SpeedGame({ onWin, onClose }: SpeedGameProps) {
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [elapsed, setElapsed] = useState(0);
   const [diff, setDiff] = useState<number | null>(null);
+  const [earnedReward, setEarnedReward] = useState(0);
+  const [timedOut, setTimedOut] = useState(false);
   const startedAtRef = useRef<number | null>(null);
   const rafRef = useRef(0);
 
@@ -35,7 +49,16 @@ export default function SpeedGame({
     startedAtRef.current = performance.now();
     const tick = () => {
       if (startedAtRef.current === null) return;
-      setElapsed((performance.now() - startedAtRef.current) / 1000);
+      const next = (performance.now() - startedAtRef.current) / 1000;
+
+      if (next >= TIME_LIMIT_SECONDS) {
+        setElapsed(TIME_LIMIT_SECONDS);
+        setTimedOut(true);
+        setPhase('result');
+        return;
+      }
+
+      setElapsed(next);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -46,17 +69,23 @@ export default function SpeedGame({
   const handleStart = () => {
     setElapsed(0);
     setDiff(null);
+    setEarnedReward(0);
+    setTimedOut(false);
     setPhase('playing');
   };
 
-  const isCleared = diff !== null && diff <= SUCCESS_THRESHOLD_SECONDS;
-
   const handleTap = () => {
     cancelAnimationFrame(rafRef.current);
-    const tapDiff = Math.abs(elapsed - TARGET_SECONDS);
-    setDiff(tapDiff);
+    const tappedAt = roundTo(elapsed, DISPLAY_PRECISION);
+    const tapDiff = roundTo(
+      Math.abs(tappedAt - TARGET_SECONDS),
+      DISPLAY_PRECISION,
+    );
+    const reward = getReward(tapDiff);
 
-    if (tapDiff <= SUCCESS_THRESHOLD_SECONDS) onWin?.(reward);
+    setDiff(tapDiff);
+    setEarnedReward(reward);
+    onWin?.(reward);
     setPhase('result');
   };
 
@@ -70,7 +99,7 @@ export default function SpeedGame({
             {TARGET_SECONDS}초에 가장 가깝게 탭해보세요
           </p>
           <p className="text-[48px] font-bold tabular-nums text-fg-primary">
-            {elapsed.toFixed(2)}초
+            {elapsed.toFixed(DISPLAY_PRECISION)}초
           </p>
           <Button className="w-full" size="lg" onClick={handleTap}>
             탭하기
@@ -80,14 +109,15 @@ export default function SpeedGame({
       result={
         <GameResultCard
           image={REACTION_RULES.image}
-          title={isCleared ? '미션 성공!' : '아쉬워요'}
+          title={timedOut ? '시간 초과' : '미션 성공!'}
           description={
-            diff !== null
-              ? `${TARGET_SECONDS}초와 ${diff.toFixed(2)}초 차이가 났어요.`
-              : ''
+            timedOut
+              ? '제한 시간 안에 탭하지 못했어요. 다시 도전해보세요!'
+              : diff !== null
+                ? `${TARGET_SECONDS}초와 ${diff.toFixed(DISPLAY_PRECISION)}초 차이가 났어요.`
+                : ''
           }
-          rewardCount={isCleared ? reward : undefined}
-          onRetry={handleStart}
+          rewardCount={timedOut ? undefined : earnedReward}
           onClose={onClose}
         />
       }

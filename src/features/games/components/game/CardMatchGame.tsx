@@ -191,7 +191,6 @@ export default function CardMatchGame({
               : `${matchedCount}/${PAIR_COUNT}쌍을 맞췄어요. 다시 도전해보세요!`
           }
           rewardCount={isCleared ? reward : undefined}
-          onRetry={handleStart}
           onClose={onClose}
         />
       }

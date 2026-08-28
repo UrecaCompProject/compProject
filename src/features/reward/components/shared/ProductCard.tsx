@@ -1,6 +1,6 @@
 import Badge from './Badge';
 
-import type { RewardProduct, Coupon } from '../types';
+import type { RewardProduct, Coupon } from '../../types';
 
 type ProductCardProps<T extends RewardProduct | Coupon> = {
   product: T;

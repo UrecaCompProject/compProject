@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { useModalStore } from '@/features/shared';
 
 import { products } from '../../mocks/products';
-import Badge from '../Badge';
-import ProductCard from '../ProductCard';
-import SearchBar from '../SearchBar';
+import Badge from '../shared/Badge';
+import ProductCard from '../shared/ProductCard';
+import SearchBar from '../shared/SearchBar';
 
 import ExchangeCouponModal from './ExchangeCouponModal';
 

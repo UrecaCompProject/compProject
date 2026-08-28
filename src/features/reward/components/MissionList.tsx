@@ -1,7 +1,7 @@
 import { missions } from '../mocks/missions';
 
-import Badge from './Badge';
 import MissionItem from './MissionItem';
+import Badge from './shared/Badge';
 
 import type { Mission } from '../types';
 

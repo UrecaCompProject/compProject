@@ -1,4 +1,4 @@
-export { default as Badge } from './components/Badge';
+export { default as Badge } from './components/shared/Badge';
 export { default as CheckIn } from './components/CheckIn';
 export { default as MissionList } from './components/MissionList';
 export { default as RewardHome } from './components/RewardHome';
