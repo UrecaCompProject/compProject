@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   ChevronDown,
@@ -17,6 +17,7 @@ interface ReportDetailProps {
 }
 
 export default function ReportDetail({ onSelectPlan }: ReportDetailProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -28,8 +29,38 @@ export default function ReportDetail({ onSelectPlan }: ReportDetailProps) {
     setHasOverflow(card.scrollHeight > card.clientHeight);
   }, []);
 
+  // ReportSheet은 리스트/상세 화면을 언마운트하지 않고 translate-x로만
+  // 넘겨서, 상세 화면을 나갔다 다시 들어와도 스크롤 위치가 그대로 남아있다.
+  // ReportSheet의 스크롤 컨테이너는 건드리지 않고, 이 화면이 다시 보이는
+  // 시점(교차 관찰)을 감지해서 그 스크롤 위치만 맨 위로 되돌린다.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const scrollParent = root.closest('.overflow-y-auto');
+    if (!scrollParent) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          scrollParent.scrollTo({ top: 0 });
+        }
+      },
+      // scrollParent 자신이 translate-x로 움직이는 요소라서, root로 쓰면
+      // 로컬 좌표계 기준이라 항상 "보이는" 것으로 계산돼 전환을 못 잡는다.
+      // 뷰포트를 기준으로 삼아야 실제로 화면에 들어오는 시점을 감지한다.
+      { root: null, threshold: 0.1 },
+    );
+
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="px-4 pt-4 pb-10 gap-5 flex flex-col bg-surface-page min-h-full">
+    <div
+      ref={rootRef}
+      className="px-4 pt-4 pb-10 gap-5 flex flex-col bg-surface-page min-h-full"
+    >
       {/* TODO: 실제 상담 리포트 상세 내용 연동 */}
       <div>
         <div className="text-semibold-16-130 text-fg-tertiary ml-1">
