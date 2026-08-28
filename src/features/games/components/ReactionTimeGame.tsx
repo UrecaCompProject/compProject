@@ -23,15 +23,15 @@ const THREE_BADGE_TOLERANCE_MS = 500;
 const STEPS = [
   {
     title: '화면의 신호를 기다려주세요!',
-    description: '신호가 나타나기 전까지 버튼을 누르지 마세요.',
+    description: '3초 후 게임 시작 후 타이머를 확인하세요.',
   },
   {
-    title: '신호가 나타나면 빠르게 탭!',
-    description: '화면이 바뀌는 순간 버튼을 최대한 빠르게 눌러보세요.',
+    title: '타이머의 시간을 잘 보고 탭!',
+    description: ' 10.000초에 가깝게 버튼을 눌러보세요.',
   },
   {
-    title: '가장 빠른 반응속도에 도전해보세요!',
-    description: '측정된 반응 시간을 확인하고 기록에 도전해보세요.',
+    title: '더 적은 오차에 도전해보세요!',
+    description: '목표 시간과 가까울수록 더 많은 배지를 받을 수 있어요.',
   },
 ];
 
