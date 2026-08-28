@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { useNavigate, useParams } from 'react-router';
 
 import {
-  getPlans,
   PlanDetailContent,
+  usePlans,
   type PlanDetailItem,
 } from '@/features/plan-detail';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
@@ -35,36 +35,8 @@ export default function PlanDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [plans, setPlans] = useState<PlanDetailItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: plans = [], isLoading, error } = usePlans();
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    getPlans()
-      .then((result) => {
-        if (!cancelled) {
-          setPlans(result);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : '요금제 정보를 불러오지 못했습니다.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const plan = plans.find((item) => item.id === id) ?? null;
   const backToList = () => navigate('/plan');
@@ -98,7 +70,17 @@ export default function PlanDetailPage() {
           )
         }
       >
-        <PlanDetailContent plan={plan} isLoading={isLoading} error={error} />
+        <PlanDetailContent
+          plan={plan}
+          isLoading={isLoading}
+          error={
+            error instanceof Error
+              ? error.message
+              : error
+                ? '요금제 정보를 불러오지 못했습니다.'
+                : null
+          }
+        />
       </BottomSheet>
 
       {plan && (
