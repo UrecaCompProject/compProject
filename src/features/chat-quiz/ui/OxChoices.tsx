@@ -28,7 +28,7 @@ export default function OxChoices({
               aria-pressed={isSelected}
               onClick={() => onSelect(option.id)}
               className={`relative h-[132px] w-full overflow-hidden rounded-[20px] border-2 transition-colors ${
-                isO ? 'bg-brand-soft' : 'bg-[#ffeef4]'
+                isO ? 'bg-brand-soft' : 'bg-accent-soft'
               } ${
                 isSelected ? 'border-brand-promo-primary' : 'border-transparent'
               }`}

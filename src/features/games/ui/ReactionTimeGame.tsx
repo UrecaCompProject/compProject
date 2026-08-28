@@ -204,10 +204,7 @@ export default function ReactionTimeGame({
     return (
       <div className="flex h-full flex-col items-center px-10 py-5 text-center">
         <div className="relative flex h-[200px] w-[200px] shrink-0 items-center justify-center">
-          <div
-            className="absolute left-1/2 top-1/2 h-[160px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
-            style={{ backgroundColor: 'rgba(91, 127, 224, 0.3)' }}
-          />
+          <div className="absolute left-1/2 top-1/2 h-[160px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-compare-selected/30 blur-[60px]" />
           <img
             src={introImage}
             alt=""

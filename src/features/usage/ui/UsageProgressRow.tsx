@@ -11,8 +11,14 @@ interface UsageProgressRowProps {
 const COLOR_CLASSES: Record<string, { text: string; bar: string }> = {
   '5G 데이터': { text: 'text-reward-active', bar: 'bg-reward-active' },
   '400kB 속도 데이터': { text: 'text-reward-active', bar: 'bg-reward-active' },
-  '유무선 통화': { text: 'text-[#955BE0]', bar: 'bg-[#955BE0]' },
-  '영상 & 부가 통화': { text: 'text-[#955BE0]', bar: 'bg-[#955BE0]' },
+  '유무선 통화': {
+    text: 'text-accent-purple-primary',
+    bar: 'bg-accent-purple-primary',
+  },
+  '영상 & 부가 통화': {
+    text: 'text-accent-purple-primary',
+    bar: 'bg-accent-purple-primary',
+  },
   메세지: { text: 'text-accent-primary', bar: 'bg-accent-primary' },
 };
 const DEFAULT_COLOR_CLASSES = {
