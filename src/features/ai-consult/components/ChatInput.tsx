@@ -10,7 +10,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 
-import { useIsLoggedIn } from '@/features/auth';
+import { useIsLoggedIn, SigninModal } from '@/features/auth';
 import type { QuizKind } from '@/features/chat-quiz';
 import { ReportSheet } from '@/features/consult-report';
 import { MyPage, PlanPage } from '@/features/pages';
@@ -21,6 +21,7 @@ import {
   Button,
   Input,
   useClickOutside,
+  useModalStore,
 } from '@/features/shared';
 
 interface ActiveSheet {
@@ -45,6 +46,7 @@ export default function ChatInput({
   disabled = false,
 }: ChatInputProps) {
   const isLogin = useIsLoggedIn();
+  const openModal = useModalStore((state) => state.open);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -52,7 +54,15 @@ export default function ChatInput({
   const [reportOpen, setReportOpen] = useState(false);
   const [activeSheet, setActiveSheet] = useState<ActiveSheet | null>(null);
 
+  const requireLogin = () => {
+    openModal({ title: '로그인', content: <SigninModal /> });
+  };
+
   const handleSend = () => {
+    if (!isLogin) {
+      requireLogin();
+      return;
+    }
     onSend(value);
   };
   const openSheet = (sheet: ActiveSheet) => {
@@ -86,6 +96,13 @@ export default function ChatInput({
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSend();
           }}
+          onFocus={(e) => {
+            if (!isLogin) {
+              e.target.blur();
+              requireLogin();
+            }
+          }}
+          readOnly={!isLogin}
           placeholder={
             isLogin ? 'AI에게 질문해보세요' : '로그인 후 질문할 수 있습니다'
           }
@@ -97,7 +114,7 @@ export default function ChatInput({
           size="icon"
           round
           onClick={handleSend}
-          disabled={disabled || !value.trim()}
+          disabled={disabled || (isLogin && !value.trim())}
         >
           <ArrowUp size={16} />
         </Button>

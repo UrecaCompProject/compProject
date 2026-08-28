@@ -3,9 +3,9 @@ import { useState } from 'react';
 import couponExchangeImage from '@/assets/images/coupon-exchange.svg';
 import { Button, useModalStore } from '@/features/shared';
 
-import ProductCard from './ProductCard';
+import ProductCard from '../shared/ProductCard';
 
-import type { RewardProduct } from '../types';
+import type { RewardProduct } from '../../types';
 
 type ExchangePhase = 'confirm' | 'success';
 
@@ -14,7 +14,7 @@ type ExchangeContentProps = {
   onGoToCoupon: () => void;
 };
 
-export default function ExchangeContent({
+export default function ExchangeCouponModal({
   product,
   onGoToCoupon,
 }: ExchangeContentProps) {

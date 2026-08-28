@@ -28,16 +28,18 @@ type MissionItemProps = {
   onAction?: (mission: Mission) => void;
 };
 
+// 게임 리스트 카드 컴포넌트
+
 export default function MissionItem({ mission, onAction }: MissionItemProps) {
   const Icon = missionIcons[mission.icon];
 
   return (
-    <li className="flex items-center gap-3 rounded-xl bg-surface-card px-3 py-3">
+    <li className="flex items-center gap-2.5 rounded-xl bg-surface-card px-2.5 py-2.5">
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-promo-primary">
         <Icon size={20} strokeWidth={1.8} />
       </span>
 
-      <div className="flex h-[33px] w-[236px] min-w-0 flex-1 flex-col justify-between">
+      <div className="flex min-w-0 flex-1 flex-col justify-between">
         <strong className="truncate text-chip text-fg-primary">
           {mission.title}
         </strong>

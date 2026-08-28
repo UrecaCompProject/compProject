@@ -1,4 +1,4 @@
-import CouponBox from './CouponBox';
+import CouponBox from './MyCouponContent';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 

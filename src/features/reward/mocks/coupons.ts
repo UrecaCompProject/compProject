@@ -6,17 +6,17 @@ import type { Coupon } from '../types';
 export const coupons: Coupon[] = [
   {
     id: 'gs25-10000',
-    name: 'GS25 1만원 상품권',
+    name: '1만원 상품권',
     brand: 'GS25',
-    image: gs25Image,
+    imageUrl: gs25Image,
     expiresAt: '2026.09.30',
     status: 'available',
   },
   {
     id: 'lgu-5gb',
-    name: 'LG U+ 5GB 데이터 상품권',
+    name: '5GB 데이터 상품권',
     brand: 'LG U+',
-    image: lguImage,
+    imageUrl: lguImage,
     expiresAt: '2026.10.15',
     status: 'available',
   },

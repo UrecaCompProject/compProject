@@ -13,7 +13,7 @@ export default function Layout() {
     <div
       className={`relative ${
         isChatPage
-          ? 'flex h-screen flex-col overflow-hidden bg-surface-pressed'
+          ? 'flex h-screen flex-col overflow-clip bg-surface-pressed'
           : 'min-h-screen bg-surface-page'
       }`}
     >

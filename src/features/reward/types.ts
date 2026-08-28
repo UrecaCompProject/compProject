@@ -16,3 +16,14 @@ export type RewardProduct = {
   imageUrl: string;
   badgeCost: number;
 };
+
+export type CouponStatus = 'available' | 'used' | 'expired';
+
+export type Coupon = {
+  id: string;
+  name: string;
+  brand: string;
+  imageUrl: string;
+  expiresAt: string;
+  status: CouponStatus;
+};

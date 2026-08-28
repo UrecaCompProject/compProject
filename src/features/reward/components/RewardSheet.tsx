@@ -1,12 +1,17 @@
 import { useState } from 'react';
 
 import type { QuizKind } from '@/features/chat-quiz';
-import { CouponBox } from '@/features/coupon';
-import { GameLayer, useActiveGameMeta, useGameStore } from '@/features/games';
+import {
+  GameLayer,
+  isGameId,
+  useActiveGameMeta,
+  useGameStore,
+} from '@/features/games';
 import { BottomSheet } from '@/features/shared';
 
+import MyCouponContent from './coupon/MyCouponContent';
 import RewardHome from './RewardHome';
-import StoreContent from './StoreContent';
+import StoreContent from './store/StoreContent';
 
 import type { Mission } from '../types';
 
@@ -18,11 +23,11 @@ type RewardSheetProps = {
 
 type RewardView = 'reward' | 'store' | 'coupon';
 
-const titles: Record<RewardView, string> = {
-  reward: '게임 혜택',
-  store: '배지 상점',
-  coupon: '나의 쿠폰함',
-};
+// const titles: Record<RewardView, string> = {
+//   reward: '혜택/이벤트',
+//   store: '혜택/이벤트',
+//   coupon: '혜택/이벤트',
+// };
 
 export default function RewardSheet({
   open,
@@ -33,6 +38,7 @@ export default function RewardSheet({
   const activeGame = useActiveGameMeta();
   const openGame = useGameStore((state) => state.openGame);
   const closeGame = useGameStore((state) => state.closeGame);
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setActiveView('reward');
@@ -47,8 +53,16 @@ export default function RewardSheet({
   };
 
   const handleMissionAction = (mission: Mission) => {
-    if (mission.id === 'card-match') {
-      openGame('card-match', { reward: mission.reward });
+    // 스크래치 이벤트는 채팅 쪽에서 별도로 처리될 예정이라, 지금은
+    // GameLayer로 열지 않고 바텀시트만 닫아서 안 보이게 한다.
+
+    // if (mission.id === 'scratch') {
+    //   handleOpenChange(false);
+    //   return;
+    // }
+
+    if (isGameId(mission.id)) {
+      openGame(mission.id, { reward: mission.reward });
       return;
     }
 
@@ -67,7 +81,8 @@ export default function RewardSheet({
     <BottomSheet
       open={open}
       onOpenChange={handleOpenChange}
-      title={activeGame?.title ?? titles[activeView]}
+      // title={activeGame?.title ?? titles[activeView]}
+      title="혜택/이벤트"
       onBack={
         activeGame?.onBack ?? (activeView === 'reward' ? undefined : handleBack)
       }
@@ -91,7 +106,7 @@ export default function RewardSheet({
           <StoreContent onGoToCoupon={() => setActiveView('coupon')} />
         )}
 
-        {activeView === 'coupon' && <CouponBox />}
+        {activeView === 'coupon' && <MyCouponContent />}
       </GameLayer>
     </BottomSheet>
   );

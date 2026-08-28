@@ -1,6 +1,13 @@
-import CardMatchGame from './components/CardMatchGame';
-import { default as ReactionTimeGame } from './components/ReactionTimeGame';
-import ScratchGame from './components/ScratchGame';
+
+import CardMatchGame from './components/game/CardMatchGame';
+import RuletteGame from './components/game/RuletteGame';
+import ScratchGame from './components/game/ScratchGame';
+import SpeedGame from './components/game/SpeedGame';
+
+// import CardMatchGame from './components/CardMatchGame';
+// import { default as ReactionTimeGame } from './components/ReactionTimeGame';
+// import ScratchGame from './components/ScratchGame';
+
 
 import type { GameDefinition, GameId } from './types';
 
@@ -13,10 +20,19 @@ export const GAME_REGISTRY: Record<GameId, GameDefinition> = {
     title: '스크래치 이벤트',
     component: ScratchGame,
   },
-  'reaction-time': {
-    title: '반응속도 게임',
-    component: ReactionTimeGame,
+  reaction: {
+    title: '반응속도 탭 게임',
+    component: SpeedGame,
   },
+  attendance: {
+    title: '출석 룰렛',
+    component: RuletteGame,
+
+//   'reaction-time': {
+//     title: '반응속도 게임',
+//     component: ReactionTimeGame,
+
+//   },
 };
 
 export function isGameId(id: string): id is GameId {

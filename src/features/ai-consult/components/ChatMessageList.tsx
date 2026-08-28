@@ -73,6 +73,21 @@ export default function ChatMessageList({
     const scrollToLastMessageTop = () => {
       const target = lastMessageRef.current;
       if (!target) return;
+
+      // 폼 입력 중 유효성 에러 문구가 붙었다 떨어지거나, 모바일 키보드가
+      // 열고 닫힐 때도 content 크기가 바뀌어 이 콜백이 실행된다.
+      // 입력 필드에 포커스가 가 있는 동안은 사용자가 타이핑 중인 것이므로
+      // 스크롤을 강제로 튕기지 않고 건너뛴다. (버튼 클릭으로 넘어가는
+      // 회원가입 단계 전환 등은 포커스가 버튼에 있어 계속 자동 스크롤된다.)
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLElement &&
+        container.contains(active) &&
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName)
+      ) {
+        return;
+      }
+
       const offset =
         target.getBoundingClientRect().top -
         container.getBoundingClientRect().top +
@@ -87,7 +102,10 @@ export default function ChatMessageList({
   const lastIndex = messages.length - 1;
 
   return (
-    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-4">
+    <div
+      ref={scrollContainerRef}
+      className="min-h-0 flex-1 overflow-y-auto py-4"
+    >
       <div ref={contentRef} className="flex flex-col gap-4 px-4">
         {messages.map((message, index) => (
           <div

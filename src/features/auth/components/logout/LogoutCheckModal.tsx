@@ -20,12 +20,12 @@ export default function LogoutCheckModal() {
     }
   };
   return (
-    <div className="flex flex-col gap-2 text-body text-fg-tertiary">
+    <div className="flex flex-col gap-2 text-body text-fg-tertiary text-center">
       레포트 작성 없이 로그아웃 시 채팅이 사라집니다
       <br />
       로그아웃을 진행하시겠습니까?
       {error && <p className="text-caption text-semantic-error">{error}</p>}
-      <Button onClick={handleLogout} disabled={isSubmitting}>
+      <Button onClick={handleLogout} disabled={isSubmitting} className="mt-2">
         {isSubmitting ? '로그아웃 중...' : '로그아웃'}
       </Button>
     </div>
