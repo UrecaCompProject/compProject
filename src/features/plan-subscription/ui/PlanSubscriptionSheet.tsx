@@ -3,7 +3,7 @@ import { Fragment, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
 import { getPlanCatalog } from '@/entities/plan';
-import { useAuthStore } from '@/entities/user';
+import { useAuth } from '@/entities/user';
 import { BottomSheet, Button, Input } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -211,7 +211,7 @@ export default function PlanSubscriptionSheet({
   );
 
   // 로그인된 사용자 정보 — 본인 입력 단계 없이 확인용으로 표시
-  const user = useAuthStore((state) => state.user);
+  const user = useAuth().user;
   const userInfo = useMemo(() => {
     const meta = user?.user_metadata;
     return {
