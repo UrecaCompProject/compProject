@@ -1,1 +1,3 @@
-export { useAuthStore, useIsLoggedIn } from './useAuthStore';
+export { AuthProvider } from './AuthProvider';
+export type { AuthContextValue } from './authContext';
+export { useAuth, useIsLoggedIn } from './useAuth';

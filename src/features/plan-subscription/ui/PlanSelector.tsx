@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Check } from 'lucide-react';
 
-import { getPlanCatalog } from '@/entities/plan';
+import { usePlanCatalog } from '@/entities/plan';
 import { Button } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -17,36 +17,8 @@ export default function PlanSelector({
   disabled = false,
   mode = 'current',
 }: PlanSelectorProps) {
-  const [plans, setPlans] = useState<RecommendedPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: plans = [], isLoading, error } = usePlanCatalog();
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getPlanCatalog()
-      .then((data) => {
-        if (!cancelled) {
-          setPlans(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : '요금제 목록을 불러오지 못했습니다.',
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleConfirm = () => {
     if (!selected || disabled) return;
@@ -63,7 +35,9 @@ export default function PlanSelector({
 
       {error && (
         <p className="text-center text-caption text-semantic-error py-4">
-          {error}
+          {error instanceof Error
+            ? error.message
+            : '요금제 목록을 불러오지 못했습니다.'}
         </p>
       )}
 

@@ -24,7 +24,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
         style={{ backgroundImage: `url(${product.imageUrl})` }}
         className="
           aspect-square w-full
-          rounded-lg bg-[#F9F9F9] bg-size-[80%] bg-center bg-no-repeat
+          rounded-lg bg-surface-page bg-size-[80%] bg-center bg-no-repeat
         "
       />
 

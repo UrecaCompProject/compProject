@@ -17,10 +17,7 @@ export default function GameRulesCard({
   return (
     <div className="flex flex-col items-center h-full px-10 py-5 text-center">
       <div className="relative flex h-50 w-50 shrink-0 items-center justify-center">
-        <div
-          className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]"
-          style={{ backgroundColor: 'rgba(91, 127, 224, 0.3)' }}
-        />
+        <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-compare-selected/30 blur-[60px]" />
         <img src={image} alt="" className="z-10 w-full h-full object-contain" />
       </div>
 

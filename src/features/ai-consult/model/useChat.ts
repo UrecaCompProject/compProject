@@ -9,15 +9,12 @@ import type { ConsultInput, ConsultResponse } from '@/shared/lib/aiConsult';
 
 import {
   WELCOME_MESSAGE,
-  buildAIMessage,
   buildErrorMessage,
-  findLastRecommendedPlan,
-  findLastRecommendations,
   formatFormSummary,
-  getQuizIntent,
   getWelcomeQuickReplies,
 } from '../lib/chatHelpers';
 import { formatResponse } from '../lib/formatResponse';
+import { routeQuickReply } from '../lib/quickReplyRouter';
 
 import { useChatCompare } from './useChatCompare';
 import { useChatReport } from './useChatReport';
@@ -174,24 +171,44 @@ export function useChat() {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
 
-      // "다시 시도" 퀵리플라이 — 마지막 사용자 입력을 재전송
-      if (trimmed === '다시 시도') {
-        const lastInput = lastUserInputRef.current;
-        if (lastInput) {
-          lastUserInputRef.current = null;
-          // 에러 메시지를 제거하고 재시도
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.type === 'ai' && last.isError) {
-              return prev.slice(0, -1);
-            }
-            return prev;
-          });
-          handleSend(lastInput);
-        }
-        return;
-      }
+      // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
+      const result = await routeQuickReply({
+        text: trimmed,
+        messages,
+        profile,
+        isLoggedIn,
+        effectiveCurrentPlan,
+        setMessages,
+        setProfile,
+        setIsLoading,
+        addAIResponse,
+        openSubscription,
+        openSignupChat,
+        startCompareFlow,
+        setPendingComparePlan,
+        fetchCompare,
+        startQuiz,
+        // "다시 시도" 시 마지막 사용자 입력을 재전송
+        retryLastInput: () => {
+          const lastInput = lastUserInputRef.current;
+          if (lastInput) {
+            lastUserInputRef.current = null;
+            // 에러 메시지를 제거하고 재시도
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.type === 'ai' && last.isError) {
+                return prev.slice(0, -1);
+              }
+              return prev;
+            });
+            handleSend(lastInput);
+          }
+        },
+      });
 
+      if (result === 'handled') return;
+
+      // fall-through: 일반 상담 요청
       setMessages((prev) => [
         ...prev,
         { id: Date.now(), type: 'user', sentence: trimmed },
@@ -200,149 +217,6 @@ export function useChat() {
 
       // 재시도를 위해 마지막 사용자 입력 보관
       lastUserInputRef.current = trimmed;
-
-      const quizIntent = getQuizIntent(trimmed);
-      if (quizIntent) {
-        startQuiz(quizIntent, { includeUserMessage: false });
-        return;
-      }
-
-      // 회원가입 흐름
-      if (trimmed === '회원 가입하기') {
-        openSignupChat();
-        return;
-      }
-
-      // 요금제 가입 흐름
-      if (trimmed === '온라인 가입' || trimmed === '요금제 가입하기') {
-        if (!isLoggedIn) {
-          setMessages((prev) => [
-            ...prev,
-            buildAIMessage(
-              '요금제 가입은 로그인 후에 가능해요. 회원가입을 진행해주세요.',
-              ['회원 가입하기', '기타 상담'],
-            ),
-          ]);
-          return;
-        }
-
-        const lastPlan = findLastRecommendedPlan(messages);
-        openSubscription(lastPlan ?? null);
-        return;
-      }
-
-      // 현재 요금제와 마지막 추천 요금제 비교
-      if (trimmed === '현재 요금제와 비교') {
-        const lastPlan = findLastRecommendedPlan(messages);
-        if (!lastPlan) {
-          setMessages((prev) => [
-            ...prev,
-            buildAIMessage(
-              '비교할 추천 요금제가 없어요. 먼저 요금제 추천을 받아주세요.',
-              ['요금제 추천받기', '메뉴로 돌아가기'],
-            ),
-          ]);
-          return;
-        }
-        if (!effectiveCurrentPlan) {
-          setPendingComparePlan(lastPlan.planName);
-          setMessages((prev) => [
-            ...prev,
-            buildAIMessage(
-              '현재 이용 중인 요금제를 아래에서 선택해주세요.',
-              ['메뉴로 돌아가기'],
-              { planSelector: true },
-            ),
-          ]);
-          return;
-        }
-        await fetchCompare(lastPlan.planName);
-        return;
-      }
-
-      // 요금제 비교하기 메뉴 - 현재 요금제가 없으면 드랍다운으로 선택
-      if (trimmed === '요금제 비교하기') {
-        startCompareFlow();
-        return;
-      }
-
-      // 이미 추천받은 상태에서 '요금제 추천받기' 재탭 — 새 조건 수집 또는 다른 요금제 분기
-      if (trimmed === '요금제 추천받기') {
-        const lastRecs = findLastRecommendations(messages);
-        if (lastRecs.length > 0) {
-          setMessages((prev) => [
-            ...prev,
-            buildAIMessage(
-              '이미 요금제를 추천받으셨어요. 새로운 조건으로 다시 추천받거나, 방금 본 요금제와 다른 요금제를 확인할 수 있어요.',
-              [
-                '새 조건으로 다시 추천받기',
-                '다른 요금제 보기',
-                '메뉴로 돌아가기',
-              ],
-            ),
-          ]);
-          return;
-        }
-        // 추천받은 적이 없으면 일반 추천 플로우로 진행 (postQuestion으로 fall-through)
-      }
-
-      // '다른 요금제 보기' — 이전 추천 planId를 제외하고 같은 조건으로 재추천
-      if (trimmed === '다른 요금제 보기') {
-        const lastRecs = findLastRecommendations(messages);
-        const excludePlanIds = lastRecs.map((r) => r.planId);
-        setIsLoading(true);
-        try {
-          const request: ConsultInput = {
-            ...profile,
-            userMessage: '다른 요금제 보기',
-            mode: 'recommend',
-            isLoggedIn,
-            excludePlanIds,
-          };
-          const response = await requestConsult(request);
-          addAIResponse(response, request, 'recommend');
-        } catch (error) {
-          setMessages((prev) => [
-            ...prev,
-            buildErrorMessage(
-              error,
-              '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-            ),
-          ]);
-        } finally {
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      // '새 조건으로 다시 추천받기' — profile을 리셋하고 폼으로 새 조건 수집
-      if (trimmed === '새 조건으로 다시 추천받기') {
-        const resetProfile: ConsultInput = {
-          mode: 'recommend',
-          isLoggedIn,
-        };
-        setProfile(resetProfile);
-        setIsLoading(true);
-        try {
-          const request: ConsultInput = {
-            ...resetProfile,
-            userMessage: '새 조건으로 다시 추천받기',
-          };
-          const response = await requestConsult(request);
-          addAIResponse(response, request, 'recommend');
-        } catch (error) {
-          setMessages((prev) => [
-            ...prev,
-            buildErrorMessage(
-              error,
-              '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-            ),
-          ]);
-        } finally {
-          setIsLoading(false);
-        }
-        return;
-      }
 
       setIsLoading(true);
 
@@ -377,6 +251,8 @@ export function useChat() {
       setPendingComparePlan,
       addAIResponse,
       setMessages,
+      setProfile,
+      setIsLoading,
     ],
   );
 

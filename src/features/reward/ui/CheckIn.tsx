@@ -82,12 +82,12 @@ export default function CheckIn() {
                 className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-full ${
                   checked
                     ? 'border-border-brand bg-brand-promo-soft'
-                    : 'bg-[#EBF1FF]'
+                    : 'bg-brand-promo-soft'
                 }
                 `}
               >
                 {checked && (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#CEDDFD]">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-promo-light">
                     <img
                       src={badgeImage}
                       alt=""
