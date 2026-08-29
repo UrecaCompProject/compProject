@@ -44,7 +44,7 @@ export default function Card({
   return (
     <div
       ref={ref}
-      className={`p-4 rounded-2xl flex flex-col bg-white
+      className={`p-4 flex flex-col bg-white
         ${border ? CardBorderVariants[border] : ''}
         ${radius ? CardRadiusVariants[radius] : ''}
         ${gap ? CardGapVariants[gap] : ''}

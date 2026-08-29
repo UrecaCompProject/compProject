@@ -3,7 +3,7 @@ import InfoRow from './InfoRow';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta = {
-  title: 'usage/InfoRow',
+  title: 'shared/InfoRow',
   component: InfoRow,
   args: {
     label: '개통일',

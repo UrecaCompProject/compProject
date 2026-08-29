@@ -1,9 +1,6 @@
 import { useState } from 'react';
 
-import { Tab } from '@/shared';
-
-import LineChart from './LineChart';
-import SectionCard from './SectionCard';
+import { Card, LineChart, Tab } from '@/shared';
 
 // TODO: 실제 사용량 조회 API 연동 전까지의 임시 데이터
 const MONTHLY_USAGE = [
@@ -32,7 +29,7 @@ export default function UsageTrendSection() {
   const visibleUsage = MONTHLY_USAGE.slice(-Number(tabValue));
 
   return (
-    <SectionCard>
+    <Card radius="none" gap="16" className="px-4 py-5">
       <div className="text-bold-16-140">평균 데이터 사용량</div>
 
       <Tab
@@ -59,6 +56,6 @@ export default function UsageTrendSection() {
           사용량입니다.
         </span>
       </div>
-    </SectionCard>
+    </Card>
   );
 }
