@@ -4,6 +4,8 @@ import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
+import { useReports } from '../model/useReports';
+
 import PreviewReport from './PreviewReport';
 import ReportDetail from './ReportDetail';
 
@@ -14,16 +16,18 @@ type ReportSheetProps = {
 
 type ReportView = 'list' | 'detail';
 
-const titles: Record<ReportView, string> = {
-  list: '상담 리포트',
-  detail: '2026년 08월 10일 리포트',
-};
-
 export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
+  const { data: reports = [] } = useReports(open);
+  console.log('ReportSheet reports', reports);
   const [activeView, setActiveView] = useState<ReportView>('list');
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
+
+  // 상세는 이미 받아둔 목록 배열에서 골라 쓴다 — 클릭할 때마다 재조회하지 않음.
+  const selectedReport =
+    reports.find((report) => report.id === selectedReportId) ?? null;
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -37,11 +41,21 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
     setActiveView('list');
   };
 
+  const handleSelectReport = (id: string) => {
+    setSelectedReportId(id);
+    setActiveView('detail');
+  };
+
   const handleSelectPlan = (plan: RecommendedPlan) => {
     handleOpenChange(false);
     setSubscriptionPlan(plan);
     setSubscriptionOpen(true);
   };
+
+  const title =
+    activeView === 'detail'
+      ? (selectedReport?.summary_title ?? '상담 리포트')
+      : '상담 리포트';
 
   return (
     <>
@@ -49,38 +63,21 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
         open={open}
         className="bg-surface-page"
         onOpenChange={handleOpenChange}
-        title={titles[activeView]}
+        title={title}
         onBack={activeView === 'detail' ? handleBack : undefined}
-        // description={
-        //   activeView === 'list' ? '챗봇 상담 기반 맞춤 상담 리포트' : undefined
-        // }
         size="full"
         bodyClassName="p-0"
       >
         <div className="relative h-full overflow-hidden">
           <div className="h-full overflow-y-auto px-5 pb-6">
             <div className="flex flex-col gap-2">
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
-              <PreviewReport onClick={() => setActiveView('detail')} />
+              {reports.map((report) => (
+                <PreviewReport
+                  key={report.id}
+                  report={report}
+                  onClick={() => handleSelectReport(report.id)}
+                />
+              ))}
             </div>
           </div>
 
@@ -89,7 +86,11 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
               activeView === 'detail' ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
-            <ReportDetail onSelectPlan={handleSelectPlan} />
+            <ReportDetail
+              key={selectedReportId ?? 'empty'}
+              report={selectedReport}
+              onSelectPlan={handleSelectPlan}
+            />
           </div>
         </div>
       </BottomSheet>
