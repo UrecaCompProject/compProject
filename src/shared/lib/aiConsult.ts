@@ -45,18 +45,18 @@ export interface RecommendedPlan {
   savingAmount: number;
   monthlyFee?: number;
   data?: string;
+  dataAmountGb?: number;
   benefits?: string[];
   category?: string;
   targetAge?: string;
   dataSpeedAfter?: string;
   voice?: string;
+  callAmountMin?: number;
   message?: string;
+  smsAmount?: number;
   shareData?: string;
   tethering?: string;
   notes?: string;
-  dataAmountGb?: number;
-  callAmountMin?: number;
-  smsAmount?: number;
 }
 
 export interface ConsultFormField {
