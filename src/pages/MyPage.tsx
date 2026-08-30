@@ -20,8 +20,8 @@ export default function MyPage() {
     daysUntilPeriodEnd,
     dataRemaining,
     dataPercent,
-    callRemaining,
     callPercent,
+    callUsedSeconds,
     smsRemaining,
     smsPercent,
     gbBenefit,
@@ -65,9 +65,9 @@ export default function MyPage() {
         />
         {/* 통화 section */}
         <MyPageCallSection
-          callRemaining={callRemaining}
           callTotal={currentPlan?.callAmountMin}
           callPercent={callPercent}
+          callUsedSeconds={callUsedSeconds}
         />
         {/* 문자 section */}
         <MyPageSmsSection
