@@ -1,6 +1,7 @@
 export { getPlans } from './api/getPlans';
 export { usePlans } from './model/usePlans';
 export { usePlanFilters } from './model/usePlanFilters';
+export { usePlanDetail } from './model/usePlanDetail';
 export { default as PlanListCard } from './ui/PlanListCard';
 export { default as PlanSearchBar } from './ui/PlanSearchBar';
 export { default as PlanFilterModal } from './ui/PlanFilterModal';
