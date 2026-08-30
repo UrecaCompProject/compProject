@@ -54,6 +54,9 @@ export interface RecommendedPlan {
   shareData?: string;
   tethering?: string;
   notes?: string;
+  dataAmountGb?: number;
+  callAmountMin?: number;
+  smsAmount?: number;
 }
 
 export interface ConsultFormField {
