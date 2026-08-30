@@ -9,6 +9,7 @@ import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { preloadLottiePlayer } from '@/features/ai-consult/lib/preloadLottie';
 import { useChat } from '@/features/ai-consult/model/useChat';
 import { GameLayer } from '@/features/games';
+import { BottomSheet } from '@/shared';
 
 export default function ChatPage() {
   const {
@@ -35,9 +36,8 @@ export default function ChatPage() {
     selectMultipleChoice,
     confirmMultipleChoice,
     nextQuestion,
-    handleGameSelect,
     closeSheetGame,
-    closeGameList,
+    activeGameMeta,
   } = useChat();
 
   // 채팅 페이지 진입 즉시 Lottie 청크를 백그라운드에서 미리 로드
@@ -55,46 +55,53 @@ export default function ChatPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <GameLayer>
-        <div className="flex h-full min-h-0 flex-col">
-          <ChatMessageList
-            messages={messages}
-            isLoading={isLoading}
-            isGeneratingReport={isGeneratingReport}
-            onSignupFinished={handleSignupFinished}
-            onFormSubmit={handleFormSubmit}
-            formDefaults={profile}
-            onPlanSubscribe={openSubscription}
-            onPlanCompare={handlePlanCompare}
-            onSelectCurrentPlan={handleSelectCurrentPlan}
-            onSelectTargetPlan={handleSelectTargetPlan}
-            onGenerateReport={handleGenerateReport}
-            subscriptionOpen={subscriptionOpen}
-            subscriptionPlan={subscriptionPlan}
-            onSubscriptionClose={closeSubscription}
-            onQuizOxAnswer={answerOx}
-            onQuizMultipleChoiceSelect={selectMultipleChoice}
-            onQuizMultipleChoiceConfirm={confirmMultipleChoice}
-            onQuizNext={nextQuestion}
-            onSelectGame={handleGameSelect}
-            onScratchClose={closeSheetGame}
-            onCloseGameList={closeGameList}
-          />
-          <QuickReplies
-            replies={quickReplies}
-            onReply={handleSend}
-            disabled={isLoading}
-            isLoggedIn={isLoggedIn}
-          />
-          <ChatInput
-            value={input}
-            onChange={setInput}
-            onSend={handleSend}
-            onStartQuiz={startQuiz}
-            disabled={isLoading}
-          />
-        </div>
-      </GameLayer>
+      <ChatMessageList
+        messages={messages}
+        isLoading={isLoading}
+        isGeneratingReport={isGeneratingReport}
+        onSignupFinished={handleSignupFinished}
+        onFormSubmit={handleFormSubmit}
+        formDefaults={profile}
+        onPlanSubscribe={openSubscription}
+        onPlanCompare={handlePlanCompare}
+        onSelectCurrentPlan={handleSelectCurrentPlan}
+        onSelectTargetPlan={handleSelectTargetPlan}
+        onGenerateReport={handleGenerateReport}
+        subscriptionOpen={subscriptionOpen}
+        subscriptionPlan={subscriptionPlan}
+        onSubscriptionClose={closeSubscription}
+        onQuizOxAnswer={answerOx}
+        onQuizMultipleChoiceSelect={selectMultipleChoice}
+        onQuizMultipleChoiceConfirm={confirmMultipleChoice}
+        onQuizNext={nextQuestion}
+        onScratchClose={closeSheetGame}
+      />
+      <QuickReplies
+        replies={quickReplies}
+        onReply={handleSend}
+        disabled={isLoading}
+        isLoggedIn={isLoggedIn}
+      />
+      <ChatInput
+        value={input}
+        onChange={setInput}
+        onSend={handleSend}
+        onStartQuiz={startQuiz}
+        disabled={isLoading}
+      />
+
+      <BottomSheet
+        open={!!activeGameMeta}
+        onOpenChange={(open) => {
+          if (!open) closeSheetGame();
+        }}
+        title={activeGameMeta?.title ?? ''}
+        onBack={activeGameMeta?.onBack}
+        size="full"
+        bodyClassName="px-0"
+      >
+        <GameLayer />
+      </BottomSheet>
     </div>
   );
 }

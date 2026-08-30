@@ -7,6 +7,8 @@ import type {
 } from '@/shared/lib/aiConsult';
 import { requestConsult } from '@/shared/lib/aiConsult';
 
+import { GAME_LIST } from '../constants/gameList';
+
 import {
   buildAIMessage,
   buildErrorMessage,
@@ -14,7 +16,9 @@ import {
   findLastRecommendations,
   getQuizIntent,
 } from './chatHelpers';
+import { handleGameSelect } from './gameRouter';
 
+import type { ChatGameId, SheetGameId } from '../constants/gameList';
 import type { ChatMessage } from '../types';
 
 type SetMessages = React.Dispatch<React.SetStateAction<ChatMessage[]>>;
@@ -78,13 +82,28 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // "게임 하기" 퀵 리플라이 — 게임 리스트 메시지를 채팅에 표시
+  // "게임 하기" 퀵 리플라이 — 게임 이름들을 퀵 리플라이로 표시
   if (text === '게임 하기') {
+    const gameTitles = GAME_LIST.map((g) => g.title);
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), type: 'user', sentence: '게임 하기' },
-      { id: Date.now() + 1, type: 'game-list' },
+      buildAIMessage('원하는 게임을 선택해 주세요!', [
+        ...gameTitles,
+        '메뉴로 돌아가기',
+      ]),
     ]);
+    return 'handled';
+  }
+
+  // 게임 이름 퀵 리플라이 매칭 — 게임 리스트에서 선택 시 해당 게임 실행
+  const matchedGame = GAME_LIST.find((g) => g.title === text);
+  if (matchedGame) {
+    handleGameSelect(matchedGame.id as ChatGameId | SheetGameId, {
+      setMessages,
+      startQuiz,
+      openSheetGame,
+    });
     return 'handled';
   }
 

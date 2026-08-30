@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 
+import { useIsLoggedIn } from '@/entities/user';
 import AIChat from '@/features/ai-consult/ui/AIChat';
 import { Button, Input } from '@/shared';
 
@@ -37,13 +38,18 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     handleCompleteSignup,
   } = useSignupFlow(onFinish);
 
+  // 회원가입 진행 중 로그인 완료 시 안내문구·입력폼 자동 숨김
+  const isLoggedIn = useIsLoggedIn();
+  const hideSignupUI =
+    isLoggedIn || step === 'completed' || step === 'already-member';
+
   return (
     <div className="flex flex-col gap-4">
-      {step !== 'completed' && step !== 'already-member' && (
+      {!hideSignupUI && (
         <AIChat sentence="회원 가입을 위해 몇 가지만 확인할게요. 편하게 답해주세요 :)" />
       )}
 
-      {step === 'basic-info' && (
+      {step === 'basic-info' && !isLoggedIn && (
         <AIChat
           sentence={
             <div className="flex flex-col gap-2 w-full">
@@ -104,7 +110,8 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
 
       {step !== 'basic-info' &&
         step !== 'completed' &&
-        step !== 'already-member' && (
+        step !== 'already-member' &&
+        !isLoggedIn && (
           <AIChat
             variant="success"
             sentence={
@@ -122,7 +129,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
           />
         )}
 
-      {step === 'verify-code' && !isCancelled && (
+      {step === 'verify-code' && !isCancelled && !isLoggedIn && (
         <>
           <AIChat sentence="인증번호를 보내드렸어요. 3분 이내에 입력해주세요." />
           <AIChat
@@ -163,7 +170,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <AIChat variant="error" sentence="회원가입이 취소되었습니다." />
       )}
 
-      {step === 'credentials' && (
+      {step === 'credentials' && !isLoggedIn && (
         <>
           <AIChat sentence="로그인에 사용할 이메일과 비밀번호를 입력해주세요." />
           <AIChat
@@ -225,7 +232,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         </>
       )}
 
-      {step === 'review' && (
+      {step === 'review' && !isLoggedIn && (
         <>
           <AIChat sentence="입력하신 내용을 확인해주세요." />
           <AIChat

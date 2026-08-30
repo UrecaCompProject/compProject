@@ -9,11 +9,9 @@ import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 import AIChat from './AIChat';
 import AIChatExtras from './AIChatExtras';
 import ChatLoadingIndicator from './ChatLoadingIndicator';
-import GameListMessage from './GameListMessage';
 import MyChat from './MyChat';
 import ScratchGameMessage from './ScratchGameMessage';
 
-import type { ChatGameId, SheetGameId } from '../constants/gameList';
 import type { ChatMessage } from '../types';
 
 interface ChatMessageListProps {
@@ -35,10 +33,8 @@ interface ChatMessageListProps {
   onQuizMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onQuizMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
   onQuizNext: () => void;
-  onSelectGame?: (gameId: ChatGameId | SheetGameId) => void;
   onScratchWin?: (reward: number) => void;
   onScratchClose?: () => void;
-  onCloseGameList?: () => void;
 }
 
 export default function ChatMessageList({
@@ -60,10 +56,8 @@ export default function ChatMessageList({
   onQuizMultipleChoiceSelect,
   onQuizMultipleChoiceConfirm,
   onQuizNext,
-  onSelectGame,
   onScratchWin,
   onScratchClose,
-  onCloseGameList,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -160,13 +154,6 @@ export default function ChatMessageList({
                 onMultipleChoiceSelect={onQuizMultipleChoiceSelect}
                 onMultipleChoiceConfirm={onQuizMultipleChoiceConfirm}
                 onNext={onQuizNext}
-              />
-            )}
-
-            {message.type === 'game-list' && (
-              <GameListMessage
-                onSelectGame={onSelectGame ?? (() => {})}
-                onClose={onCloseGameList}
               />
             )}
 

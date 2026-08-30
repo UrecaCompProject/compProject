@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsLoggedIn } from '@/entities/user';
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { useChatQuiz } from '@/features/chat-quiz';
-import { useGameStore } from '@/features/games';
+import { useGameStore, useActiveGameMeta } from '@/features/games';
 import type { GameId } from '@/features/games';
 import { useSubscriptionStore } from '@/features/plan-subscription';
 import { requestConsult } from '@/shared/lib/aiConsult';
@@ -16,14 +16,12 @@ import {
   getWelcomeQuickReplies,
 } from '../lib/chatHelpers';
 import { formatResponse } from '../lib/formatResponse';
-import { handleGameSelect as routeGameSelect } from '../lib/gameRouter';
 import { routeQuickReply } from '../lib/quickReplyRouter';
 
 import { useChatCompare } from './useChatCompare';
 import { useChatReport } from './useChatReport';
 import { useChatSubscription } from './useChatSubscription';
 
-import type { ChatGameId, SheetGameId } from '../constants/gameList';
 import type { ChatMessage } from '../types';
 
 export function useChat() {
@@ -173,6 +171,8 @@ export function useChat() {
   // 바텀시트 게임(card-match, reaction, attendance) 실행/종료 — useGameStore 재활용
   const openGameStore = useGameStore((state) => state.openGame);
   const closeSheetGame = useGameStore((state) => state.closeGame);
+  // 활성 게임 메타 — BottomSheet의 open/title/onBack에 사용
+  const activeGameMeta = useActiveGameMeta();
 
   // gameRouter/quickReplyRouter에서 reward만 넘기도록 래핑 — GameOpenParams로 변환
   const openSheetGame = useCallback(
@@ -181,34 +181,6 @@ export function useChat() {
     },
     [openGameStore],
   );
-
-  // 게임 리스트에서 항목 선택 시 채팅 게임/바텀시트 게임으로 분기
-  const handleGameSelect = useCallback(
-    (gameId: ChatGameId | SheetGameId) => {
-      routeGameSelect(gameId, {
-        setMessages,
-        startQuiz,
-        openSheetGame,
-      });
-    },
-    [setMessages, startQuiz, openSheetGame],
-  );
-
-  // 게임 선택창 닫기 — game-list 메시지 제거 후 메뉴 퀵리플라이 복귀
-  const closeGameList = useCallback(() => {
-    setMessages((prev) => {
-      const filtered = prev.filter((m) => m.type !== 'game-list');
-      return [
-        ...filtered,
-        {
-          id: Date.now(),
-          type: 'ai' as const,
-          sentence: '메뉴로 돌아갈게요. 원하는 항목을 선택해 주세요.',
-          quickReplies: getWelcomeQuickReplies(isLoggedIn),
-        },
-      ];
-    });
-  }, [setMessages, isLoggedIn]);
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -366,8 +338,7 @@ export function useChat() {
     selectMultipleChoice,
     confirmMultipleChoice,
     nextQuestion,
-    handleGameSelect,
     closeSheetGame,
-    closeGameList,
+    activeGameMeta,
   };
 }
