@@ -6,3 +6,4 @@ export { default as MyPageBillingSection } from './ui/MyPageBillingSection';
 export { default as MyPageDataSection } from './ui/MyPageDataSection';
 export { default as MyPageCallSection } from './ui/MyPageCallSection';
 export { default as MyPageSmsSection } from './ui/MyPageSmsSection';
+export { default as MyPageSheet } from './ui/MyPageSheet';

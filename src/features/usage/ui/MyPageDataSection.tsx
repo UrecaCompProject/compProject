@@ -23,6 +23,9 @@ export default function MyPageDataSection({
   dataPercent,
   dataSpeedAfter,
 }: MyPageDataSectionProps) {
+  // data_amount_gb는 무제한 요금제일 경우 9999.99로 저장되어 있어, 그대로 표시하면 의미가 없다.
+  const isUnlimited = dataTotal != null && dataTotal >= 9999;
+
   return (
     <Card radius="none" gap="16" className="px-4 py-5">
       <div className="text-bold-16-140">데이터 상세</div>
@@ -41,15 +44,29 @@ export default function MyPageDataSection({
 
       <UsageProgressRow
         label="5G 데이터"
-        value={dataRemaining != null ? `${dataRemaining.toFixed(2)}GB` : '-'}
-        total={dataTotal != null ? `${dataTotal.toFixed(2)}GB` : '-'}
-        percent={dataPercent}
+        value={
+          isUnlimited
+            ? '무제한'
+            : dataRemaining != null
+              ? `${dataRemaining.toFixed(2)}GB`
+              : '-'
+        }
+        total={
+          isUnlimited
+            ? undefined
+            : dataTotal != null
+              ? `${dataTotal.toFixed(2)}GB`
+              : '-'
+        }
+        percent={isUnlimited ? 100 : dataPercent}
       />
-      <UsageProgressRow
-        label={`${dataSpeedAfter ?? ''} 속도 데이터`}
-        value="무제한"
-        percent={100}
-      />
+      {!isUnlimited && (
+        <UsageProgressRow
+          label={`${dataSpeedAfter ?? ''} 속도 데이터`}
+          value="무제한"
+          percent={100}
+        />
+      )}
     </Card>
   );
 }
