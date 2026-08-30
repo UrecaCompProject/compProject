@@ -10,7 +10,13 @@ import type {
 } from '@/shared/lib/aiConsult';
 
 export type MessageType =
-  'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result';
+  | 'ai'
+  | 'user'
+  | 'signup'
+  | 'quiz-question'
+  | 'quiz-result'
+  | 'game-list'
+  | 'scratch-game';
 
 export type ChatMessage =
   | {
@@ -32,4 +38,15 @@ export type ChatMessage =
   | { id: number; type: 'user'; sentence: string }
   | { id: number; type: 'signup' }
   | QuizQuestionMessage
-  | QuizResultMessage;
+  | QuizResultMessage
+  // 게임 리스트 — "게임 하기" 퀵 리플라이 시 표시
+  | {
+      id: number;
+      type: 'game-list';
+    }
+  // 스크래치 게임 — 채팅 내에서 ScratchGame 컴포넌트 렌더링
+  | {
+      id: number;
+      type: 'scratch-game';
+      reward?: number;
+    };

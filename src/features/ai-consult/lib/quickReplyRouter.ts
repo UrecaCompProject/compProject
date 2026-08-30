@@ -1,4 +1,5 @@
 import type { QuizKind } from '@/features/chat-quiz';
+import type { GameId } from '@/features/games';
 import type {
   ConsultInput,
   ConsultResponse,
@@ -39,6 +40,7 @@ export interface QuickReplyContext {
   setPendingComparePlan: (planName: string) => void;
   fetchCompare: (planBName: string, planAName?: string) => Promise<void>;
   startQuiz: (kind: QuizKind, opts?: { includeUserMessage: boolean }) => void;
+  openSheetGame: (gameId: GameId, reward?: number) => void;
   // "다시 시도" 시 마지막 사용자 입력을 재전송 — useChat의 lastUserInputRef와 handleSend 재귀 호출을 캡슐화
   retryLastInput: () => void;
 }
@@ -66,12 +68,29 @@ export async function routeQuickReply(
     setPendingComparePlan,
     fetchCompare,
     startQuiz,
+    openSheetGame,
     retryLastInput,
   } = ctx;
 
   // "다시 시도" 퀵리플라이 — 마지막 사용자 입력을 재전송
   if (text === '다시 시도') {
     retryLastInput();
+    return 'handled';
+  }
+
+  // "게임 하기" 퀵 리플라이 — 게임 리스트 메시지를 채팅에 표시
+  if (text === '게임 하기') {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: '게임 하기' },
+      { id: Date.now() + 1, type: 'game-list' },
+    ]);
+    return 'handled';
+  }
+
+  // "출석체크" 퀵 리플라이 — 출석 룰렛 바텀시트 게임으로 바로 연결
+  if (text === '출석체크') {
+    openSheetGame('attendance', 5);
     return 'handled';
   }
 
