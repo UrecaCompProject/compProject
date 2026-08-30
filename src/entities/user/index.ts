@@ -1,7 +1,3 @@
-export {
-  useAuthStore,
-  useIsLoggedIn,
-  useUserProfile,
-} from './model/useAuthStore';
-export { getUserProfile } from './api/getUserProfile';
-export type { UserProfile } from './api/getUserProfile';
+export { AuthProvider } from './model/AuthProvider';
+export type { AuthContextValue } from './model/authContext';
+export { useAuth, useIsLoggedIn } from './model/useAuth';
