@@ -1,11 +1,6 @@
 import { maskPhone } from '@/features/auth/lib/signup';
-import {
-  InfoRow,
-  SectionCard,
-  UsageProgressRow,
-  UsageTrendSection,
-} from '@/features/usage';
-import { Line } from '@/shared';
+import { UsageProgressRow, UsageTrendSection } from '@/features/usage';
+import { Card, InfoRow, Line } from '@/shared';
 
 export default function MyPage() {
   return (
@@ -20,7 +15,7 @@ export default function MyPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        <SectionCard>
+        <Card radius="none" gap="16" className="px-4 py-5">
           <div className="text-bold-16-140">가입 정보</div>
 
           <div className="flex flex-col gap-2">
@@ -33,9 +28,9 @@ export default function MyPage() {
             <InfoRow label="개통일" value="2023-09-11" />
             <InfoRow label="가입일" value="2018-11-17" />
           </div>
-        </SectionCard>
+        </Card>
 
-        <SectionCard>
+        <Card radius="none" gap="16" className="px-4 py-5">
           <div className="text-bold-16-140">요금 조회 / 납부 정보</div>
           <Line />
           <div className="flex justify-between">
@@ -44,9 +39,9 @@ export default function MyPage() {
               월 34,000원
             </div>
           </div>
-        </SectionCard>
+        </Card>
 
-        <SectionCard>
+        <Card radius="none" gap="16" className="px-4 py-5">
           <div className="text-bold-16-140">데이터 상세</div>
 
           <div className="flex flex-col gap-1">
@@ -70,9 +65,9 @@ export default function MyPage() {
             value="무제한"
             percent={100}
           />
-        </SectionCard>
+        </Card>
 
-        <SectionCard>
+        <Card radius="none" gap="16" className="px-4 py-5">
           <div className="text-bold-16-140">통화</div>
 
           <UsageProgressRow
@@ -87,9 +82,9 @@ export default function MyPage() {
             total="300분"
             percent={100 - (15 / 300) * 100}
           />
-        </SectionCard>
+        </Card>
 
-        <SectionCard>
+        <Card radius="none" gap="16" className="px-4 py-5">
           <div className="text-bold-16-140">문자</div>
 
           <UsageProgressRow
@@ -98,7 +93,7 @@ export default function MyPage() {
             total="100건"
             percent={(100 / 100) * 100}
           />
-        </SectionCard>
+        </Card>
 
         <UsageTrendSection />
       </div>

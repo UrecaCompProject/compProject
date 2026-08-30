@@ -48,11 +48,17 @@ export default function LineChart({
       ? 0
       : values.reduce((sum, value) => sum + value, 0) / values.length;
 
-  // 0부터 최댓값까지 정수 눈금이 yTickCount개 찍히도록, 최댓값을
-  // (yTickCount - 1)의 배수로 올림한다.
+  // yTickCount가 1 이하면 (yTickCount - 1)이 0이 되어 0으로 나누기가
+  // 발생하므로, 최소 2로 정규화한다.
+  const tickCount = Number.isFinite(yTickCount)
+    ? Math.max(2, Math.floor(yTickCount))
+    : 5;
+
+  // 0부터 최댓값까지 정수 눈금이 tickCount개 찍히도록, 최댓값을
+  // (tickCount - 1)의 배수로 올림한다.
   const dataMax = values.length === 0 ? 0 : Math.max(...values);
-  const step = Math.ceil(dataMax / (yTickCount - 1)) || 1;
-  const yMax = step * (yTickCount - 1);
+  const step = Math.ceil(dataMax / (tickCount - 1)) || 1;
+  const yMax = step * (tickCount - 1);
 
   const data = {
     labels,

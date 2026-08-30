@@ -3,7 +3,7 @@ import LineChart from './LineChart';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta = {
-  title: 'usage/LineChart',
+  title: 'shared/LineChart',
   component: LineChart,
   args: {
     labels: [

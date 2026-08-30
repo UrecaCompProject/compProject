@@ -6,6 +6,7 @@ export { toPlanBenefits } from './lib/toPlanBenefits';
 
 export { getPlanCatalog } from './api/getPlanCatalog';
 export { getCurrentPlan } from './api/getCurrentPlan';
+export { postChangePlan } from './api/postChangePlan';
 export { usePlanCatalog } from './model/usePlanCatalog';
 export { useCurrentPlan } from './model/useCurrentPlan';
 

@@ -1,6 +1,8 @@
 export { default as Button } from './ui/Button';
 export { default as Input } from './ui/Input';
 export { default as Card } from './ui/Card';
+export { default as InfoRow } from './ui/InfoRow';
+export { default as LineChart } from './ui/LineChart';
 export { default as Line } from './ui/Line';
 export { default as IconBadge } from './ui/IconBadge';
 export { default as IconListItem } from './ui/IconListItem';

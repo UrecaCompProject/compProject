@@ -1,27 +1,29 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import {
-  ChevronDown,
-  ChevronUp,
-  Database,
-  PhoneCall,
-  Gift,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
-import { PlanCard } from '@/entities/plan';
+import { PlanCard, toPlanBenefits } from '@/entities/plan';
 import { Card } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
+import type { ReportRow } from '../api/getReport';
+
 interface ReportDetailProps {
+  report: ReportRow | null;
   onSelectPlan?: (plan: RecommendedPlan) => void;
 }
 
-export default function ReportDetail({ onSelectPlan }: ReportDetailProps) {
+export default function ReportDetail({
+  report,
+  onSelectPlan,
+}: ReportDetailProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
 
+  // ReportSheet가 report.id를 key로 넘겨 report가 바뀔 때마다 이 컴포넌트를
+  // 새로 마운트시키므로, isExpanded/hasOverflow는 report별로 자연히 초기화된다.
   useLayoutEffect(() => {
     const card = cardRef.current;
     if (!card) return;
@@ -56,12 +58,15 @@ export default function ReportDetail({ onSelectPlan }: ReportDetailProps) {
     return () => observer.disconnect();
   }, []);
 
+  if (!report) return null;
+
+  const analysis = report.analysis_input;
+
   return (
     <div
       ref={rootRef}
       className="px-4 pt-4 pb-10 gap-5 flex flex-col bg-surface-page min-h-full"
     >
-      {/* TODO: 실제 상담 리포트 상세 내용 연동 */}
       <div>
         <div className="text-semibold-16-130 text-fg-tertiary ml-1">
           상담 요약
@@ -78,73 +83,22 @@ export default function ReportDetail({ onSelectPlan }: ReportDetailProps) {
                   : 'max-h-45 pb-14'
             }`}
           >
-            <div>
-              <div className="text-chip flex gap-1.5">
-                <div className="font-semibold text-brand-promo-primary shrink-0">
-                  Q1.
-                </div>
-                <div>
-                  현재 사용하고 있는 데이터 사용량은 얼마인가요? 현재 사용하고
-                  있는 데이터 사용량은 얼마인가요?
-                </div>
-              </div>
+            <p className="text-regular-14-130 text-fg-secondary">
+              {report.summary}
+            </p>
 
-              <div className="text-regular-14-130 text-fg-tertiary mt-0.5 flex gap-1.5">
-                <div className="font-semibold">A1.</div>
-                <div>5GB ~ 10GB</div>
+            {analysis.importantConditions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {analysis.importantConditions.map((condition) => (
+                  <span
+                    key={condition}
+                    className="inline-flex items-center rounded-full bg-surface-page px-3 py-1.5 text-caption text-fg-secondary"
+                  >
+                    {condition}
+                  </span>
+                ))}
               </div>
-            </div>
-
-            <div>
-              <div className="text-chip flex gap-1.5">
-                <div className="font-semibold text-brand-promo-primary shrink-0">
-                  Q1.
-                </div>
-                <div>
-                  현재 사용하고 있는 데이터 사용량은 얼마인가요? 현재 사용하고
-                  있는 데이터 사용량은 얼마인가요?
-                </div>
-              </div>
-
-              <div className="text-regular-14-130 text-fg-tertiary mt-0.5 flex gap-1.5">
-                <div className="font-semibold">A1.</div>
-                <div>5GB ~ 10GB</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-chip flex gap-1.5">
-                <div className="font-semibold text-brand-promo-primary shrink-0">
-                  Q1.
-                </div>
-                <div>
-                  현재 사용하고 있는 데이터 사용량은 얼마인가요? 현재 사용하고
-                  있는 데이터 사용량은 얼마인가요?
-                </div>
-              </div>
-
-              <div className="text-regular-14-130 text-fg-tertiary mt-0.5 flex gap-1.5">
-                <div className="font-semibold">A1.</div>
-                <div>5GB ~ 10GB</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-chip flex gap-1.5">
-                <div className="font-semibold text-brand-promo-primary shrink-0">
-                  Q1.
-                </div>
-                <div>
-                  현재 사용하고 있는 데이터 사용량은 얼마인가요? 현재 사용하고
-                  있는 데이터 사용량은 얼마인가요?
-                </div>
-              </div>
-
-              <div className="text-regular-14-130 text-fg-tertiary mt-0.5 flex gap-1.5">
-                <div className="font-semibold">A1.</div>
-                <div>5GB ~ 10GB</div>
-              </div>
-            </div>
+            )}
           </Card>
 
           {hasOverflow && (
@@ -168,68 +122,23 @@ export default function ReportDetail({ onSelectPlan }: ReportDetailProps) {
         <div className="text-semibold-16-130 text-fg-tertiary ml-1">
           추천 요금제
         </div>
-        <PlanCard
-          className="w-full"
-          title="추천 요금제"
-          price={50000}
-          benefits={[
-            { icon: Database, label: '5G 데이터 20GB + 3G 무제한' },
-            { icon: PhoneCall, label: '통화·문제 무제한' },
-            { icon: Gift, label: '넷플릭스 스탠다드, U+ VIP 등급' },
-          ]}
-          reason="현재 사용량과 비교했을 때 가장 적합한 요금제입니다."
-          onSelect={() =>
-            onSelectPlan?.({
-              planId: '1',
-              planName: '추천 요금제',
-              reason: '현재 사용량과 비교했을 때 가장 적합한 요금제입니다.',
-              savingAmount: 0,
-              monthlyFee: 50000,
-            })
-          }
-        />
-
-        <PlanCard
-          className="w-full"
-          title="추천 요금제"
-          price={50000}
-          benefits={[
-            { icon: Database, label: '5G 데이터 20GB + 3G 무제한' },
-            { icon: PhoneCall, label: '통화·문제 무제한' },
-            { icon: Gift, label: '넷플릭스 스탠다드, U+ VIP 등급' },
-          ]}
-          reason="현재 사용량과 비교했을 때 가장 적합한 요금제입니다."
-          onSelect={() =>
-            onSelectPlan?.({
-              planId: '2',
-              planName: '추천 요금제',
-              reason: '현재 사용량과 비교했을 때 가장 적합한 요금제입니다.',
-              savingAmount: 0,
-              monthlyFee: 50000,
-            })
-          }
-        />
-
-        <PlanCard
-          className="w-full"
-          title="추천 요금제"
-          price={50000}
-          benefits={[
-            { icon: Database, label: '5G 데이터 20GB + 3G 무제한' },
-            { icon: PhoneCall, label: '통화·문제 무제한' },
-            { icon: Gift, label: '넷플릭스 스탠다드, U+ VIP 등급' },
-          ]}
-          reason="현재 사용량과 비교했을 때 가장 적합한 요금제입니다."
-          onSelect={() =>
-            onSelectPlan?.({
-              planId: '3',
-              planName: '추천 요금제',
-              reason: '현재 사용량과 비교했을 때 가장 적합한 요금제입니다.',
-              savingAmount: 0,
-              monthlyFee: 50000,
-            })
-          }
-        />
+        {report.recommendedPlanDetails.map((plan) => (
+          <PlanCard
+            key={plan.planId}
+            className="w-full"
+            title={plan.planName}
+            price={plan.monthlyFee ?? 0}
+            benefits={toPlanBenefits(plan)}
+            reason={analysis.recommendationReason}
+            onSelect={() =>
+              onSelectPlan?.({
+                ...plan,
+                reason: analysis.recommendationReason,
+                savingAmount: analysis.monthlySavingAmount,
+              })
+            }
+          />
+        ))}
       </div>
       {/* <div className="w-full flex gap-2">
         <Button className="w-full" variant="outline">

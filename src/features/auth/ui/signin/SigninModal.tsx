@@ -1,28 +1,18 @@
-import { useState } from 'react';
-
-// eslint-disable-next-line import-x/no-cycle
-import { postSignin } from '@/features/auth';
 import { Button, Input, useModalStore } from '@/shared';
 
-export default function SigninModal() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const close = useModalStore((state) => state.close);
+import { useSignin } from '../../model/useSignin';
 
-  const handleSignin = async () => {
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await postSignin(email, password);
-      close();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '로그인에 실패했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+export default function SigninModal() {
+  const close = useModalStore((state) => state.close);
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isSubmitting,
+    error,
+    handleSignin,
+  } = useSignin(close);
 
   return (
     <div className="flex flex-col gap-2 text-body text-fg-tertiary">
