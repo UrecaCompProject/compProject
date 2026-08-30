@@ -39,7 +39,9 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <AIChat sentence="회원 가입을 위해 몇 가지만 확인할게요. 편하게 답해주세요 :)" />
+      {step !== 'completed' && step !== 'already-member' && (
+        <AIChat sentence="회원 가입을 위해 몇 가지만 확인할게요. 편하게 답해주세요 :)" />
+      )}
 
       {step === 'basic-info' && (
         <AIChat
