@@ -4,6 +4,7 @@ import { loadPlans } from './data.ts';
 import type { Plan } from './data.ts';
 import {
   comparePromptText,
+  generalReportPromptText,
   noticePromptText,
   reasonPromptText,
   reportPromptText,
@@ -1004,26 +1005,60 @@ const reportSystemPrompt = `
 존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
 `;
 
+const generalReportSystemPrompt = `
+당신은 AI 통신 상담 대화 내용을 요약하는 역할을 담당합니다.
+제공된 대화 내용만 사용해 JSON 형식으로 요약하세요.
+존재하지 않는 정보를 임의로 만들지 마세요.
+`;
+
 // 상담 대화와 추천 결과를 바탕으로 요약 레포트를 생성합니다.
+// reportKind가 'general'이면 요금제 추천 없이 일반 대화만 요약합니다.
 export async function generateReport(
   input: ReportInput,
 ): Promise<ReportOutput> {
-  const { conversation, currentPlan, recommendationResult } = input;
-  const filledPrompt = fillTemplate(reportPromptText, {
+  const {
     conversation,
-    currentPlan: currentPlan || '미등록',
+    currentPlan,
     recommendationResult,
-  });
+    reportKind,
+    userProfile,
+  } = input;
+  const isGeneral = reportKind === 'general';
 
-  try {
-    const raw = await chatOpenAI(reportSystemPrompt, filledPrompt);
-    const parsed = safeJsonParse<ReportOutput>(raw);
-    if (parsed && parsed.summary) return parsed;
-  } catch {
-    // LLM 실패 시 아래 기본값으로 fallback
+  const filledPrompt = isGeneral
+    ? fillTemplate(generalReportPromptText, { conversation, userProfile })
+    : fillTemplate(reportPromptText, {
+        conversation,
+        currentPlan: currentPlan || '미등록',
+        recommendationResult,
+        userProfile,
+      });
+
+  const systemPrompt = isGeneral
+    ? generalReportSystemPrompt
+    : reportSystemPrompt;
+
+  const raw = await chatOpenAI(systemPrompt, filledPrompt, 1200, true);
+  const parsed = safeJsonParse<ReportOutput>(raw);
+  if (parsed && parsed.summary) return parsed;
+  // 파싱은 됐으나 summary가 비어 있거나, JSON 파싱 실패 시 원문을 함께 던짐
+  throw new Error(`report parse fail. raw=${raw}`);
+
+  // 일반 대화 요약 fallback — 요금제 필드는 빈값/미등록
+  if (isGeneral) {
+    return {
+      summary: '상담 내용을 요약한 레포트입니다.',
+      usageType: '',
+      currentPlan: '미등록',
+      recommendedPlans: [],
+      recommendationReason: '상담에서 안내된 내용을 확인해주세요.',
+      monthlySavingAmount: 0,
+      importantConditions: [],
+      qaPairs: [],
+    };
   }
 
-  // LLM 실패 시 추천 결과 텍스트에서 최소한의 요금제 이름과 절감액을 추출
+  // 요금제 추천 fallback — 추천 결과 텍스트에서 최소한의 요금제 이름과 절감액을 추출
   const fallbackPlans = recommendationResult
     .split('\n')
     .map((line) => {
@@ -1046,5 +1081,6 @@ export async function generateReport(
       recommendationResult || '추천된 요금제를 확인해주세요.',
     monthlySavingAmount: Number.isNaN(fallbackSaving) ? 0 : fallbackSaving,
     importantConditions: [],
+    qaPairs: [],
   };
 }

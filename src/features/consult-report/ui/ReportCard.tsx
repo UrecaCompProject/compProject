@@ -65,15 +65,36 @@ export default function ReportCard({ report }: ReportCardProps) {
         {report.summary}
       </p>
 
+      {/* 상담 요약 — LLM이 추출한 핵심 질문/답변 */}
+      {report.qaPairs && report.qaPairs.length > 0 && (
+        <div className="bg-surface-page rounded-2xl p-4 space-y-4">
+          <p className="text-body-sm font-semibold text-fg-primary">
+            상담 요약
+          </p>
+          {report.qaPairs.map((pair, idx) => (
+            <div key={idx} className="space-y-1">
+              <p className="text-body-sm font-medium text-fg-primary">
+                Q{idx + 1}. {pair.question}
+              </p>
+              <p className="text-body-sm text-fg-secondary">
+                A{idx + 1}. {pair.answer}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="bg-surface-page rounded-2xl p-4 space-y-3">
-        <InfoRow
-          label="사용자 유형"
-          value={
-            <span className="inline-flex items-center rounded-full bg-brand-soft px-2.5 py-1 text-caption text-brand-primary">
-              {report.usageType}
-            </span>
-          }
-        />
+        {report.usageType && (
+          <InfoRow
+            label="사용자 유형"
+            value={
+              <span className="inline-flex items-center rounded-full bg-brand-soft px-2.5 py-1 text-caption text-brand-primary">
+                {report.usageType}
+              </span>
+            }
+          />
+        )}
         <InfoRow label="현재 요금제" value={report.currentPlan || '-'} />
       </div>
 

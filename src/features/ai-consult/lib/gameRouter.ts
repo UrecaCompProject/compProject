@@ -52,11 +52,13 @@ function handleChatGame(
       id: Date.now(),
       type: 'user',
       sentence: getGameTitle(gameId),
+      category: 'game',
     },
     {
       id: Date.now() + 1,
       type: 'ai',
       sentence: intro,
+      category: 'game',
     },
   ]);
 

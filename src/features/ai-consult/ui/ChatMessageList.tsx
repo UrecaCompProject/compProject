@@ -18,6 +18,7 @@ interface ChatMessageListProps {
   messages: ChatMessage[];
   isLoading?: boolean;
   isGeneratingReport?: boolean;
+  canShowReportButton?: boolean;
   onSignupFinished?: () => void;
   onFormSubmit?: (values: Partial<ConsultInput>) => void;
   formDefaults?: Partial<ConsultInput>;
@@ -41,6 +42,7 @@ export default function ChatMessageList({
   messages,
   isLoading = false,
   isGeneratingReport = false,
+  canShowReportButton = false,
   onSignupFinished,
   onFormSubmit,
   formDefaults,
@@ -126,6 +128,7 @@ export default function ChatMessageList({
                   isLast={index === lastIndex}
                   isLoading={isLoading}
                   isGeneratingReport={isGeneratingReport}
+                  canShowReportButton={canShowReportButton}
                   onPlanSubscribe={onPlanSubscribe}
                   onPlanCompare={onPlanCompare}
                   onSelectCurrentPlan={onSelectCurrentPlan}
