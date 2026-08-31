@@ -6,3 +6,4 @@ export type {
   Coupon,
   CouponRow,
 } from './reward';
+export { useExpiringCoupons } from './useExpiringCoupons';
