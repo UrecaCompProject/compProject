@@ -8,7 +8,7 @@ import {
   Target,
 } from 'lucide-react';
 
-import badgeImage from '@/shared/assets/images/badge.png';
+import badgeImage from '@/shared/assets/images/badge.svg';
 
 import type { Mission, MissionIcon } from '../types';
 import type { LucideIcon } from 'lucide-react';
@@ -35,11 +35,11 @@ export default function MissionItem({ mission, onAction }: MissionItemProps) {
 
   return (
     <li className="flex items-center gap-2.5 rounded-xl bg-surface-card px-2.5 py-2.5">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-promo-primary">
+      <span className="inline-flex items-center justify-center rounded-lg h-9 w-9 shrink-0 bg-brand-soft text-brand-promo-primary">
         <Icon size={20} strokeWidth={1.8} />
       </span>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
+      <div className="flex flex-col justify-between flex-1 min-w-0">
         <strong className="truncate text-chip text-fg-primary">
           {mission.title}
         </strong>

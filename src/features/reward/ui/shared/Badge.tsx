@@ -1,4 +1,4 @@
-import badgeImage from '@/shared/assets/images/badge.png';
+import badgeImage from '@/shared/assets/images/badge.svg';
 
 type BadgeSize = 'large' | 'small';
 
