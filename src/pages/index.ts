@@ -1,5 +1,3 @@
-export { default as MainDetailPage } from './MainDetailPage';
-
 export { default as ChatPage } from './ChatPage';
 
 export { default as PlanPage } from './PlanPage';
