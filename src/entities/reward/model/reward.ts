@@ -10,7 +10,7 @@ export type Mission = {
 };
 
 export type RewardProduct = {
-  id: number;
+  id: string;
   brand: string;
   name: string;
   imageUrl: string;

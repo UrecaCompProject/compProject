@@ -6,5 +6,6 @@ export { default as RewardSheet } from './ui/RewardSheet';
 export { default as StoreContent } from './ui/store/StoreContent';
 
 export { missions } from './mocks/missions';
+export { useProducts } from './model/useProducts';
 
 export type { Mission, RewardProduct } from './types';

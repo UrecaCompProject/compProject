@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { useModalStore } from '@/shared';
 
-import { products } from '../../mocks/products';
+import { useProducts } from '../../model/useProducts';
 import Badge from '../shared/Badge';
 import ProductCard from '../shared/ProductCard';
 import SearchBar from '../shared/SearchBar';
@@ -19,6 +19,8 @@ export default function StoreContent({ onGoToCoupon }: StoreContentProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const openModal = useModalStore((state) => state.open);
   const badgeBalance = 100;
+
+  const { data: products = [], isLoading, error } = useProducts();
 
   const filteredProducts = products.filter((product) =>
     `${product.brand} ${product.name}`
@@ -52,6 +54,22 @@ export default function StoreContent({ onGoToCoupon }: StoreContentProps) {
 
       <section className="flex gap-5 min-h-full flex-col bg-surface-page px-4 py-5">
         <SearchBar value={searchTerm} onChange={setSearchTerm} />
+
+        {isLoading && (
+          <p className="py-8 text-center text-caption text-fg-tertiary">
+            상품을 불러오는 중...
+          </p>
+        )}
+        {error && (
+          <p className="py-8 text-center text-caption text-semantic-error">
+            상품 목록을 불러오지 못했습니다.
+          </p>
+        )}
+        {!isLoading && !error && filteredProducts.length === 0 && (
+          <p className="py-8 text-center text-caption text-fg-tertiary">
+            상품이 없습니다.
+          </p>
+        )}
 
         <section className="mx-auto grid w-full min-w-[288px] grid-cols-2 gap-x-4 gap-y-4.5 sm:grid-cols-3">
           {filteredProducts.map((product) => (
