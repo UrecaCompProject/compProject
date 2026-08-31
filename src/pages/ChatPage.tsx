@@ -5,8 +5,11 @@ import {
   ChatMessageList,
   QuickReplies,
 } from '@/features/ai-consult';
+import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { preloadLottiePlayer } from '@/features/ai-consult/lib/preloadLottie';
 import { useChat } from '@/features/ai-consult/model/useChat';
+import { GameLayer } from '@/features/games';
+import { BottomSheet } from '@/shared';
 
 export default function ChatPage() {
   const {
@@ -33,6 +36,8 @@ export default function ChatPage() {
     selectMultipleChoice,
     confirmMultipleChoice,
     nextQuestion,
+    closeSheetGame,
+    activeGameMeta,
   } = useChat();
 
   // 채팅 페이지 진입 즉시 Lottie 청크를 백그라운드에서 미리 로드
@@ -42,8 +47,11 @@ export default function ChatPage() {
   }, []);
 
   const lastMessage = messages[messages.length - 1];
+  // 퀴즈·게임 진행 중에도 메뉴 퀵 리플라이를 항상 유지
   const quickReplies =
-    lastMessage?.type === 'ai' ? lastMessage.quickReplies : undefined;
+    lastMessage?.type === 'ai' && lastMessage.quickReplies
+      ? lastMessage.quickReplies
+      : getWelcomeQuickReplies(isLoggedIn);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -66,6 +74,7 @@ export default function ChatPage() {
         onQuizMultipleChoiceSelect={selectMultipleChoice}
         onQuizMultipleChoiceConfirm={confirmMultipleChoice}
         onQuizNext={nextQuestion}
+        onScratchClose={closeSheetGame}
       />
       <QuickReplies
         replies={quickReplies}
@@ -80,6 +89,19 @@ export default function ChatPage() {
         onStartQuiz={startQuiz}
         disabled={isLoading}
       />
+
+      <BottomSheet
+        open={!!activeGameMeta}
+        onOpenChange={(open) => {
+          if (!open) closeSheetGame();
+        }}
+        title={activeGameMeta?.title ?? ''}
+        onBack={activeGameMeta?.onBack}
+        size="full"
+        bodyClassName="px-0"
+      >
+        <GameLayer />
+      </BottomSheet>
     </div>
   );
 }
