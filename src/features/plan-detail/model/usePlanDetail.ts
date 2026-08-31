@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { toRecommendedPlan } from '../lib/toRecommendedPlan';
 
@@ -11,6 +11,12 @@ export function usePlanDetail(id: string | undefined) {
 
   const plan = plans.find((item) => item.id === id) ?? null;
 
+  // 신청 시트 초기화 이펙트가 매 렌더 재실행되지 않도록 참조를 안정화한다.
+  const recommendedPlan = useMemo(
+    () => (plan ? toRecommendedPlan(plan) : null),
+    [plan],
+  );
+
   const errorMessage =
     error instanceof Error
       ? error.message
@@ -22,7 +28,7 @@ export function usePlanDetail(id: string | undefined) {
     plan,
     isLoading,
     errorMessage,
-    recommendedPlan: plan ? toRecommendedPlan(plan) : null,
+    recommendedPlan,
     isSubscribeOpen,
     setIsSubscribeOpen,
   };

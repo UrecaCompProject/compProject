@@ -18,50 +18,58 @@ export default function PlanDetailPage() {
   } = usePlanDetail(id);
 
   const backToList = () => navigate('/plan');
+  const subscribing = isSubscribeOpen && !!recommendedPlan;
 
+  // 신청 플로우는 자체 BottomSheet를 만들지 않고, 이 화면의 시트에 내용만
+  // 갈아끼운다(renderShell). 첫 단계에서 뒤로가기 → 요금제 상세로 복귀.
   return (
-    <>
-      <BottomSheet
-        open
-        onOpenChange={(open) => {
-          if (!open) backToList();
-        }}
-        onBack={backToList}
-        title={plan?.name ?? '요금제'}
-        size="large"
-        bodyClassName="px-0 bg-surface-page"
-        footer={
-          plan && (
-            <div className="flex w-full gap-2">
-              <Button variant="outline" size="lg" className="flex-1">
-                비교 하기
-              </Button>
-              <Button
-                variant="primary"
-                size="lg"
-                className="flex-1"
-                onClick={() => setIsSubscribeOpen(true)}
-              >
-                신청 하기
-              </Button>
-            </div>
-          )
-        }
-      >
-        <PlanDetailContent
-          plan={plan}
-          isLoading={isLoading}
-          error={errorMessage}
-        />
-      </BottomSheet>
-
-      {recommendedPlan && (
-        <PlanSubscriptionSheet
-          open={isSubscribeOpen}
-          onOpenChange={setIsSubscribeOpen}
-          plan={recommendedPlan}
-        />
+    <PlanSubscriptionSheet
+      plan={recommendedPlan}
+      active={subscribing}
+      onExit={() => setIsSubscribeOpen(false)}
+      onComplete={backToList}
+      renderShell={(shell) => (
+        <BottomSheet
+          open
+          onOpenChange={(open) => {
+            if (!open) backToList();
+          }}
+          onBack={subscribing ? shell.onBack : backToList}
+          title={subscribing ? shell.title : (plan?.name ?? '요금제')}
+          description={subscribing ? shell.description : undefined}
+          size={subscribing ? shell.size : 'large'}
+          bodyClassName={subscribing ? 'px-5' : 'px-0 bg-surface-page'}
+          footer={
+            subscribing ? (
+              shell.footer
+            ) : plan ? (
+              <div className="flex w-full gap-2">
+                <Button variant="outline" size="lg" className="flex-1">
+                  비교 하기
+                </Button>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => setIsSubscribeOpen(true)}
+                >
+                  신청 하기
+                </Button>
+              </div>
+            ) : null
+          }
+        >
+          {subscribing ? (
+            shell.children
+          ) : (
+            <PlanDetailContent
+              plan={plan}
+              isLoading={isLoading}
+              error={errorMessage}
+            />
+          )}
+        </BottomSheet>
       )}
-    </>
+    />
   );
 }
