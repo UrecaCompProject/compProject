@@ -18,6 +18,14 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
     ${onSelect ? 'transition-transform active:scale-[0.98]' : ''}
   `;
 
+  // DB의 name에 브랜드명이 이미 포함된 경우(예: "wavve 1개월 상품권")
+  // brand를 다시 앞에 붙이면 중복 표기되므로, name이 brand로 시작하면 그대로 쓴다.
+  const displayName = product.name
+    .toLowerCase()
+    .startsWith(product.brand.toLowerCase())
+    ? product.name
+    : `${product.brand} ${product.name}`;
+
   const content = (
     <>
       <div
@@ -29,7 +37,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
       />
 
       <h2 className=" shrink-0 truncate w-full px-1 text-center font-medium leading-[130%]">
-        {product.brand} {product.name}
+        {displayName}
       </h2>
 
       {'badgeCost' in product ? (
@@ -52,7 +60,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
 
   return (
     <button
-      aria-label={`${product.brand} ${product.name} 선택`}
+      aria-label={`${displayName} 선택`}
       type="button"
       onClick={() => onSelect(product)}
       className={className}

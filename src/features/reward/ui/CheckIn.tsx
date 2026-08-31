@@ -1,7 +1,7 @@
 import { ChevronRight } from 'lucide-react';
 
 import { Button, useModalStore } from '@/shared';
-import badgeImage from '@/shared/assets/images/badge.png';
+import badgeImage from '@/shared/assets/images/badge.svg';
 
 import { useAttendance } from '../model/useAttendance';
 
@@ -31,7 +31,7 @@ export default function CheckIn() {
     openModal({
       title: '출석하시겠습니까?',
       content: (
-        <div className="flex flex-col gap-2 text-body text-fg-tertiary text-center">
+        <div className="flex flex-col gap-2 text-center text-body text-fg-tertiary">
           <div className="flex gap-2 mt-2">
             <Button
               type="button"
@@ -56,8 +56,8 @@ export default function CheckIn() {
   };
 
   return (
-    <section className="bg-surface-card px-4 py-4">
-      <div className="mb-4 flex items-center justify-between">
+    <section className="px-4 py-4 bg-surface-card">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-[16px] font-bold">
           연속 출석{' '}
           <span className="text-brand-promo-primary">{currentStreak}일째</span>
@@ -93,7 +93,7 @@ export default function CheckIn() {
                 `}
               >
                 {checked && (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-reward-locked">
+                  <span className="flex items-center justify-center rounded-full h-7 w-7 bg-reward-locked">
                     <img
                       src={badgeImage}
                       alt=""
