@@ -34,6 +34,15 @@ export default defineConfig({
   },
   test: {
     projects: [
+      // 일반 단위 테스트 — Node 환경에서 실행되는 순수 함수 테스트
+      {
+        test: {
+          name: 'unit',
+          environment: 'node',
+          include: ['src/**/*.test.{ts,tsx}'],
+          exclude: ['src/**/*.stories.{ts,tsx}'],
+        },
+      },
       {
         extends: true,
         plugins: [

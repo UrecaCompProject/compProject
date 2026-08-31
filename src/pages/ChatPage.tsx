@@ -21,6 +21,9 @@ export default function ChatPage() {
     isGeneratingReport,
     canShowReportButton,
     handleSend,
+    handleStop,
+    handleRegenerate,
+    handleEditMessage,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
@@ -79,6 +82,8 @@ export default function ChatPage() {
         onQuizMultipleChoiceConfirm={confirmMultipleChoice}
         onQuizNext={finishQuiz}
         onScratchClose={closeSheetGame}
+        onRegenerate={handleRegenerate}
+        onEditMessage={handleEditMessage}
       />
       <QuickReplies
         replies={quickReplies}
@@ -94,6 +99,7 @@ export default function ChatPage() {
         value={input}
         onChange={setInput}
         onSend={handleSend}
+        onStop={handleStop}
         onStartQuiz={startQuiz}
         onStartScratch={startScratch}
         disabled={isLoading}

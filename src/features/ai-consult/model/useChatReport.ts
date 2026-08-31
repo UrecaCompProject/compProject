@@ -24,6 +24,8 @@ interface UseChatReportParams {
   setIsLoading: (v: boolean) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   resetChat: () => void;
+  startRequest: () => AbortSignal;
+  clearRequest: (signal?: AbortSignal) => void;
 }
 
 // 상담에 확정된 사용자 조건을 문자열로 요약
@@ -54,6 +56,8 @@ export function useChatReport({
   setIsLoading,
   setMessages,
   resetChat,
+  startRequest,
+  clearRequest,
 }: UseChatReportParams) {
   // 레포트 생성 중 상태를 일반 로딩과 분리해, 비교 로딩 시 레포트 버튼이
   // "생성 중..."으로 잘못 표시되는 문제를 방지
@@ -70,14 +74,19 @@ export function useChatReport({
       setIsGeneratingReport(true);
       setIsLoading(true);
 
+      const signal = startRequest();
+
       try {
-        const report = await generateReport({
-          conversation: buildConversationLog(messages),
-          currentPlan: effectiveCurrentPlan || '미등록',
-          recommendationResult: buildRecommendationResult(recommendations),
-          reportKind,
-          userProfile: buildUserProfile(userProfile),
-        });
+        const report = await generateReport(
+          {
+            conversation: buildConversationLog(messages),
+            currentPlan: effectiveCurrentPlan || '미등록',
+            recommendationResult: buildRecommendationResult(recommendations),
+            reportKind,
+            userProfile: buildUserProfile(userProfile),
+          },
+          signal,
+        );
         await saveReport(report, recommendations);
         // 리포트 결과만 남기고 채팅방을 웰컱+리포트 상태로 초기화
         resetChat();
@@ -93,16 +102,25 @@ export function useChatReport({
         ]);
         return report;
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '레포트 생성 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // 사용자가 의도적으로 중지한 경우 — 중지 안내 메시지 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '레포트 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['메뉴로 돌아가기'],
+            },
+          ]);
+          return;
+        }
+        setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);
         setIsGeneratingReport(false);
+        clearRequest(signal);
       }
     },
     [
@@ -114,6 +132,8 @@ export function useChatReport({
       setIsLoading,
       setMessages,
       resetChat,
+      startRequest,
+      clearRequest,
     ],
   );
 

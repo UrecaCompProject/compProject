@@ -47,37 +47,45 @@ export default function ChatMenuBar({
       >
         <div className="w-full border-t border-border px-5 py-7 text-medium-12-130 text-fg-tertiary">
           <div className="flex justify-between items-center max-w-110 mx-auto">
-            <div
+            <button
+              type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setMyPageOpen(true)}
+              aria-label="마이페이지 열기"
             >
               <IconBadge icon={UserRound} size={52} radius={16} />
               <div>마이페이지</div>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setPlanOpen(true)}
+              aria-label="요금제 메뉴 열기"
             >
               <IconBadge icon={CreditCard} size={52} radius={16} />
               <div>요금제</div>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setRewardOpen(true)}
+              aria-label="혜택/이벤트 메뉴 열기"
             >
               <IconBadge icon={Gift} size={52} radius={16} />
               <div>혜택/이벤트</div>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setReportOpen(true)}
+              aria-label="상담 리포트 메뉴 열기"
             >
               <IconBadge icon={FileSpreadsheet} size={52} radius={16} />
               <div>상담 리포트</div>
-            </div>
+            </button>
           </div>
         </div>
       </div>

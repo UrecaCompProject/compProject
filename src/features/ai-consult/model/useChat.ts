@@ -65,6 +65,23 @@ export function useChat() {
   });
   // 에러 발생 시 재시도를 위해 마지막 사용자 입력을 보관
   const lastUserInputRef = useRef<string | null>(null);
+  // AI 응답 생성 중 사용자가 중지할 수 있도록 AbortController를 보관
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // 새 AbortController를 생성하여 ref에 저장하고 signal을 반환
+  // handleSend뿐 아니라 fetchCompare/handleGenerateReport도 호출해 중지 대상이 되도록 통일
+  const startRequest = useCallback(() => {
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    return controller.signal;
+  }, []);
+
+  // 요청 완료 후 ref를 정리 — 자신이 시작한 controller와 같을 때만 null로 설정
+  // 이전 요청의 finally가 나중에 실행되어 새 요청의 controller를 덮어쓰는 경쟁 상태 방지
+  const clearRequest = useCallback((signal?: AbortSignal) => {
+    if (signal && abortControllerRef.current?.signal !== signal) return;
+    abortControllerRef.current = null;
+  }, []);
 
   // AI 응답을 메시지 목록에 추가하고 profile을 갱신하는 공통 헬퍼
   const addAIResponse = useCallback(
@@ -162,9 +179,12 @@ export function useChat() {
     profile,
     isLoggedIn,
     effectiveCurrentPlan,
+    isLoading,
     setIsLoading,
     setMessages,
     addAIResponse,
+    startRequest,
+    clearRequest,
   });
 
   const { isGeneratingReport, handleGenerateReport } = useChatReport({
@@ -175,6 +195,8 @@ export function useChat() {
     setIsLoading,
     setMessages,
     resetChat,
+    startRequest,
+    clearRequest,
   });
 
   // 리워드 미션 목록에서 스크래치 이벤트를 선택했을 때 — startQuiz와 동일하게
@@ -220,11 +242,13 @@ export function useChat() {
   );
 
   const handleSend = useCallback(
-    async (text: string) => {
+    async (text: string, options?: { skipUserMessage?: boolean }) => {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
 
       // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
+      const signal = startRequest();
+
       const result = await routeQuickReply({
         text: trimmed,
         messages,
@@ -242,6 +266,7 @@ export function useChat() {
         fetchCompare,
         startQuiz,
         openSheetGame,
+        signal,
         // "다시 시도" 시 마지막 사용자 입력을 재전송
         retryLastInput: () => {
           const lastInput = lastUserInputRef.current;
@@ -255,7 +280,7 @@ export function useChat() {
               }
               return prev;
             });
-            handleSend(lastInput);
+            handleSend(lastInput, { skipUserMessage: true });
           }
         },
       });
@@ -263,15 +288,18 @@ export function useChat() {
       if (result === 'handled') return;
 
       // fall-through: 일반 상담 요청
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'user',
-          sentence: trimmed,
-          category: modeToCategory(profile.mode) ?? 'general',
-        },
-      ]);
+      // 재생성 시에는 사용자 메시지가 이미 있으므로 추가하지 않음
+      if (!options?.skipUserMessage) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            type: 'user',
+            sentence: trimmed,
+            category: modeToCategory(profile.mode) ?? 'general',
+          },
+        ]);
+      }
       setInput('');
 
       // 재시도를 위해 마지막 사용자 입력 보관
@@ -280,21 +308,31 @@ export function useChat() {
       setIsLoading(true);
 
       try {
-        const { input: nextProfile, response } = await postQuestion(trimmed, {
-          ...profile,
-          isLoggedIn,
-        });
+        const { input: nextProfile, response } = await postQuestion(
+          trimmed,
+          { ...profile, isLoggedIn },
+          signal,
+        );
         addAIResponse(response, nextProfile, nextProfile.mode);
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['메뉴로 돌아가기'],
+            },
+          ]);
+        } else {
+          setMessages((prev) => [...prev, buildErrorMessage(error)]);
+        }
       } finally {
         setIsLoading(false);
+        clearRequest(signal);
       }
     },
     [
@@ -313,6 +351,8 @@ export function useChat() {
       setMessages,
       setProfile,
       setIsLoading,
+      startRequest,
+      clearRequest,
     ],
   );
 
@@ -332,6 +372,8 @@ export function useChat() {
       ]);
       setIsLoading(true);
 
+      const signal = startRequest();
+
       try {
         const merged: ConsultInput = {
           ...profile,
@@ -340,21 +382,86 @@ export function useChat() {
           mode: 'recommend',
           isLoggedIn,
         };
-        const response = await requestConsult(merged);
+        const response = await requestConsult(merged, signal);
         addAIResponse(response, merged, 'recommend');
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['메뉴로 돌아가기'],
+            },
+          ]);
+        } else {
+          setMessages((prev) => [...prev, buildErrorMessage(error)]);
+        }
       } finally {
         setIsLoading(false);
+        clearRequest(signal);
       }
     },
-    [isLoading, profile, isLoggedIn, addAIResponse, setMessages],
+    [
+      isLoading,
+      profile,
+      isLoggedIn,
+      addAIResponse,
+      setMessages,
+      startRequest,
+      clearRequest,
+    ],
+  );
+
+  // AI 응답 생성 중지 — 진행 중인 fetch 요청을 취소하고 로딩 상태 해제
+  const handleStop = useCallback(() => {
+    abortControllerRef.current?.abort();
+    // 중지 시에는 무조건 ref를 clear — 새 요청이 시작될 수 있도록 보장
+    abortControllerRef.current = null;
+    setIsLoading(false);
+  }, []);
+
+  // 마지막 AI 응답을 제거하고 마지막 사용자 입력으로 재생성
+  const handleRegenerate = useCallback(() => {
+    if (isLoading) return;
+    const lastInput = lastUserInputRef.current;
+    if (!lastInput) return;
+
+    // 마지막 AI 응답 메시지 제거 후 재전송 (사용자 메시지는 유지)
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.type === 'ai') {
+        return prev.slice(0, -1);
+      }
+      return prev;
+    });
+    handleSend(lastInput, { skipUserMessage: true });
+  }, [isLoading, handleSend, setMessages]);
+
+  // 사용자 메시지 수정 — 해당 메시지 이후 대화를 잘라내고 입력창에 원문 주입
+  const handleEditMessage = useCallback(
+    (messageId: number) => {
+      if (isLoading) return;
+
+      setMessages((prev) => {
+        const targetIndex = prev.findIndex(
+          (m) => m.id === messageId && m.type === 'user',
+        );
+        if (targetIndex === -1) return prev;
+
+        const targetMessage = prev[targetIndex];
+        if (targetMessage.type !== 'user') return prev;
+
+        // 입력창에 원문 주입
+        setInput(targetMessage.sentence);
+        // 해당 메시지까지 포함하여 이후 메시지 제거 (메시지 자체도 제거)
+        return prev.slice(0, targetIndex);
+      });
+    },
+    [isLoading, setMessages, setInput],
   );
 
   // 웰컱 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출
@@ -371,6 +478,9 @@ export function useChat() {
     isGeneratingReport,
     canShowReportButton,
     handleSend,
+    handleStop,
+    handleRegenerate,
+    handleEditMessage,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,

@@ -33,6 +33,7 @@ function buildOutOfScopeFallback(isLoggedIn: boolean): ConsultResponse {
 export async function postQuestion(
   text: string,
   prev: ConsultInput,
+  signal?: AbortSignal,
 ): Promise<{ input: ConsultInput; response: ConsultResponse }> {
   const input = parseUserInput(text, prev);
 
@@ -44,6 +45,6 @@ export async function postQuestion(
     };
   }
 
-  const response = await requestConsult(input);
+  const response = await requestConsult(input, signal);
   return { input, response };
 }

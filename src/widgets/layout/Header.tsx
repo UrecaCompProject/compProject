@@ -17,7 +17,7 @@ export default function Header() {
       <button
         type="button"
         aria-label="알림"
-        className="relative shrink-0 cursor-pointer"
+        className="relative flex shrink-0 cursor-pointer items-center justify-center"
         onClick={() =>
           open({
             title: '알림',
@@ -27,7 +27,7 @@ export default function Header() {
       >
         <Bell size={22} />
         {hasExpiringCoupons && (
-          <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-semantic-error" />
+          <span className="absolute right-1 top-0.5 h-2.5 w-2.5 rounded-full bg-semantic-error ring-2 ring-surface-card" />
         )}
       </button>
       {isLogin ? (

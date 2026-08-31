@@ -1,6 +1,8 @@
 import type { QuizKind } from '@/features/chat-quiz';
 import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
+import { classifyError } from './classifyError';
+
 import type { ChatMessage, MessageCategory } from '../types';
 
 export const WELCOME_MESSAGE =
@@ -115,19 +117,16 @@ export function buildRecommendationResult(
     .join('\n');
 }
 
-// 에러 메시지 추출 — Error 인스턴스면 message, 아니면 기본 문구 사용
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
-}
-
-// 에러 AI 메시지 객체 생성 — isError 플래그로 빨간 말풍선 + 재시도 퀵리플라이 적용
-export function buildErrorMessage(error: unknown, fallback: string) {
+// 에러 AI 메시지 객체 생성 — classifyError로 사용자 친화적 메시지 분류
+// _fallback 파라미터는 기존 호출부 호환성 유지용 (classifyError의 unknown 케이스가 동일 문구 사용)
+export function buildErrorMessage(error: unknown, _fallback?: string) {
+  const { userMessage, quickReplies } = classifyError(error);
   return {
     id: Date.now(),
     type: 'ai' as const,
-    sentence: getErrorMessage(error, fallback),
+    sentence: userMessage,
     isError: true,
-    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+    quickReplies,
   };
 }
 
