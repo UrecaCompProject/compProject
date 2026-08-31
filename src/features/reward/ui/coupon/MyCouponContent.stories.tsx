@@ -5,6 +5,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 const meta = {
   title: 'coupon/CouponBox',
   component: CouponBox,
+  args: {
+    onGoToReward: () => {},
+  },
   parameters: {
     layout: 'fullscreen',
     backgrounds: {
