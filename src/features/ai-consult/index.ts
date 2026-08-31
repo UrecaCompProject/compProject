@@ -17,3 +17,5 @@ export {
 export type { SubscriptionForm } from '@/features/plan-subscription';
 
 export * from './types';
+
+export type { ChatGameId, SheetGameId, GameMeta } from './constants/gameList';

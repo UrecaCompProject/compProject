@@ -10,7 +10,7 @@ import type {
 } from '@/shared/lib/aiConsult';
 
 export type MessageType =
-  'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result';
+  'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result' | 'scratch-game';
 
 export type ChatMessage =
   | {
@@ -32,4 +32,10 @@ export type ChatMessage =
   | { id: number; type: 'user'; sentence: string }
   | { id: number; type: 'signup' }
   | QuizQuestionMessage
-  | QuizResultMessage;
+  | QuizResultMessage
+  // 스크래치 게임 — 채팅 내에서 ScratchGame 컴포넌트 렌더링
+  | {
+      id: number;
+      type: 'scratch-game';
+      reward?: number;
+    };

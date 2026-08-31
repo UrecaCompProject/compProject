@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsLoggedIn } from '@/entities/user';
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { useChatQuiz } from '@/features/chat-quiz';
+import { useGameStore, useActiveGameMeta } from '@/features/games';
+import type { GameId } from '@/features/games';
 import { useSubscriptionStore } from '@/features/plan-subscription';
 import { requestConsult } from '@/shared/lib/aiConsult';
 import type { ConsultInput, ConsultResponse } from '@/shared/lib/aiConsult';
@@ -166,6 +168,20 @@ export function useChat() {
     ]);
   };
 
+  // 바텀시트 게임(card-match, reaction, attendance) 실행/종료 — useGameStore 재활용
+  const openGameStore = useGameStore((state) => state.openGame);
+  const closeSheetGame = useGameStore((state) => state.closeGame);
+  // 활성 게임 메타 — BottomSheet의 open/title/onBack에 사용
+  const activeGameMeta = useActiveGameMeta();
+
+  // gameRouter/quickReplyRouter에서 reward만 넘기도록 래핑 — GameOpenParams로 변환
+  const openSheetGame = useCallback(
+    (gameId: GameId, reward?: number) => {
+      openGameStore(gameId, reward !== undefined ? { reward } : {});
+    },
+    [openGameStore],
+  );
+
   const handleSend = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -188,6 +204,7 @@ export function useChat() {
         setPendingComparePlan,
         fetchCompare,
         startQuiz,
+        openSheetGame,
         // "다시 시도" 시 마지막 사용자 입력을 재전송
         retryLastInput: () => {
           const lastInput = lastUserInputRef.current;
@@ -246,6 +263,7 @@ export function useChat() {
       effectiveCurrentPlan,
       startQuiz,
       openSubscription,
+      openSheetGame,
       fetchCompare,
       startCompareFlow,
       setPendingComparePlan,
@@ -320,5 +338,7 @@ export function useChat() {
     selectMultipleChoice,
     confirmMultipleChoice,
     finishQuiz,
+    closeSheetGame,
+    activeGameMeta,
   };
 }

@@ -10,6 +10,7 @@ import AIChat from './AIChat';
 import AIChatExtras from './AIChatExtras';
 import ChatLoadingIndicator from './ChatLoadingIndicator';
 import MyChat from './MyChat';
+import ScratchGameMessage from './ScratchGameMessage';
 
 import type { ChatMessage } from '../types';
 
@@ -32,6 +33,8 @@ interface ChatMessageListProps {
   onQuizMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onQuizMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
   onQuizNext: () => void;
+  onScratchWin?: (reward: number) => void;
+  onScratchClose?: () => void;
 }
 
 export default function ChatMessageList({
@@ -53,6 +56,8 @@ export default function ChatMessageList({
   onQuizMultipleChoiceSelect,
   onQuizMultipleChoiceConfirm,
   onQuizNext,
+  onScratchWin,
+  onScratchClose,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -149,6 +154,14 @@ export default function ChatMessageList({
                 onMultipleChoiceSelect={onQuizMultipleChoiceSelect}
                 onMultipleChoiceConfirm={onQuizMultipleChoiceConfirm}
                 onNext={onQuizNext}
+              />
+            )}
+
+            {message.type === 'scratch-game' && (
+              <ScratchGameMessage
+                reward={message.reward}
+                onWin={onScratchWin}
+                onClose={onScratchClose}
               />
             )}
           </div>
