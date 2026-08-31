@@ -1,10 +1,13 @@
 import type { QuizKind } from '@/features/chat-quiz';
+import type { GameId } from '@/features/games';
 import type {
   ConsultInput,
   ConsultResponse,
   RecommendedPlan,
 } from '@/shared/lib/aiConsult';
 import { requestConsult } from '@/shared/lib/aiConsult';
+
+import { GAME_LIST } from '../constants/gameList';
 
 import {
   buildAIMessage,
@@ -13,7 +16,9 @@ import {
   findLastRecommendations,
   getQuizIntent,
 } from './chatHelpers';
+import { handleGameSelect } from './gameRouter';
 
+import type { ChatGameId, SheetGameId } from '../constants/gameList';
 import type { ChatMessage } from '../types';
 
 type SetMessages = React.Dispatch<React.SetStateAction<ChatMessage[]>>;
@@ -39,6 +44,7 @@ export interface QuickReplyContext {
   setPendingComparePlan: (planName: string) => void;
   fetchCompare: (planBName: string, planAName?: string) => Promise<void>;
   startQuiz: (kind: QuizKind, opts?: { includeUserMessage: boolean }) => void;
+  openSheetGame: (gameId: GameId, reward?: number) => void;
   // "다시 시도" 시 마지막 사용자 입력을 재전송 — useChat의 lastUserInputRef와 handleSend 재귀 호출을 캡슐화
   retryLastInput: () => void;
 }
@@ -66,12 +72,44 @@ export async function routeQuickReply(
     setPendingComparePlan,
     fetchCompare,
     startQuiz,
+    openSheetGame,
     retryLastInput,
   } = ctx;
 
   // "다시 시도" 퀵리플라이 — 마지막 사용자 입력을 재전송
   if (text === '다시 시도') {
     retryLastInput();
+    return 'handled';
+  }
+
+  // "게임 하기" 퀵 리플라이 — 게임 이름들을 퀵 리플라이로 표시
+  if (text === '게임 하기') {
+    const gameTitles = GAME_LIST.map((g) => g.title);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: '게임 하기' },
+      buildAIMessage('원하는 게임을 선택해 주세요!', [
+        ...gameTitles,
+        '메뉴로 돌아가기',
+      ]),
+    ]);
+    return 'handled';
+  }
+
+  // 게임 이름 퀵 리플라이 매칭 — 게임 리스트에서 선택 시 해당 게임 실행
+  const matchedGame = GAME_LIST.find((g) => g.title === text);
+  if (matchedGame) {
+    handleGameSelect(matchedGame.id as ChatGameId | SheetGameId, {
+      setMessages,
+      startQuiz,
+      openSheetGame,
+    });
+    return 'handled';
+  }
+
+  // "출석체크" 퀵 리플라이 — 출석 룰렛 바텀시트 게임으로 바로 연결
+  if (text === '출석체크') {
+    openSheetGame('attendance', 5);
     return 'handled';
   }
 
