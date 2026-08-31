@@ -237,6 +237,7 @@ export default function ScratchGame({
     // ---- 실제 스크래치 인터랙션 ----
     let scratching = false;
     let lastPoint: { x: number; y: number } | null = null;
+    let hasCleared = false; // 클리어 판정 후 남은 pointermove/up에서 onWin이 중복 호출되지 않도록
 
     function stopHint() {
       if (userInteracted) return;
@@ -271,6 +272,8 @@ export default function ScratchGame({
     }
 
     function checkCleared() {
+      if (hasCleared) return;
+
       const data = ctx!.getImageData(0, 0, canvas!.width, canvas!.height).data;
       let transparent = 0;
       let total = 0;
@@ -280,8 +283,10 @@ export default function ScratchGame({
         if (data[i] < 40) transparent++;
       }
       if (total > 0 && transparent / total > CLEAR_THRESHOLD) {
+        hasCleared = true;
         ctx!.clearRect(0, 0, CARD_W, CARD_H);
         canvas!.removeEventListener('pointerdown', onDown);
+        canvas!.removeEventListener('pointermove', onMove);
         canvas!.style.pointerEvents = 'none';
         canvas!.style.cursor = 'default';
         setIsCleared(true);
