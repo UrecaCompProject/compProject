@@ -73,7 +73,7 @@ export function useUsage() {
   const callPercent = toPercent(callRemaining, currentPlan?.callAmountMin);
   const smsPercent = toPercent(smsRemaining, currentPlan?.smsAmount);
 
-  console.log(dataPercent, callPercent, smsPercent);
+  // console.log(dataPercent, callPercent, smsPercent);
 
   const gbBenefit = currentPlan?.benefits?.find((benefit) =>
     benefit.includes('GB→'),
