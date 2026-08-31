@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ArrowUp, Menu } from 'lucide-react';
+import { ArrowUp, Menu, Square } from 'lucide-react';
 
 import { useIsLoggedIn, SigninModal } from '@/features/auth';
 import type { QuizKind } from '@/features/chat-quiz';
@@ -12,6 +12,7 @@ interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
   onSend: (text: string) => void;
+  onStop?: () => void;
   onStartQuiz?: (quizType: QuizKind) => void;
   disabled?: boolean;
 }
@@ -20,6 +21,7 @@ export default function ChatInput({
   value,
   onChange,
   onSend,
+  onStop,
   onStartQuiz,
   disabled = false,
 }: ChatInputProps) {
@@ -72,15 +74,30 @@ export default function ChatInput({
           disabled={disabled}
           className="flex-1"
         />
-        <Button
-          variant="primary"
-          size="icon"
-          round
-          onClick={handleSend}
-          disabled={disabled || !isLogin || !value.trim()}
-        >
-          <ArrowUp size={16} />
-        </Button>
+        {disabled ? (
+          // 로딩 중 — 정지 버튼 표시
+          <Button
+            variant="primary"
+            size="icon"
+            round
+            onClick={onStop}
+            aria-label="응답 생성 중지"
+          >
+            <Square size={16} />
+          </Button>
+        ) : (
+          // 대기 중 — 전송 버튼 표시
+          <Button
+            variant="primary"
+            size="icon"
+            round
+            onClick={handleSend}
+            disabled={!isLogin || !value.trim()}
+            aria-label="메시지 전송"
+          >
+            <ArrowUp size={16} />
+          </Button>
+        )}
       </div>
 
       <ChatMenuBar

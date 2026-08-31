@@ -117,14 +117,17 @@ const CONSULT_TIMEOUT_MS = 30_000;
 const REPORT_TIMEOUT_MS = 60_000;
 
 // Supabase Edge Function 'ai-consult'를 호출하여 AI 요금제 추천 결과를 받습니다.
+// signal을 전달하면 호출 도중에 요청을 취소할 수 있습니다.
 export async function requestConsult(
   input: ConsultInput,
+  signal?: AbortSignal,
 ): Promise<ConsultResponse> {
   const { data, error } = await supabase.functions.invoke<ConsultResponse>(
     'ai-consult',
     {
       body: input,
       timeout: CONSULT_TIMEOUT_MS,
+      signal,
     },
   );
 
@@ -140,8 +143,10 @@ export async function requestConsult(
 }
 
 // 상담 내용과 추천 결과를 바탕으로 요약 레포트를 생성합니다.
+// signal을 전달하면 레포트 생성 도중에 요청을 취소할 수 있습니다.
 export async function generateReport(
   input: ReportInput,
+  signal?: AbortSignal,
 ): Promise<ReportOutput> {
   const { data, error } = await supabase.functions.invoke<{
     report: ReportOutput;
@@ -149,6 +154,7 @@ export async function generateReport(
   }>('ai-consult', {
     body: { ...input, mode: 'report' },
     timeout: REPORT_TIMEOUT_MS,
+    signal,
   });
 
   if (error) {

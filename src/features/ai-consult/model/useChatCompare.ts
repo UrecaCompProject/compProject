@@ -17,6 +17,7 @@ interface UseChatCompareParams {
   profile: ConsultInput;
   isLoggedIn: boolean;
   effectiveCurrentPlan: string | undefined;
+  isLoading: boolean;
   setIsLoading: (v: boolean) => void;
   setMessages: SetMessages;
   addAIResponse: (
@@ -24,6 +25,8 @@ interface UseChatCompareParams {
     request: ConsultInput,
     defaultMode: ConsultInput['mode'],
   ) => void;
+  startRequest: () => AbortSignal;
+  clearRequest: (signal?: AbortSignal) => void;
 }
 
 // 요금제 비교 2단계 플로우와 fetchCompare 로직을 관리
@@ -31,9 +34,12 @@ export function useChatCompare({
   profile,
   isLoggedIn,
   effectiveCurrentPlan,
+  isLoading,
   setIsLoading,
   setMessages,
   addAIResponse,
+  startRequest,
+  clearRequest,
 }: UseChatCompareParams) {
   // 비교 요청 시 현재 요금제가 없으면 드랍다운 선택 후 비교를 이어가기 위해
   // 대기 중인 비교 대상 요금제명을 보관
@@ -48,6 +54,7 @@ export function useChatCompare({
   const fetchCompare = useCallback(
     async (planBName: string, planAName?: string) => {
       setIsLoading(true);
+      const signal = startRequest();
       try {
         const comparePlanA = planAName ?? effectiveCurrentPlan;
         const request: ConsultInput = {
@@ -58,18 +65,27 @@ export function useChatCompare({
           comparePlanA,
           comparePlanB: planBName,
         };
-        const response = await requestConsult(request);
+        const response = await requestConsult(request, signal);
         addAIResponse(response, request, 'compare');
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '비교 요청 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // 사용자가 의도적으로 중지한 경우 — 중지 안내 메시지 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '비교 요청을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['메뉴로 돌아가기'],
+            },
+          ]);
+          return;
+        }
+        setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);
+        clearRequest(signal);
       }
     },
     [
@@ -79,11 +95,15 @@ export function useChatCompare({
       setIsLoading,
       setMessages,
       addAIResponse,
+      startRequest,
+      clearRequest,
     ],
   );
 
   const handlePlanCompare = useCallback(
     (plan: RecommendedPlan) => {
+      // 로딩 중이면 중복 요청 차단 — 중지 후 isLoading이 false가 되면 다시 클릭 가능
+      if (isLoading) return;
       if (!effectiveCurrentPlan) {
         pendingComparePlanRef.current = plan.planName;
         setMessages((prev) => [
@@ -98,7 +118,7 @@ export function useChatCompare({
       }
       fetchCompare(plan.planName);
     },
-    [effectiveCurrentPlan, fetchCompare, setMessages],
+    [isLoading, effectiveCurrentPlan, fetchCompare, setMessages],
   );
 
   // PlanSelector 드랍다운에서 요금제를 선택했을 때 호출

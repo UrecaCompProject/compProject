@@ -45,6 +45,8 @@ export interface QuickReplyContext {
   fetchCompare: (planBName: string, planAName?: string) => Promise<void>;
   startQuiz: (kind: QuizKind, opts?: { includeUserMessage: boolean }) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  // AbortController signal — 비동기 requestConsult 호출 취소에 사용
+  signal?: AbortSignal;
   // "다시 시도" 시 마지막 사용자 입력을 재전송 — useChat의 lastUserInputRef와 handleSend 재귀 호출을 캡슐화
   retryLastInput: () => void;
 }
@@ -73,6 +75,7 @@ export async function routeQuickReply(
     fetchCompare,
     startQuiz,
     openSheetGame,
+    signal,
     retryLastInput,
   } = ctx;
 
@@ -218,16 +221,13 @@ export async function routeQuickReply(
         isLoggedIn,
         excludePlanIds,
       };
-      const response = await requestConsult(request);
+      const response = await requestConsult(request, signal);
       addAIResponse(response, request, 'recommend');
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        buildErrorMessage(
-          error,
-          '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-        ),
-      ]);
+      // AbortError는 useChat의 handleStop에서 처리하므로 'handled' 반환
+      if (error instanceof DOMException && error.name === 'AbortError')
+        return 'handled';
+      setMessages((prev) => [...prev, buildErrorMessage(error)]);
     } finally {
       setIsLoading(false);
     }
@@ -247,16 +247,13 @@ export async function routeQuickReply(
         ...resetProfile,
         userMessage: '새 조건으로 다시 추천받기',
       };
-      const response = await requestConsult(request);
+      const response = await requestConsult(request, signal);
       addAIResponse(response, request, 'recommend');
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        buildErrorMessage(
-          error,
-          '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-        ),
-      ]);
+      // AbortError는 useChat의 handleStop에서 처리하므로 'handled' 반환
+      if (error instanceof DOMException && error.name === 'AbortError')
+        return 'handled';
+      setMessages((prev) => [...prev, buildErrorMessage(error)]);
     } finally {
       setIsLoading(false);
     }

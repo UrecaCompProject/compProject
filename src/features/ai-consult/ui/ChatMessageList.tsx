@@ -36,6 +36,8 @@ interface ChatMessageListProps {
   onQuizNext: () => void;
   onScratchWin?: (reward: number) => void;
   onScratchClose?: () => void;
+  onRegenerate?: () => void;
+  onEditMessage?: (messageId: number) => void;
 }
 
 export default function ChatMessageList({
@@ -60,6 +62,8 @@ export default function ChatMessageList({
   onQuizNext,
   onScratchWin,
   onScratchClose,
+  onRegenerate,
+  onEditMessage,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -105,6 +109,11 @@ export default function ChatMessageList({
   }, []);
 
   const lastIndex = messages.length - 1;
+  // 마지막 user 메시지 인덱스 — 수정 버튼은 이 메시지에만 표시
+  const lastUserIndex = messages.reduce(
+    (acc, m, i) => (m.type === 'user' ? i : acc),
+    -1,
+  );
 
   return (
     <div
@@ -122,6 +131,10 @@ export default function ChatMessageList({
                 <AIChat
                   sentence={message.sentence}
                   variant={message.isError ? 'error' : 'default'}
+                  onRegenerate={onRegenerate}
+                  showRegenerate={
+                    index === lastIndex && !isLoading && !!message.isError
+                  }
                 />
                 <AIChatExtras
                   message={message}
@@ -140,8 +153,14 @@ export default function ChatMessageList({
               </>
             )}
             {message.type === 'user' && (
-              <div className="flex justify-end">
-                <MyChat sentence={message.sentence} />
+              <div className="flex flex-col items-end">
+                <MyChat
+                  sentence={message.sentence}
+                  onEdit={
+                    onEditMessage ? () => onEditMessage(message.id) : undefined
+                  }
+                  showEdit={index === lastUserIndex && !isLoading}
+                />
               </div>
             )}
 
