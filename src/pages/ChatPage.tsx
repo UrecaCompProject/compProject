@@ -32,7 +32,7 @@ export default function ChatPage() {
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    nextQuestion,
+    finishQuiz,
   } = useChat();
 
   // 채팅 페이지 진입 즉시 Lottie 청크를 백그라운드에서 미리 로드
@@ -65,7 +65,7 @@ export default function ChatPage() {
         onQuizOxAnswer={answerOx}
         onQuizMultipleChoiceSelect={selectMultipleChoice}
         onQuizMultipleChoiceConfirm={confirmMultipleChoice}
-        onQuizNext={nextQuestion}
+        onQuizNext={finishQuiz}
       />
       <QuickReplies
         replies={quickReplies}

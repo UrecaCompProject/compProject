@@ -145,7 +145,6 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
     },
     [nextId, session, setMessages],
   );
-
   const answerOx = useCallback(
     (messageId: number, answer: 'o' | 'x') => {
       if (!session || session.quizType !== 'ox') return;
@@ -216,12 +215,13 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
   const finishQuiz = useCallback(() => {
     if (!session) return;
 
+    const rewardCount = 1;
     setMessages((previous) => [
       ...previous,
       {
         id: nextId(),
         type: 'ai',
-        sentence: `퀴즈가 끝났어요! 배지 ${reward}개를 획득하였습니다.`,
+        sentence: `퀴즈가 끝났어요! 배지 ${rewardCount}개를 획득하였습니다.`,
       },
     ]);
     setSession(null);
