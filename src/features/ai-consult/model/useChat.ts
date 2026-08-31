@@ -177,6 +177,24 @@ export function useChat() {
     resetChat,
   });
 
+  // 리워드 미션 목록에서 스크래치 이벤트를 선택했을 때 — startQuiz와 동일하게
+  // 사용자 발화 + AI 안내 메시지를 추가한 뒤 채팅 안에서 스크래치 카드를 시작한다.
+  const startScratch = useCallback(
+    (reward?: number) => {
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: 'user', sentence: '스크래치 이벤트 할래' },
+        {
+          id: Date.now() + 1,
+          type: 'ai',
+          sentence: '네, 스크래치 이벤트를 진행하겠습니다.',
+        },
+        { id: Date.now() + 2, type: 'scratch-game', reward },
+      ]);
+    },
+    [setMessages],
+  );
+
   const openSignupChat = () => {
     setMessages((prev) => [
       ...prev,
@@ -366,6 +384,7 @@ export function useChat() {
     closeSubscription,
     isLoggedIn,
     startQuiz,
+    startScratch,
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,

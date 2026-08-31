@@ -1,6 +1,5 @@
 import CardMatchGame from './ui/game/CardMatchGame';
 import RuletteGame from './ui/game/RuletteGame';
-import ScratchGame from './ui/game/ScratchGame';
 import SpeedGame from './ui/game/SpeedGame';
 
 // import CardMatchGame from './components/CardMatchGame';
@@ -13,10 +12,6 @@ export const GAME_REGISTRY: Record<GameId, GameDefinition> = {
   'card-match': {
     title: '카드 뒤집기',
     component: CardMatchGame,
-  },
-  scratch: {
-    title: '스크래치 이벤트',
-    component: ScratchGame,
   },
   reaction: {
     title: '반응속도 탭 게임',

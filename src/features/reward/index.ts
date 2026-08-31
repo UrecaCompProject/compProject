@@ -9,5 +9,6 @@ export { default as StoreContent } from './ui/store/StoreContent';
 export { missions } from './mocks/missions';
 export { useProducts } from './model/useProducts';
 export { useAttendance } from './model/useAttendance';
+export { useBadgeBalance } from './model/useBadgeBalance';
 
 export type { Mission, RewardProduct } from './types';
