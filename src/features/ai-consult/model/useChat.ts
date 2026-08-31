@@ -376,6 +376,23 @@ export function useChat() {
     setIsLoading(false);
   }, []);
 
+  // 마지막 AI 응답을 제거하고 마지막 사용자 입력으로 재생성
+  const handleRegenerate = useCallback(() => {
+    if (isLoading) return;
+    const lastInput = lastUserInputRef.current;
+    if (!lastInput) return;
+
+    // 마지막 AI 응답 메시지 제거 후 재전송
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.type === 'ai') {
+        return prev.slice(0, -1);
+      }
+      return prev;
+    });
+    handleSend(lastInput);
+  }, [isLoading, handleSend, setMessages]);
+
   // 웰컱 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출
   const aiResponseCount = messages.filter(
     (m) => m.type === 'ai' && m.id !== 0,
@@ -391,6 +408,7 @@ export function useChat() {
     canShowReportButton,
     handleSend,
     handleStop,
+    handleRegenerate,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,

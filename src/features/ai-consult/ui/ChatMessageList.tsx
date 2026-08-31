@@ -36,6 +36,7 @@ interface ChatMessageListProps {
   onQuizNext: () => void;
   onScratchWin?: (reward: number) => void;
   onScratchClose?: () => void;
+  onRegenerate?: () => void;
 }
 
 export default function ChatMessageList({
@@ -60,6 +61,7 @@ export default function ChatMessageList({
   onQuizNext,
   onScratchWin,
   onScratchClose,
+  onRegenerate,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -122,6 +124,10 @@ export default function ChatMessageList({
                 <AIChat
                   sentence={message.sentence}
                   variant={message.isError ? 'error' : 'default'}
+                  onRegenerate={onRegenerate}
+                  showRegenerate={
+                    index === lastIndex && !isLoading && !message.isError
+                  }
                 />
                 <AIChatExtras
                   message={message}
