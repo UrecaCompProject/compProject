@@ -40,6 +40,13 @@ export default function RewardSheet({
   onStartScratch,
 }: RewardSheetProps) {
   const [activeView, setActiveView] = useState<RewardView>('reward');
+  // activeView가 바뀔 때마다 증가 — 상점 등 하위 화면에 key로 넘겨서
+  // 다시 들어올 때마다 검색어 같은 로컬 상태가 초기화된 채로 새로 마운트되게 한다.
+  const [viewEntryKey, setViewEntryKey] = useState(0);
+  const goToView = (view: RewardView) => {
+    setActiveView(view);
+    setViewEntryKey((key) => key + 1);
+  };
   const activeGame = useActiveGameMeta();
   const openGame = useGameStore((state) => state.openGame);
   const closeGame = useGameStore((state) => state.closeGame);
@@ -48,7 +55,7 @@ export default function RewardSheet({
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      setActiveView('reward');
+      goToView('reward');
       closeGame();
     }
 
@@ -56,7 +63,7 @@ export default function RewardSheet({
   };
 
   const handleBack = () => {
-    setActiveView('reward');
+    goToView('reward');
   };
 
   const handleMissionAction = (mission: Mission) => {
@@ -114,18 +121,22 @@ export default function RewardSheet({
           ? 'px-0'
           : 'bg-surface-page px-5 py-4'
       }
+      scrollResetKey={viewEntryKey}
     >
       <GameLayer>
         {activeView === 'reward' && (
           <RewardHome
-            onStoreClick={() => setActiveView('store')}
-            onCouponClick={() => setActiveView('coupon')}
+            onStoreClick={() => goToView('store')}
+            onCouponClick={() => goToView('coupon')}
             onMissionAction={handleMissionAction}
           />
         )}
 
         {activeView === 'store' && (
-          <StoreContent onGoToCoupon={() => setActiveView('coupon')} />
+          <StoreContent
+            key={viewEntryKey}
+            onGoToCoupon={() => goToView('coupon')}
+          />
         )}
 
         {activeView === 'coupon' && (
