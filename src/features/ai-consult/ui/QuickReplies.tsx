@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { Button } from '@/shared';
+import quickReplyToggleButton from '@/shared/assets/images/quick-reply-toggle-button.svg';
 
 interface QuickRepliesProps {
   replies?: string[];
@@ -46,19 +47,34 @@ export default function QuickReplies({
 
   return (
     <div>
-      <div className="mx-4 border-t border-border pt-4">
-        <div className="flex items-center justify-between gap-3 px-1 pb-2">
-          <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary">
-            자주 물어보는 질문
-          </div>
+      <div className="mx-4 relative border-t border-border pt-3">
+        <div className="absolute left-1/2 top-0 flex -translate-x-1/2 -translate-y-[101%] justify-center px-1">
           <button
             type="button"
             onClick={onToggleCollapse}
             aria-label={collapsed ? '퀵 리플라이 펼치기' : '퀵 리플라이 접기'}
-            className="flex h-6 w-6 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
+            className="relative flex h-5 w-[120px] items-center justify-center transition-opacity"
           >
-            {collapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            <img
+              src={quickReplyToggleButton}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full select-none"
+            />
+            {collapsed ? (
+              <ChevronUp size={16} className="relative z-10 text-fg-tertiary" />
+            ) : (
+              <ChevronDown
+                size={16}
+                className="relative z-10 text-fg-tertiary"
+              />
+            )}
           </button>
+        </div>
+        <div className="px-1 pb-2">
+          <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary">
+            자주 물어보는 질문
+          </div>
         </div>
       </div>
       <div
