@@ -38,23 +38,27 @@ export default function StoreContent({ onGoToCoupon }: StoreContentProps) {
 
   return (
     <>
-      <section className="relative w-full border-b-2 border-brand-promo-primary bg-surface-card">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-bold-16-140 font-bold text-brand-promo-primary">
-            배지 상점
-          </h1>
+      <div className="sticky top-0 z-10 will-change-transform">
+        <section className="relative w-full border-b-2 border-brand-promo-primary bg-surface-card">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h1 className="text-bold-16-140 font-bold text-brand-promo-primary">
+              배지 상점
+            </h1>
 
-          <Badge
-            size="large"
-            value={badgeBalance}
-            ariaLabel={`보유 배지 ${badgeBalance}개`}
-          />
+            <Badge
+              size="large"
+              value={badgeBalance}
+              ariaLabel={`보유 배지 ${badgeBalance}개`}
+            />
+          </div>
+        </section>
+
+        <div className="bg-surface-page/70 px-4 py-4 backdrop-blur-md">
+          <SearchBar value={searchTerm} onChange={setSearchTerm} />
         </div>
-      </section>
+      </div>
 
       <section className="flex gap-5 min-h-full flex-col bg-surface-page px-4 py-5">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} />
-
         {isLoading && (
           <p className="py-8 text-center text-caption text-fg-tertiary">
             상품을 불러오는 중...
