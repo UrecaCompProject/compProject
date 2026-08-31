@@ -1,4 +1,11 @@
-import { Fragment, type ReactNode, useMemo, useState } from 'react';
+import {
+  Fragment,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
@@ -25,11 +32,33 @@ const initialForm: SubscriptionForm = {
   agreedMarketing: false,
 };
 
+/**
+ * 신청 플로우의 헤더/푸터/본문을 담아 호출부로 넘겨주는 형태.
+ * 자체 BottomSheet 대신 상위(예: 요금제 상세)의 시트에 내용을 갈아끼울 때 사용한다.
+ */
+export interface SubscriptionShell {
+  title: string;
+  description?: string;
+  footer: ReactNode;
+  onBack?: () => void;
+  size: 'content' | 'large';
+  children: ReactNode;
+}
+
 interface PlanSubscriptionSheetProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   plan: RecommendedPlan | null;
   onComplete?: () => void;
+  /**
+   * falsy → truthy로 바뀌는 순간 플로우를 첫 단계로 초기화한다.
+   * 상위 시트에서 상세 ↔ 신청 화면을 오갈 때 사용. 기본값 true(단독 사용).
+   */
+  active?: boolean;
+  /** 첫 단계에서 뒤로가기를 눌렀을 때 호출 — 상위에서 상세 화면으로 복귀시킨다. */
+  onExit?: () => void;
+  /** 넘기면 자체 BottomSheet 대신 이 함수로 렌더링한다. */
+  renderShell?: (shell: SubscriptionShell) => ReactNode;
 }
 
 const STEP_TITLES: Record<
@@ -70,9 +99,12 @@ const STEPS: SubscriptionStep[] = [
 function StepIndicator({
   current,
   onChange,
+  minIndex = 0,
 }: {
   current: SubscriptionStep;
   onChange: (step: SubscriptionStep) => void;
+  /** 이 인덱스보다 앞선 단계는 진입 시 이미 확정된 것으로 보고 이동을 막는다. */
+  minIndex?: number;
 }) {
   const currentIndex = STEPS.indexOf(current);
 
@@ -80,8 +112,10 @@ function StepIndicator({
     <div className="flex items-center justify-between mb-6">
       {STEPS.map((step, index) => {
         const isActive = step === current;
+        // 진입 시점에 건너뛴 단계(요금제 상세에서 선택 완료)도 완료로 취급
+        const isDone = index < minIndex;
         const isPast = index < currentIndex;
-        const clickable = index <= currentIndex;
+        const clickable = index >= minIndex && index <= currentIndex;
 
         return (
           <Fragment key={step}>
@@ -90,8 +124,8 @@ function StepIndicator({
               disabled={!clickable}
               onClick={() => clickable && onChange(step)}
               className={`flex shrink-0 flex-col items-center gap-1 ${
-                clickable ? 'cursor-pointer' : 'cursor-default opacity-40'
-              }`}
+                clickable ? 'cursor-pointer' : 'cursor-default'
+              } ${!clickable && !isPast ? 'opacity-40' : ''}`}
             >
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-caption font-semibold ${
@@ -102,7 +136,7 @@ function StepIndicator({
                       : 'bg-surface-pressed text-fg-disabled'
                 }`}
               >
-                {index + 1}
+                {isDone ? <Check size={16} /> : index + 1}
               </div>
               <span className="text-[10px] text-fg-secondary whitespace-nowrap">
                 {STEP_TITLES[step].label}
@@ -188,19 +222,37 @@ function PlanSelectItem({
 }
 
 export default function PlanSubscriptionSheet({
-  open,
-  onOpenChange,
+  open = false,
+  onOpenChange = () => {},
   plan,
   onComplete,
+  active = true,
+  onExit,
+  renderShell,
 }: PlanSubscriptionSheetProps) {
-  const [step, setStep] = useState<SubscriptionStep>(
-    plan ? 'confirm' : 'planSelect',
-  );
+  // plan을 미리 받고 진입하면(요금제 상세에서 선택) 1단계(요금제 선택)는 건너뛴다.
+  const firstStep: SubscriptionStep = plan ? 'confirm' : 'planSelect';
+  const firstStepIndex = STEPS.indexOf(firstStep);
+
+  const [step, setStep] = useState<SubscriptionStep>(firstStep);
   const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
     plan,
   );
   const [form, setForm] = useState<SubscriptionForm>(initialForm);
   const [expandedTerm, setExpandedTerm] = useState<string | null>(null);
+
+  // 상위 시트에서 신청 화면으로 갈아끼워지는 순간(active: false → true)마다
+  // 플로우를 첫 단계로 되돌린다. 이미 활성 상태면 아무 것도 하지 않는다.
+  const prevActiveRef = useRef(active);
+  useEffect(() => {
+    if (active && !prevActiveRef.current) {
+      setStep(plan ? 'confirm' : 'planSelect');
+      setSelectedPlan(plan);
+      setForm(initialForm);
+      setExpandedTerm(null);
+    }
+    prevActiveRef.current = active;
+  }, [active, plan]);
 
   // 요금제 카탈로그 — TanStack Query로 캐싱·로딩·에러 상태 관리
   const {
@@ -315,7 +367,8 @@ export default function PlanSubscriptionSheet({
       'agreement',
     ];
     const index = order.indexOf(step);
-    setStep(order[Math.max(0, index - 1)] ?? 'planSelect');
+    // 진입 단계(firstStep)보다 앞선 단계로는 돌아가지 않는다.
+    setStep(order[Math.max(firstStepIndex, index - 1)] ?? firstStep);
   };
 
   const allAgreed =
@@ -351,7 +404,7 @@ export default function PlanSubscriptionSheet({
         <p className="text-center text-caption text-error">{submitError}</p>
       )}
       <div className="flex gap-2 w-full">
-        {step !== 'planSelect' && step !== 'complete' && (
+        {step !== firstStep && step !== 'complete' && (
           <Button
             key={`nav-prev-${step}`}
             variant="outline"
@@ -396,310 +449,332 @@ export default function PlanSubscriptionSheet({
     </div>
   );
 
+  // 진입 단계(firstStep)에서의 뒤로가기는 상위 상세 화면으로 복귀(onExit).
+  // onExit이 없으면(단독 사용) 뒤로가기 자체를 숨긴다. 그 외 단계는 이전 단계로.
+  const onBack =
+    step === 'complete' ? undefined : step === firstStep ? onExit : handlePrev;
+  const size: SubscriptionShell['size'] =
+    step === 'complete' ? 'content' : 'large';
+
+  const body = (
+    <div className="space-y-5 pb-2">
+      <StepIndicator
+        current={step}
+        onChange={setStep}
+        minIndex={firstStepIndex}
+      />
+
+      {step === 'planSelect' && (
+        <section className="space-y-4">
+          <p className="text-body-sm text-fg-secondary">
+            가입하실 요금제를 아래에서 선택해주세요.
+          </p>
+          {isPlanListLoading && (
+            <p className="text-center text-caption text-fg-tertiary py-8">
+              요금제를 불러오는 중...
+            </p>
+          )}
+          {!isPlanListLoading && planListError && (
+            <p className="text-center text-caption text-semantic-error py-8">
+              {planListError instanceof Error
+                ? planListError.message
+                : '요금제 목록을 불러오지 못했습니다.'}
+            </p>
+          )}
+          {!isPlanListLoading && !planListError && planList.length === 0 && (
+            <p className="text-center text-caption text-fg-tertiary py-8">
+              등록된 요금제가 없습니다.
+            </p>
+          )}
+          <div className="space-y-3">
+            {planList.map((p) => (
+              <PlanSelectItem
+                key={p.planId}
+                plan={p}
+                selected={p.planId === selectedPlan?.planId}
+                onClick={() => setSelectedPlan(p)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {step === 'confirm' && selectedPlan && (
+        <section className="space-y-5">
+          <PlanSummary plan={selectedPlan} />
+          <div>
+            <h5 className="text-body font-semibold text-fg-primary mb-3">
+              가입 유형을 선택해 주세요
+            </h5>
+            <div className="space-y-3">
+              {typeOptions.map((option) => {
+                const selected = form.type === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-3 rounded-2xl border p-4 transition-colors cursor-pointer ${
+                      selected
+                        ? 'border-brand-promo-primary bg-brand-promo-primary/5'
+                        : 'border-border bg-white hover:bg-surface-page'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => update('type', option.value)}
+                      className="size-5 shrink-0 accent-brand-promo-primary"
+                    />
+                    <span
+                      className={`text-body-sm font-medium ${
+                        selected
+                          ? 'text-brand-promo-primary'
+                          : 'text-fg-secondary'
+                      }`}
+                    >
+                      {option.label}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {step === 'delivery' && (
+        <section className="space-y-4">
+          {/* USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시 */}
+          <div>
+            <label className="text-caption text-fg-secondary mb-1.5 block">
+              USIM 유형
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: 'usim', label: '유심(USIM)' },
+                { value: 'esim', label: 'eSIM' },
+              ].map((sim) => {
+                const selected = form.simType === sim.value;
+                return (
+                  <button
+                    key={sim.value}
+                    type="button"
+                    onClick={() =>
+                      update(
+                        'simType',
+                        sim.value as SubscriptionForm['simType'],
+                      )
+                    }
+                    className={`rounded-2xl border p-4 text-body-sm font-medium transition-colors cursor-pointer ${
+                      selected
+                        ? 'border-brand-promo-primary bg-brand-promo-primary/5 text-brand-promo-primary'
+                        : 'border-border bg-white text-fg-secondary hover:bg-surface-page'
+                    }`}
+                  >
+                    {sim.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {form.simType === 'usim' && (
+            <div>
+              <label className="text-caption text-fg-secondary mb-1.5 block">
+                배송 주소
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={form.address}
+                  onChange={(e) => update('address', e.target.value)}
+                  placeholder="도로명 주소를 입력해주세요"
+                  variant={fieldErrors.address ? 'error' : 'default'}
+                  className="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="md"
+                  type="button"
+                  disabled
+                  className="shrink-0"
+                >
+                  도로명 검색
+                </Button>
+              </div>
+              <Input
+                value={form.addressDetail}
+                onChange={(e) => update('addressDetail', e.target.value)}
+                placeholder="상세 주소"
+                variant={fieldErrors.address ? 'error' : 'default'}
+                className="mt-2"
+              />
+              {fieldErrors.address && (
+                <p className="mt-1 text-caption text-error">
+                  주소를 5자 이상 입력해주세요
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {step === 'agreement' && (
+        <section className="space-y-4">
+          {/* 본인정보 확인 패널 — 로그인된 사용자 정보를 읽기 전용으로 표시 */}
+          <div className="rounded-2xl border border-border bg-surface-page p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <h6 className="text-body-sm font-semibold text-fg-primary">
+                신청자 정보 확인
+              </h6>
+              <span className="text-caption text-semantic-success font-medium">
+                본인 인증 완료
+              </span>
+            </div>
+            <div className="text-body-sm text-fg-secondary space-y-1">
+              <InfoRow label="이름" value={userInfo.name || '-'} />
+              <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
+              <InfoRow label="이메일" value={userInfo.email || '-'} />
+            </div>
+            <p className="text-caption text-fg-tertiary">
+              로그인된 계정 정보가 자동 적용되었습니다. 정보가 다르다면
+              마이페이지에서 수정 후 신청해 주세요.
+            </p>
+          </div>
+
+          <p className="text-body-sm text-fg-secondary">
+            아래 약관에 동의해 주세요.
+          </p>
+          <label className="flex items-start gap-3 rounded-2xl border border-border-brand bg-brand-promo-primary/5 p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allAgreed}
+              onChange={(e) => handleAllAgree(e.target.checked)}
+              className="mt-1 accent-brand-promo-primary"
+            />
+            <span className="text-body-sm font-semibold text-fg-primary">
+              모두 동의합니다
+            </span>
+          </label>
+          <div className="h-px bg-border" />
+
+          <TermAccordion
+            termKey="privacy"
+            label="[필수] 개인정보 수집 및 이용 동의"
+            checked={form.agreedPrivacy}
+            onCheck={(v) => update('agreedPrivacy', v)}
+            expanded={expandedTerm === 'privacy'}
+            onToggle={() =>
+              setExpandedTerm(expandedTerm === 'privacy' ? null : 'privacy')
+            }
+          >
+            에피라통신(주)은 요금제 가입 신청 처리를 위해 아래의 개인정보를
+            수집·이용합니다.
+            {'\n\n'}- 수집 항목: 이름, 휴대폰 번호, 이메일, 배송 주소(USIM 선택
+            시){'\n'}- 이용 목적: 가입 신청 접수, USIM 배송, 요금제 개통 안내
+            {'\n'}- 보유 기간: 가입 신청 완료 후 1년간 보관 후 파기
+            {'\n\n'}
+            동의를 거부할 수 있으나, 거부 시 요금제 가입 신청이 불가능합니다.
+          </TermAccordion>
+
+          <TermAccordion
+            termKey="service"
+            label="[필수] 통신 서비스 이용 약관 동의"
+            checked={form.agreedService}
+            onCheck={(v) => update('agreedService', v)}
+            expanded={expandedTerm === 'service'}
+            onToggle={() =>
+              setExpandedTerm(expandedTerm === 'service' ? null : 'service')
+            }
+          >
+            제1조(목적) 본 약관은 에피라통신(주)이 제공하는 이동통신 서비스의
+            이용 조건 및 절차, 당사자 간 권리·의무·책임을 규정합니다.
+            {'\n\n'}
+            제2조(서비스 제공) 당사는 가입 신청 접수 후 순차에 따라 서비스를
+            개통하며, 개통 예정일은 별도로 안내합니다.
+            {'\n\n'}
+            제3조(요금) 월 정액 요금은 선택한 요금제 기준이며, 부가세 포함
+            여부는 요금제 안내를 따릅니다.
+          </TermAccordion>
+
+          <TermAccordion
+            termKey="marketing"
+            label="[선택] 마케팅 정보 수신 동의"
+            checked={form.agreedMarketing}
+            onCheck={(v) => update('agreedMarketing', v)}
+            expanded={expandedTerm === 'marketing'}
+            onToggle={() =>
+              setExpandedTerm(expandedTerm === 'marketing' ? null : 'marketing')
+            }
+          >
+            에피라통신(주)의 신규 요금제, 프로모션, 혜택 정보를 SMS·이메일로
+            수신하실 수 있습니다. 동의하지 않아도 가입 신청에 영향이 없으며,
+            언제든지 마이페이지에서 철회할 수 있습니다.
+          </TermAccordion>
+        </section>
+      )}
+
+      {step === 'complete' && selectedPlan && (
+        <section className="flex flex-col items-center gap-4 py-4 text-center">
+          <CheckCircle2 size={48} className="text-semantic-success" />
+          <div>
+            <h5 className="text-title font-bold text-fg-primary">
+              {form.type === 'change' ? '요금제 변경' : '요금제 가입'}이
+              완료되었어요
+            </h5>
+            <p className="text-body-sm text-fg-secondary mt-1">
+              {selectedPlan.planName} · 월{' '}
+              {selectedPlan.monthlyFee !== undefined
+                ? selectedPlan.monthlyFee.toLocaleString()
+                : '-'}
+              원
+            </p>
+          </div>
+          <div className="w-full rounded-2xl bg-surface-page p-4 text-body-sm text-fg-secondary space-y-2 text-left">
+            <InfoRow label="이름" value={userInfo.name || '-'} />
+            <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
+            <InfoRow label="이메일" value={userInfo.email || '-'} />
+            {form.simType === 'usim' && (
+              <InfoRow
+                label="주소"
+                value={
+                  form.address +
+                  (form.addressDetail ? ` ${form.addressDetail}` : '')
+                }
+              />
+            )}
+            <InfoRow
+              label="가입 유형"
+              value={
+                typeOptions.find((t) => t.value === form.type)?.label ?? ''
+              }
+            />
+            <InfoRow label="USIM" value={form.simType.toUpperCase()} />
+          </div>
+        </section>
+      )}
+    </div>
+  );
+
+  const shell: SubscriptionShell = {
+    title,
+    description,
+    footer,
+    onBack,
+    size,
+    children: body,
+  };
+
+  if (renderShell) return <>{renderShell(shell)}</>;
+
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={title}
-      description={description}
-      footer={footer}
-      onBack={
-        step !== 'planSelect' && step !== 'complete' ? handlePrev : undefined
-      }
-      size={step === 'complete' ? 'content' : 'large'}
+      title={shell.title}
+      description={shell.description}
+      footer={shell.footer}
+      onBack={shell.onBack}
+      size={shell.size}
     >
-      <div className="space-y-5 pb-2">
-        <StepIndicator current={step} onChange={setStep} />
-
-        {step === 'planSelect' && (
-          <section className="space-y-4">
-            <p className="text-body-sm text-fg-secondary">
-              가입하실 요금제를 아래에서 선택해주세요.
-            </p>
-            {isPlanListLoading && (
-              <p className="text-center text-caption text-fg-tertiary py-8">
-                요금제를 불러오는 중...
-              </p>
-            )}
-            {!isPlanListLoading && planListError && (
-              <p className="text-center text-caption text-semantic-error py-8">
-                {planListError instanceof Error
-                  ? planListError.message
-                  : '요금제 목록을 불러오지 못했습니다.'}
-              </p>
-            )}
-            {!isPlanListLoading && !planListError && planList.length === 0 && (
-              <p className="text-center text-caption text-fg-tertiary py-8">
-                등록된 요금제가 없습니다.
-              </p>
-            )}
-            <div className="space-y-3">
-              {planList.map((p) => (
-                <PlanSelectItem
-                  key={p.planId}
-                  plan={p}
-                  selected={p.planId === selectedPlan?.planId}
-                  onClick={() => setSelectedPlan(p)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {step === 'confirm' && selectedPlan && (
-          <section className="space-y-5">
-            <PlanSummary plan={selectedPlan} />
-            <div>
-              <h5 className="text-body font-semibold text-fg-primary mb-3">
-                가입 유형을 선택해 주세요
-              </h5>
-              <div className="space-y-3">
-                {typeOptions.map((option) => {
-                  const selected = form.type === option.value;
-                  return (
-                    <label
-                      key={option.value}
-                      className={`flex items-center gap-3 rounded-2xl border p-4 transition-colors cursor-pointer ${
-                        selected
-                          ? 'border-brand-promo-primary bg-brand-promo-primary/5'
-                          : 'border-border bg-white hover:bg-surface-page'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => update('type', option.value)}
-                        className="size-5 shrink-0 accent-brand-promo-primary"
-                      />
-                      <span
-                        className={`text-body-sm font-medium ${
-                          selected
-                            ? 'text-brand-promo-primary'
-                            : 'text-fg-secondary'
-                        }`}
-                      >
-                        {option.label}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {step === 'delivery' && (
-          <section className="space-y-4">
-            {/* USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시 */}
-            <div>
-              <label className="text-caption text-fg-secondary mb-1.5 block">
-                USIM 유형
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: 'usim', label: '유심(USIM)' },
-                  { value: 'esim', label: 'eSIM' },
-                ].map((sim) => {
-                  const selected = form.simType === sim.value;
-                  return (
-                    <button
-                      key={sim.value}
-                      type="button"
-                      onClick={() =>
-                        update(
-                          'simType',
-                          sim.value as SubscriptionForm['simType'],
-                        )
-                      }
-                      className={`rounded-2xl border p-4 text-body-sm font-medium transition-colors cursor-pointer ${
-                        selected
-                          ? 'border-brand-promo-primary bg-brand-promo-primary/5 text-brand-promo-primary'
-                          : 'border-border bg-white text-fg-secondary hover:bg-surface-page'
-                      }`}
-                    >
-                      {sim.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {form.simType === 'usim' && (
-              <div>
-                <label className="text-caption text-fg-secondary mb-1.5 block">
-                  배송 주소
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    value={form.address}
-                    onChange={(e) => update('address', e.target.value)}
-                    placeholder="도로명 주소를 입력해주세요"
-                    variant={fieldErrors.address ? 'error' : 'default'}
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="md"
-                    type="button"
-                    disabled
-                    className="shrink-0"
-                  >
-                    도로명 검색
-                  </Button>
-                </div>
-                <Input
-                  value={form.addressDetail}
-                  onChange={(e) => update('addressDetail', e.target.value)}
-                  placeholder="상세 주소"
-                  variant={fieldErrors.address ? 'error' : 'default'}
-                  className="mt-2"
-                />
-                {fieldErrors.address && (
-                  <p className="mt-1 text-caption text-error">
-                    주소를 5자 이상 입력해주세요
-                  </p>
-                )}
-              </div>
-            )}
-          </section>
-        )}
-
-        {step === 'agreement' && (
-          <section className="space-y-4">
-            {/* 본인정보 확인 패널 — 로그인된 사용자 정보를 읽기 전용으로 표시 */}
-            <div className="rounded-2xl border border-border bg-surface-page p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <h6 className="text-body-sm font-semibold text-fg-primary">
-                  신청자 정보 확인
-                </h6>
-                <span className="text-caption text-semantic-success font-medium">
-                  본인 인증 완료
-                </span>
-              </div>
-              <div className="text-body-sm text-fg-secondary space-y-1">
-                <InfoRow label="이름" value={userInfo.name || '-'} />
-                <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
-                <InfoRow label="이메일" value={userInfo.email || '-'} />
-              </div>
-              <p className="text-caption text-fg-tertiary">
-                로그인된 계정 정보가 자동 적용되었습니다. 정보가 다르다면
-                마이페이지에서 수정 후 신청해 주세요.
-              </p>
-            </div>
-
-            <p className="text-body-sm text-fg-secondary">
-              아래 약관에 동의해 주세요.
-            </p>
-            <label className="flex items-start gap-3 rounded-2xl border border-border-brand bg-brand-promo-primary/5 p-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={allAgreed}
-                onChange={(e) => handleAllAgree(e.target.checked)}
-                className="mt-1 accent-brand-promo-primary"
-              />
-              <span className="text-body-sm font-semibold text-fg-primary">
-                모두 동의합니다
-              </span>
-            </label>
-            <div className="h-px bg-border" />
-
-            <TermAccordion
-              termKey="privacy"
-              label="[필수] 개인정보 수집 및 이용 동의"
-              checked={form.agreedPrivacy}
-              onCheck={(v) => update('agreedPrivacy', v)}
-              expanded={expandedTerm === 'privacy'}
-              onToggle={() =>
-                setExpandedTerm(expandedTerm === 'privacy' ? null : 'privacy')
-              }
-            >
-              에피라통신(주)은 요금제 가입 신청 처리를 위해 아래의 개인정보를
-              수집·이용합니다.
-              {'\n\n'}- 수집 항목: 이름, 휴대폰 번호, 이메일, 배송 주소(USIM
-              선택 시){'\n'}- 이용 목적: 가입 신청 접수, USIM 배송, 요금제 개통
-              안내{'\n'}- 보유 기간: 가입 신청 완료 후 1년간 보관 후 파기
-              {'\n\n'}
-              동의를 거부할 수 있으나, 거부 시 요금제 가입 신청이 불가능합니다.
-            </TermAccordion>
-
-            <TermAccordion
-              termKey="service"
-              label="[필수] 통신 서비스 이용 약관 동의"
-              checked={form.agreedService}
-              onCheck={(v) => update('agreedService', v)}
-              expanded={expandedTerm === 'service'}
-              onToggle={() =>
-                setExpandedTerm(expandedTerm === 'service' ? null : 'service')
-              }
-            >
-              제1조(목적) 본 약관은 에피라통신(주)이 제공하는 이동통신 서비스의
-              이용 조건 및 절차, 당사자 간 권리·의무·책임을 규정합니다.
-              {'\n\n'}
-              제2조(서비스 제공) 당사는 가입 신청 접수 후 순차에 따라 서비스를
-              개통하며, 개통 예정일은 별도로 안내합니다.
-              {'\n\n'}
-              제3조(요금) 월 정액 요금은 선택한 요금제 기준이며, 부가세 포함
-              여부는 요금제 안내를 따릅니다.
-            </TermAccordion>
-
-            <TermAccordion
-              termKey="marketing"
-              label="[선택] 마케팅 정보 수신 동의"
-              checked={form.agreedMarketing}
-              onCheck={(v) => update('agreedMarketing', v)}
-              expanded={expandedTerm === 'marketing'}
-              onToggle={() =>
-                setExpandedTerm(
-                  expandedTerm === 'marketing' ? null : 'marketing',
-                )
-              }
-            >
-              에피라통신(주)의 신규 요금제, 프로모션, 혜택 정보를 SMS·이메일로
-              수신하실 수 있습니다. 동의하지 않아도 가입 신청에 영향이 없으며,
-              언제든지 마이페이지에서 철회할 수 있습니다.
-            </TermAccordion>
-          </section>
-        )}
-
-        {step === 'complete' && selectedPlan && (
-          <section className="flex flex-col items-center gap-4 py-4 text-center">
-            <CheckCircle2 size={48} className="text-semantic-success" />
-            <div>
-              <h5 className="text-title font-bold text-fg-primary">
-                {form.type === 'change' ? '요금제 변경' : '요금제 가입'}이
-                완료되었어요
-              </h5>
-              <p className="text-body-sm text-fg-secondary mt-1">
-                {selectedPlan.planName} · 월{' '}
-                {selectedPlan.monthlyFee !== undefined
-                  ? selectedPlan.monthlyFee.toLocaleString()
-                  : '-'}
-                원
-              </p>
-            </div>
-            <div className="w-full rounded-2xl bg-surface-page p-4 text-body-sm text-fg-secondary space-y-2 text-left">
-              <InfoRow label="이름" value={userInfo.name || '-'} />
-              <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
-              <InfoRow label="이메일" value={userInfo.email || '-'} />
-              {form.simType === 'usim' && (
-                <InfoRow
-                  label="주소"
-                  value={
-                    form.address +
-                    (form.addressDetail ? ` ${form.addressDetail}` : '')
-                  }
-                />
-              )}
-              <InfoRow
-                label="가입 유형"
-                value={
-                  typeOptions.find((t) => t.value === form.type)?.label ?? ''
-                }
-              />
-              <InfoRow label="USIM" value={form.simType.toUpperCase()} />
-            </div>
-          </section>
-        )}
-      </div>
+      {shell.children}
     </BottomSheet>
   );
 }
