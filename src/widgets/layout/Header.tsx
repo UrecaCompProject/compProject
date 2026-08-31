@@ -17,7 +17,7 @@ export default function Header() {
       <button
         type="button"
         aria-label="알림"
-        className="relative flex shrink-0 cursor-pointer items-center justify-center p-3"
+        className="relative flex shrink-0 cursor-pointer items-center justify-center"
         onClick={() =>
           open({
             title: '알림',
