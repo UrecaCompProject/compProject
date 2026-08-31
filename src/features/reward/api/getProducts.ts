@@ -28,6 +28,7 @@ export async function getProducts(): Promise<RewardProduct[]> {
     .from('products')
     .select('*')
     .eq('is_active', true)
+    .order('description', { ascending: true })
     .order('required_badges', { ascending: true });
 
   if (error) {
