@@ -87,18 +87,34 @@ export default function ReportDetail({
               {report.summary}
             </p>
 
-            {analysis.importantConditions.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {analysis.importantConditions.map((condition) => (
-                  <span
-                    key={condition}
-                    className="inline-flex items-center rounded-full bg-surface-page px-3 py-1.5 text-caption text-fg-secondary"
-                  >
-                    {condition}
-                  </span>
+            {analysis.qaPairs && analysis.qaPairs.length > 0 && (
+              <div className="space-y-3 pt-2">
+                {analysis.qaPairs.map((pair, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <p className="text-regular-14-130 font-medium text-fg-primary">
+                      Q{idx + 1}. {pair.question}
+                    </p>
+                    <p className="text-regular-14-130 text-fg-secondary">
+                      A{idx + 1}. {pair.answer}
+                    </p>
+                  </div>
                 ))}
               </div>
             )}
+
+            {analysis.importantConditions &&
+              analysis.importantConditions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {analysis.importantConditions.map((condition) => (
+                    <span
+                      key={condition}
+                      className="inline-flex items-center rounded-full bg-surface-page px-3 py-1.5 text-caption text-fg-secondary"
+                    >
+                      {condition}
+                    </span>
+                  ))}
+                </div>
+              )}
           </Card>
 
           {hasOverflow && (

@@ -170,6 +170,7 @@ export function useChat() {
   const { isGeneratingReport, handleGenerateReport } = useChatReport({
     messages,
     effectiveCurrentPlan,
+    userProfile: profile,
     isLoading,
     setIsLoading,
     setMessages,

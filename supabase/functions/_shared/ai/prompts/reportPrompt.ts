@@ -14,9 +14,14 @@ export const reportPromptText = `
 당신은 AI 통신 요금제 상담 내용을 요약하는 역할을 담당합니다.
 
 
-[상담 내용]
+[상담 대화 기록]
 
 {conversation}
+
+
+[확정된 사용자 조건]
+
+{userProfile}
 
 
 [현재 요금제]
@@ -59,7 +64,8 @@ export const reportPromptText = `
 - currentPlan: 사용자의 현재 요금제 이름입니다. 없으면 "미등록"으로 하세요.
 - recommendedPlans: 추천된 요금제의 "표시명(name)" 배열입니다.
   planId가 아닌 name을 사용하고, 추천된 순서를 유지하세요.
-  예: ["5G 라이트+", "5G 프리미어"]
+  [최종 추천 결과]에 나열된 모든 요금제를 누락 없이 포함해야 합니다.
+  예: ["5G 라이트+", "5G 프리미어", "5G 스탠다드"]
 - recommendationReason: 2-3문장. 왜 이 요금제를 추천했는지 핵심 사유를 작성하세요.
   추천 결과에 제시된 사유를 요약형태로 재구성하되, 새로운 사유를 만들지 마세요.
 - monthlySavingAmount: 월 절감 가능 금액(원, 정수).
@@ -68,16 +74,24 @@ export const reportPromptText = `
 - importantConditions: 추천 결정에 직접 영향을 준 핵심 조건 2-5개를 문자열 배열로 작성하세요.
   부가 정보(예: 가입 방식, 배송 주소)는 제외하고, 요금제 선택에 영향을 준 조건만 포함하세요.
   예: ["월 데이터 15GB 이상 사용", "OTT 넷플릭스 필수", "예산 5만원 이하", "청소년 요금제 필요"]
+- qaPairs: [확정된 사용자 조건]에서 핵심 질문과 답변 3-5개를 { question, answer } 객체 배열로 작성하세요.
+  질문은 간결하게, 답변은 사용자가 실제 입력/선택한 값 그대로 작성하세요.
+  예: [{ "question": "데이터 사용량은 얼마인가요?", "answer": "월 20GB" },
+       { "question": "예산은 얼마인가요?", "answer": "300,000원" }]
+  메뉴나 안내 문구(예: "요금제 추천받기", "상세 정보를 입력해주세요")는 qaPairs에 포함하지 마세요.
 
-{{
+{
   "summary": "string",
   "usageType": "string",
   "currentPlan": "string",
   "recommendedPlans": ["string"],
   "recommendationReason": "string",
   "monthlySavingAmount": number,
-  "importantConditions": ["string"]
-}}
+  "importantConditions": ["string"],
+  "qaPairs": [
+    { "question": "string", "answer": "string" }
+  ]
+}
 
 JSON 이외의 추가 설명 문장은 포함하지 마세요.
 `;
