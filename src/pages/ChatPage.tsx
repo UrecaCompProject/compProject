@@ -35,7 +35,7 @@ export default function ChatPage() {
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    nextQuestion,
+    finishQuiz,
     closeSheetGame,
     activeGameMeta,
   } = useChat();
@@ -73,7 +73,7 @@ export default function ChatPage() {
         onQuizOxAnswer={answerOx}
         onQuizMultipleChoiceSelect={selectMultipleChoice}
         onQuizMultipleChoiceConfirm={confirmMultipleChoice}
-        onQuizNext={nextQuestion}
+        onQuizNext={finishQuiz}
         onScratchClose={closeSheetGame}
       />
       <QuickReplies
