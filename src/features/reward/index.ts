@@ -11,5 +11,6 @@ export { useProducts } from './model/useProducts';
 export { useMyCoupons } from './model/useMyCoupons';
 export { useAttendance } from './model/useAttendance';
 export { useBadgeBalance } from './model/useBadgeBalance';
+export { useMissionCompletion } from './model/useMissionCompletion';
 
 export type { Mission, RewardProduct } from './types';

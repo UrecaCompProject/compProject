@@ -3,6 +3,7 @@ export type MissionIcon =
 
 export type Mission = {
   id: string;
+  uuid: string;
   title: string;
   reward: number;
   actionLabel: '시작' | '공유';

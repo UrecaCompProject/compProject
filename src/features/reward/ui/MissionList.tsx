@@ -1,5 +1,6 @@
 import { missions } from '../mocks/missions';
 import { useBadgeBalance } from '../model/useBadgeBalance';
+import { useMissionCompletion } from '../model/useMissionCompletion';
 
 import MissionItem from './MissionItem';
 import Badge from './shared/Badge';
@@ -13,6 +14,7 @@ type MissionListProps = {
 // 게임 보여주는 리스트 컴포넌트
 export default function MissionList({ onAction }: MissionListProps) {
   const badgeBalance = useBadgeBalance();
+  const { playedTodayGameIds } = useMissionCompletion();
   return (
     <section className="bg-surface-page px-4 pb-4 pt-3">
       <div className="mb-3 flex items-center justify-between">
@@ -29,7 +31,12 @@ export default function MissionList({ onAction }: MissionListProps) {
 
       <ul className="flex flex-col gap-2">
         {missions.map((mission) => (
-          <MissionItem key={mission.id} mission={mission} onAction={onAction} />
+          <MissionItem
+            key={mission.uuid}
+            mission={mission}
+            onAction={onAction}
+            finished={playedTodayGameIds.has(mission.uuid)}
+          />
         ))}
       </ul>
     </section>
