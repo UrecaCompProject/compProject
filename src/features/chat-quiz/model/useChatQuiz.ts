@@ -3,18 +3,24 @@ import type { Dispatch, SetStateAction } from 'react';
 
 import type { ChatMessage } from '@/features/ai-consult/types';
 import {
-  multipleChoiceQuestions,
-  oxQuestions,
+  type MultipleChoiceQuestion,
+  type OxQuestion,
   type QuizKind,
   type QuizQuestionMessage,
   type QuizResultMessage,
 } from '@/features/chat-quiz';
 
-type QuizSession = {
-  quizType: QuizKind;
-  currentQuestionIndex: number;
-  correctCount: number;
-};
+import { pickRandomQuizQuestion } from '../lib/pickRandomQuizQuestion';
+
+type QuizSession =
+  | {
+      quizType: 'ox';
+      question: OxQuestion;
+    }
+  | {
+      quizType: 'multiple-choice';
+      question: MultipleChoiceQuestion;
+    };
 
 type UseChatQuizParams = {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
@@ -26,36 +32,25 @@ type StartQuizOptions = {
 
 const QUIZ_START_DELAY = 800;
 
-function getQuestions(quizType: QuizKind) {
-  return quizType === 'ox' ? oxQuestions : multipleChoiceQuestions;
-}
-
 function createQuestionMessage(
   id: number,
-  quizType: QuizKind,
-  questionIndex: number,
+  session: QuizSession,
 ): QuizQuestionMessage {
-  if (quizType === 'ox') {
-    return {
-      id,
-      type: 'quiz-question',
-      quizType,
-      question: oxQuestions[questionIndex],
-      questionNumber: questionIndex + 1,
-      selectedAnswer: null,
-      disabled: false,
-    };
-  }
-
-  return {
+  const baseMessage = {
     id,
-    type: 'quiz-question',
-    quizType,
-    question: multipleChoiceQuestions[questionIndex],
-    questionNumber: questionIndex + 1,
+    type: 'quiz-question' as const,
+    questionNumber: 1,
     selectedAnswer: null,
     disabled: false,
   };
+
+  return session.quizType === 'ox'
+    ? { ...baseMessage, quizType: 'ox', question: session.question }
+    : {
+        ...baseMessage,
+        quizType: 'multiple-choice',
+        question: session.question,
+      };
 }
 
 export function useChatQuiz({ setMessages }: UseChatQuizParams) {
@@ -78,17 +73,22 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
       quizType: QuizKind,
       { includeUserMessage = true }: StartQuizOptions = {},
     ) => {
-      const nextSession: QuizSession = {
-        quizType,
-        currentQuestionIndex: 0,
-        correctCount: 0,
-      };
       const introduction =
         quizType === 'ox'
           ? '네, 보안 OX 퀴즈를 진행하겠습니다.'
-          : '네, 통신 상식 퀴즈를 진행하겠습니다.';
+          : '네, 에피라 퀴즈를 진행하겠습니다.';
       const userRequest =
         quizType === 'ox' ? '보안 OX 퀴즈 할래' : '통신 상식 퀴즈 할래';
+      const nextSession =
+        quizType === 'ox'
+          ? {
+              quizType,
+              question: pickRandomQuizQuestion('ox'),
+            }
+          : {
+              quizType,
+              question: pickRandomQuizQuestion('multiple-choice'),
+            };
 
       setSession(nextSession);
       if (questionTimerRef.current) clearTimeout(questionTimerRef.current);
@@ -102,7 +102,7 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
       questionTimerRef.current = setTimeout(() => {
         setMessages((previous) => [
           ...previous,
-          createQuestionMessage(nextId(), quizType, 0),
+          createQuestionMessage(nextId(), nextSession),
         ]);
         questionTimerRef.current = null;
       }, QUIZ_START_DELAY);
@@ -124,16 +124,13 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
     }) => {
       if (!session) return;
 
-      const questions = getQuestions(session.quizType);
-      const isLastQuestion =
-        session.currentQuestionIndex === questions.length - 1;
       const resultMessage: QuizResultMessage = {
         id: nextId(),
         type: 'quiz-result',
         quizType: session.quizType,
         isCorrect,
         explanation,
-        isLastQuestion,
+        isLastQuestion: true,
       };
 
       setMessages((previous) => [
@@ -145,22 +142,13 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
         { id: nextId(), type: 'user', sentence: answerLabel },
         resultMessage,
       ]);
-
-      if (isCorrect) {
-        setSession((current) =>
-          current
-            ? { ...current, correctCount: current.correctCount + 1 }
-            : current,
-        );
-      }
     },
     [nextId, session, setMessages],
   );
-
   const answerOx = useCallback(
     (messageId: number, answer: 'o' | 'x') => {
       if (!session || session.quizType !== 'ox') return;
-      const question = oxQuestions[session.currentQuestionIndex];
+      const question = session.question;
 
       setMessages((previous) =>
         previous.map((message) =>
@@ -224,34 +212,19 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
     [appendAnswerResult, session],
   );
 
-  const nextQuestion = useCallback(() => {
+  const finishQuiz = useCallback(() => {
     if (!session) return;
 
-    const questions = getQuestions(session.quizType);
-    const nextQuestionIndex = session.currentQuestionIndex + 1;
-
-    if (nextQuestionIndex >= questions.length) {
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: nextId(),
-          type: 'ai',
-          sentence: `퀴즈가 끝났어요! 총 ${questions.length}문제 중 ${session.correctCount}문제를 맞혔어요.`,
-        },
-      ]);
-      setSession(null);
-      return;
-    }
-
-    setSession((current) =>
-      current
-        ? { ...current, currentQuestionIndex: nextQuestionIndex }
-        : current,
-    );
+    const rewardCount = 1;
     setMessages((previous) => [
       ...previous,
-      createQuestionMessage(nextId(), session.quizType, nextQuestionIndex),
+      {
+        id: nextId(),
+        type: 'ai',
+        sentence: `퀴즈가 끝났어요! 배지 ${rewardCount}개를 획득하였습니다.`,
+      },
     ]);
+    setSession(null);
   }, [nextId, session, setMessages]);
 
   return {
@@ -260,6 +233,6 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    nextQuestion,
+    finishQuiz,
   };
 }

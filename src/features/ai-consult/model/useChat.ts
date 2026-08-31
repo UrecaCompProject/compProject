@@ -39,7 +39,7 @@ export function useChat() {
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    nextQuestion,
+    finishQuiz,
   } = useChatQuiz({ setMessages });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -337,7 +337,7 @@ export function useChat() {
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    nextQuestion,
+    finishQuiz,
     closeSheetGame,
     activeGameMeta,
   };
