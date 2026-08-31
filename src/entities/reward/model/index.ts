@@ -4,4 +4,5 @@ export type {
   RewardProduct,
   CouponStatus,
   Coupon,
+  CouponRow,
 } from './reward';
