@@ -25,7 +25,7 @@ interface UseChatReportParams {
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   resetChat: () => void;
   startRequest: () => AbortSignal;
-  clearRequest: () => void;
+  clearRequest: (signal?: AbortSignal) => void;
 }
 
 // 상담에 확정된 사용자 조건을 문자열로 요약
@@ -120,7 +120,7 @@ export function useChatReport({
       } finally {
         setIsLoading(false);
         setIsGeneratingReport(false);
-        clearRequest();
+        clearRequest(signal);
       }
     },
     [

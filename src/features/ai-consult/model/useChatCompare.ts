@@ -26,7 +26,7 @@ interface UseChatCompareParams {
     defaultMode: ConsultInput['mode'],
   ) => void;
   startRequest: () => AbortSignal;
-  clearRequest: () => void;
+  clearRequest: (signal?: AbortSignal) => void;
 }
 
 // 요금제 비교 2단계 플로우와 fetchCompare 로직을 관리
@@ -85,7 +85,7 @@ export function useChatCompare({
         setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);
-        clearRequest();
+        clearRequest(signal);
       }
     },
     [

@@ -76,8 +76,10 @@ export function useChat() {
     return controller.signal;
   }, []);
 
-  // 요청 완료 후 ref를 정리 — 다음 요청이 새 controller로 시작하도록 보장
-  const clearRequest = useCallback(() => {
+  // 요청 완료 후 ref를 정리 — 자신이 시작한 controller와 같을 때만 null로 설정
+  // 이전 요청의 finally가 나중에 실행되어 새 요청의 controller를 덮어쓰는 경쟁 상태 방지
+  const clearRequest = useCallback((signal?: AbortSignal) => {
+    if (signal && abortControllerRef.current?.signal !== signal) return;
     abortControllerRef.current = null;
   }, []);
 
@@ -222,7 +224,7 @@ export function useChat() {
   );
 
   const handleSend = useCallback(
-    async (text: string) => {
+    async (text: string, options?: { skipUserMessage?: boolean }) => {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
 
@@ -260,7 +262,7 @@ export function useChat() {
               }
               return prev;
             });
-            handleSend(lastInput);
+            handleSend(lastInput, { skipUserMessage: true });
           }
         },
       });
@@ -268,15 +270,18 @@ export function useChat() {
       if (result === 'handled') return;
 
       // fall-through: 일반 상담 요청
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'user',
-          sentence: trimmed,
-          category: modeToCategory(profile.mode) ?? 'general',
-        },
-      ]);
+      // 재생성 시에는 사용자 메시지가 이미 있으므로 추가하지 않음
+      if (!options?.skipUserMessage) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            type: 'user',
+            sentence: trimmed,
+            category: modeToCategory(profile.mode) ?? 'general',
+          },
+        ]);
+      }
       setInput('');
 
       // 재시도를 위해 마지막 사용자 입력 보관
@@ -309,7 +314,7 @@ export function useChat() {
         }
       } finally {
         setIsLoading(false);
-        clearRequest();
+        clearRequest(signal);
       }
     },
     [
@@ -379,7 +384,7 @@ export function useChat() {
         }
       } finally {
         setIsLoading(false);
-        clearRequest();
+        clearRequest(signal);
       }
     },
     [
@@ -396,9 +401,10 @@ export function useChat() {
   // AI 응답 생성 중지 — 진행 중인 fetch 요청을 취소하고 로딩 상태 해제
   const handleStop = useCallback(() => {
     abortControllerRef.current?.abort();
-    clearRequest();
+    // 중지 시에는 무조건 ref를 clear — 새 요청이 시작될 수 있도록 보장
+    abortControllerRef.current = null;
     setIsLoading(false);
-  }, [clearRequest]);
+  }, []);
 
   // 마지막 AI 응답을 제거하고 마지막 사용자 입력으로 재생성
   const handleRegenerate = useCallback(() => {
@@ -406,7 +412,7 @@ export function useChat() {
     const lastInput = lastUserInputRef.current;
     if (!lastInput) return;
 
-    // 마지막 AI 응답 메시지 제거 후 재전송
+    // 마지막 AI 응답 메시지 제거 후 재전송 (사용자 메시지는 유지)
     setMessages((prev) => {
       const last = prev[prev.length - 1];
       if (last?.type === 'ai') {
@@ -414,7 +420,7 @@ export function useChat() {
       }
       return prev;
     });
-    handleSend(lastInput);
+    handleSend(lastInput, { skipUserMessage: true });
   }, [isLoading, handleSend, setMessages]);
 
   // 사용자 메시지 수정 — 해당 메시지 이후 대화를 잘라내고 입력창에 원문 주입

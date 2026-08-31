@@ -133,7 +133,7 @@ export default function ChatMessageList({
                   variant={message.isError ? 'error' : 'default'}
                   onRegenerate={onRegenerate}
                   showRegenerate={
-                    index === lastIndex && !isLoading && !message.isError
+                    index === lastIndex && !isLoading && !!message.isError
                   }
                 />
                 <AIChatExtras
