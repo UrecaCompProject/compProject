@@ -25,12 +25,12 @@ export default function AIChat({
 }: AIChatProps) {
   return (
     <div className="flex gap-2">
-      <div className="rounded-full w-7 h-7 bg-gray-300 shrink-0">
+      <div className="rounded-full w-7 h-7 bg-gray-300">
         <img src="/bot_profile.png" alt="AI 도우미 해리" />
       </div>
       <div className="flex flex-col gap-1 mt-2">
         <div
-          className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 max-w-[70%] whitespace-pre-line ${AIChatBubbleVariants[variant]}`}
+          className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 w-fit min-w-[240px] max-w-[80%] whitespace-pre-line ${AIChatBubbleVariants[variant]}`}
           role={variant === 'error' ? 'alert' : undefined}
         >
           {sentence}
