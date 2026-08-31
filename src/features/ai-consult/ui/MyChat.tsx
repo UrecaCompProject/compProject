@@ -13,7 +13,7 @@ export default function MyChat({
 }: MyChatProps) {
   return (
     <>
-      <div className="w-fit self-end rounded-2xl rounded-tr-sm px-4 py-3 bg-brand-promo-primary min-w-[240px] max-w-[80%] text-surface-card whitespace-pre-line">
+      <div className="w-fit self-end rounded-2xl rounded-tr-sm px-4 py-3 bg-brand-promo-primary max-w-[80%] text-surface-card whitespace-pre-line break-keep">
         {sentence}
       </div>
       {showEdit && onEdit && (
