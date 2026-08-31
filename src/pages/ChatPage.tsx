@@ -18,6 +18,7 @@ export default function ChatPage() {
     setInput,
     isLoading,
     isGeneratingReport,
+    canShowReportButton,
     handleSend,
     handleSignupFinished,
     handleFormSubmit,
@@ -59,6 +60,7 @@ export default function ChatPage() {
         messages={messages}
         isLoading={isLoading}
         isGeneratingReport={isGeneratingReport}
+        canShowReportButton={canShowReportButton}
         onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
