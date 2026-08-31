@@ -24,6 +24,7 @@ interface UseChatCompareParams {
     request: ConsultInput,
     defaultMode: ConsultInput['mode'],
   ) => void;
+  getSignal?: () => AbortSignal | undefined;
 }
 
 // 요금제 비교 2단계 플로우와 fetchCompare 로직을 관리
@@ -34,6 +35,7 @@ export function useChatCompare({
   setIsLoading,
   setMessages,
   addAIResponse,
+  getSignal,
 }: UseChatCompareParams) {
   // 비교 요청 시 현재 요금제가 없으면 드랍다운 선택 후 비교를 이어가기 위해
   // 대기 중인 비교 대상 요금제명을 보관
@@ -58,16 +60,13 @@ export function useChatCompare({
           comparePlanA,
           comparePlanB: planBName,
         };
-        const response = await requestConsult(request);
+        const response = await requestConsult(request, getSignal?.());
         addAIResponse(response, request, 'compare');
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '비교 요청 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // AbortError는 useChat의 handleStop에서 처리하므로 여기서는 조용히 무시
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
+        setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);
       }
@@ -79,6 +78,7 @@ export function useChatCompare({
       setIsLoading,
       setMessages,
       addAIResponse,
+      getSignal,
     ],
   );
 

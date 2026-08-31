@@ -65,6 +65,8 @@ export function useChat() {
   });
   // 에러 발생 시 재시도를 위해 마지막 사용자 입력을 보관
   const lastUserInputRef = useRef<string | null>(null);
+  // AI 응답 생성 중 사용자가 중지할 수 있도록 AbortController를 보관
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // AI 응답을 메시지 목록에 추가하고 profile을 갱신하는 공통 헬퍼
   const addAIResponse = useCallback(
@@ -165,6 +167,7 @@ export function useChat() {
     setIsLoading,
     setMessages,
     addAIResponse,
+    getSignal: () => abortControllerRef.current?.signal,
   });
 
   const { isGeneratingReport, handleGenerateReport } = useChatReport({
@@ -175,6 +178,7 @@ export function useChat() {
     setIsLoading,
     setMessages,
     resetChat,
+    getSignal: () => abortControllerRef.current?.signal,
   });
 
   const openSignupChat = () => {
@@ -207,6 +211,9 @@ export function useChat() {
       if (!trimmed || isLoading) return;
 
       // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const result = await routeQuickReply({
         text: trimmed,
         messages,
@@ -224,6 +231,7 @@ export function useChat() {
         fetchCompare,
         startQuiz,
         openSheetGame,
+        signal: controller.signal,
         // "다시 시도" 시 마지막 사용자 입력을 재전송
         retryLastInput: () => {
           const lastInput = lastUserInputRef.current;
@@ -262,21 +270,31 @@ export function useChat() {
       setIsLoading(true);
 
       try {
-        const { input: nextProfile, response } = await postQuestion(trimmed, {
-          ...profile,
-          isLoggedIn,
-        });
+        const { input: nextProfile, response } = await postQuestion(
+          trimmed,
+          { ...profile, isLoggedIn },
+          controller.signal,
+        );
         addAIResponse(response, nextProfile, nextProfile.mode);
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+            },
+          ]);
+        } else {
+          setMessages((prev) => [...prev, buildErrorMessage(error)]);
+        }
       } finally {
         setIsLoading(false);
+        abortControllerRef.current = null;
       }
     },
     [
@@ -314,6 +332,9 @@ export function useChat() {
       ]);
       setIsLoading(true);
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
         const merged: ConsultInput = {
           ...profile,
@@ -322,22 +343,38 @@ export function useChat() {
           mode: 'recommend',
           isLoggedIn,
         };
-        const response = await requestConsult(merged);
+        const response = await requestConsult(merged, controller.signal);
         addAIResponse(response, merged, 'recommend');
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '요청 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+            },
+          ]);
+        } else {
+          setMessages((prev) => [...prev, buildErrorMessage(error)]);
+        }
       } finally {
         setIsLoading(false);
+        abortControllerRef.current = null;
       }
     },
     [isLoading, profile, isLoggedIn, addAIResponse, setMessages],
   );
+
+  // AI 응답 생성 중지 — 진행 중인 fetch 요청을 취소하고 로딩 상태 해제
+  const handleStop = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
+  }, []);
 
   // 웰컱 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출
   const aiResponseCount = messages.filter(
@@ -353,6 +390,7 @@ export function useChat() {
     isGeneratingReport,
     canShowReportButton,
     handleSend,
+    handleStop,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,

@@ -20,6 +20,7 @@ export default function ChatPage() {
     isGeneratingReport,
     canShowReportButton,
     handleSend,
+    handleStop,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
@@ -88,6 +89,7 @@ export default function ChatPage() {
         value={input}
         onChange={setInput}
         onSend={handleSend}
+        onStop={handleStop}
         onStartQuiz={startQuiz}
         disabled={isLoading}
       />

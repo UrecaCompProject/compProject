@@ -24,6 +24,7 @@ interface UseChatReportParams {
   setIsLoading: (v: boolean) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   resetChat: () => void;
+  getSignal?: () => AbortSignal | undefined;
 }
 
 // 상담에 확정된 사용자 조건을 문자열로 요약
@@ -54,6 +55,7 @@ export function useChatReport({
   setIsLoading,
   setMessages,
   resetChat,
+  getSignal,
 }: UseChatReportParams) {
   // 레포트 생성 중 상태를 일반 로딩과 분리해, 비교 로딩 시 레포트 버튼이
   // "생성 중..."으로 잘못 표시되는 문제를 방지
@@ -71,13 +73,16 @@ export function useChatReport({
       setIsLoading(true);
 
       try {
-        const report = await generateReport({
-          conversation: buildConversationLog(messages),
-          currentPlan: effectiveCurrentPlan || '미등록',
-          recommendationResult: buildRecommendationResult(recommendations),
-          reportKind,
-          userProfile: buildUserProfile(userProfile),
-        });
+        const report = await generateReport(
+          {
+            conversation: buildConversationLog(messages),
+            currentPlan: effectiveCurrentPlan || '미등록',
+            recommendationResult: buildRecommendationResult(recommendations),
+            reportKind,
+            userProfile: buildUserProfile(userProfile),
+          },
+          getSignal?.(),
+        );
         await saveReport(report, recommendations);
         // 리포트 결과만 남기고 채팅방을 웰컱+리포트 상태로 초기화
         resetChat();
@@ -93,13 +98,10 @@ export function useChatReport({
         ]);
         return report;
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          buildErrorMessage(
-            error,
-            '레포트 생성 중 문제가 발생했어요. 다시 시도해주세요.',
-          ),
-        ]);
+        // AbortError는 useChat의 handleStop에서 처리하므로 여기서는 조용히 무시
+        if (error instanceof DOMException && error.name === 'AbortError')
+          return;
+        setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);
         setIsGeneratingReport(false);
@@ -114,6 +116,7 @@ export function useChatReport({
       setIsLoading,
       setMessages,
       resetChat,
+      getSignal,
     ],
   );
 
