@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
 import { Button } from '@/shared';
 
 interface QuickRepliesProps {
@@ -7,6 +9,8 @@ interface QuickRepliesProps {
   onReply: (reply: string) => void;
   disabled?: boolean;
   isLoggedIn?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 // 비회원에게 노출되지 않아야 할 회원 전용 퀵리플라이 (게임/출석체크는 로그인 필요)
@@ -23,6 +27,8 @@ export default function QuickReplies({
   onReply,
   disabled = false,
   isLoggedIn = false,
+  collapsed = false,
+  onToggleCollapse,
 }: QuickRepliesProps) {
   const processed = useMemo(() => {
     if (!replies || replies.length === 0) return [];
@@ -40,21 +46,43 @@ export default function QuickReplies({
 
   return (
     <div>
-      <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary px-5 pt-4 pb-2">
-        자주 물어보는 질문
-      </div>
-      <div className="flex flex-wrap gap-2 px-4 pb-4">
-        {processed.map((reply) => (
-          <Button
-            key={reply}
-            variant="chip"
-            size="chip"
-            onClick={() => onReply(reply)}
-            disabled={disabled}
+      <div className="mx-4 border-t border-border pt-4">
+        <div className="flex items-center justify-between gap-3 px-1 pb-2">
+          <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary">
+            자주 물어보는 질문
+          </div>
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? '퀵 리플라이 펼치기' : '퀵 리플라이 접기'}
+            className="flex h-6 w-6 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
           >
-            {reply}
-          </Button>
-        ))}
+            {collapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </div>
+      </div>
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          collapsed
+            ? 'grid-rows-[0fr] opacity-0'
+            : 'grid-rows-[1fr] opacity-100'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="flex flex-wrap gap-2 px-4 pb-4">
+            {processed.map((reply) => (
+              <Button
+                key={reply}
+                variant="chip"
+                size="chip"
+                onClick={() => onReply(reply)}
+                disabled={disabled}
+              >
+                {reply}
+              </Button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
