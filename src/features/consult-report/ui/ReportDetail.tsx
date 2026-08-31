@@ -134,28 +134,31 @@ export default function ReportDetail({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="text-semibold-16-130 text-fg-tertiary ml-1">
-          추천 요금제
-        </div>
-        {report.recommendedPlanDetails.map((plan) => (
-          <PlanCard
-            key={plan.planId}
-            className="w-full"
-            title={plan.planName}
-            price={plan.monthlyFee ?? 0}
-            benefits={toPlanBenefits(plan)}
-            reason={analysis.recommendationReason}
-            onSelect={() =>
-              onSelectPlan?.({
-                ...plan,
-                reason: analysis.recommendationReason,
-                savingAmount: analysis.monthlySavingAmount,
-              })
-            }
-          />
-        ))}
-      </div>
+      {report.recommendedPlanDetails &&
+        report.recommendedPlanDetails.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <div className="text-semibold-16-130 text-fg-tertiary ml-1">
+              추천 요금제
+            </div>
+            {report.recommendedPlanDetails.map((plan) => (
+              <PlanCard
+                key={plan.planId}
+                className="w-full"
+                title={plan.planName}
+                price={plan.monthlyFee ?? 0}
+                benefits={toPlanBenefits(plan)}
+                reason={analysis.recommendationReason}
+                onSelect={() =>
+                  onSelectPlan?.({
+                    ...plan,
+                    reason: analysis.recommendationReason,
+                    savingAmount: analysis.monthlySavingAmount,
+                  })
+                }
+              />
+            ))}
+          </div>
+        )}
       {/* <div className="w-full flex gap-2">
         <Button className="w-full" variant="outline">
           비교 하기
