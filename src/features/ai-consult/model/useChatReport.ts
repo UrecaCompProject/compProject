@@ -102,9 +102,20 @@ export function useChatReport({
         ]);
         return report;
       } catch (error) {
-        // AbortError는 useChat의 handleStop에서 처리하므로 여기서는 조용히 무시
-        if (error instanceof DOMException && error.name === 'AbortError')
+        // 사용자가 의도적으로 중지한 경우 — 중지 안내 메시지 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '레포트 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['메뉴로 돌아가기'],
+            },
+          ]);
           return;
+        }
         setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);

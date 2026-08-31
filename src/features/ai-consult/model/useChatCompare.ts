@@ -17,6 +17,7 @@ interface UseChatCompareParams {
   profile: ConsultInput;
   isLoggedIn: boolean;
   effectiveCurrentPlan: string | undefined;
+  isLoading: boolean;
   setIsLoading: (v: boolean) => void;
   setMessages: SetMessages;
   addAIResponse: (
@@ -33,6 +34,7 @@ export function useChatCompare({
   profile,
   isLoggedIn,
   effectiveCurrentPlan,
+  isLoading,
   setIsLoading,
   setMessages,
   addAIResponse,
@@ -66,9 +68,20 @@ export function useChatCompare({
         const response = await requestConsult(request, signal);
         addAIResponse(response, request, 'compare');
       } catch (error) {
-        // AbortError는 useChat의 handleStop에서 처리하므로 여기서는 조용히 무시
-        if (error instanceof DOMException && error.name === 'AbortError')
+        // 사용자가 의도적으로 중지한 경우 — 중지 안내 메시지 표시
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              type: 'ai' as const,
+              sentence:
+                '비교 요청을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+              quickReplies: ['메뉴로 돌아가기'],
+            },
+          ]);
           return;
+        }
         setMessages((prev) => [...prev, buildErrorMessage(error)]);
       } finally {
         setIsLoading(false);
@@ -89,6 +102,8 @@ export function useChatCompare({
 
   const handlePlanCompare = useCallback(
     (plan: RecommendedPlan) => {
+      // 로딩 중이면 중복 요청 차단 — 중지 후 isLoading이 false가 되면 다시 클릭 가능
+      if (isLoading) return;
       if (!effectiveCurrentPlan) {
         pendingComparePlanRef.current = plan.planName;
         setMessages((prev) => [
@@ -103,7 +118,7 @@ export function useChatCompare({
       }
       fetchCompare(plan.planName);
     },
-    [effectiveCurrentPlan, fetchCompare, setMessages],
+    [isLoading, effectiveCurrentPlan, fetchCompare, setMessages],
   );
 
   // PlanSelector 드랍다운에서 요금제를 선택했을 때 호출

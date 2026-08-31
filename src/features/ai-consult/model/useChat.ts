@@ -177,6 +177,7 @@ export function useChat() {
     profile,
     isLoggedIn,
     effectiveCurrentPlan,
+    isLoading,
     setIsLoading,
     setMessages,
     addAIResponse,
