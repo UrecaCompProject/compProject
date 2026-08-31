@@ -64,7 +64,7 @@ export default function PlanFilterModal({
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 mt-2">
       <FilterSection
         title="요금 범위"
         options={PRICE_RANGE_OPTIONS}
@@ -86,7 +86,7 @@ export default function PlanFilterModal({
         onSelect={(age) => setDraft((prev) => ({ ...prev, age }))}
       />
 
-      <div className="flex gap-2 border-t border-border pt-4">
+      <div className="flex gap-2">
         <Button
           type="button"
           variant="secondary"

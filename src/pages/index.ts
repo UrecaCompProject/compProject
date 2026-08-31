@@ -1,4 +1,3 @@
-export { default as MyPage } from './MyPage';
 export { default as MainDetailPage } from './MainDetailPage';
 
 export { default as ChatPage } from './ChatPage';
