@@ -72,6 +72,7 @@ describe('classifyError', () => {
     for (const err of cases) {
       const result = classifyError(err);
       expect(result.quickReplies.length).toBeGreaterThan(0);
+      expect(result.quickReplies).not.toContain('다시 시도');
     }
   });
 });

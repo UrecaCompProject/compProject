@@ -16,19 +16,19 @@ const ERROR_MESSAGES: Record<
   network: {
     message:
       '인터넷 연결이 불안정해요. 네트워크 상태를 확인한 후 다시 시도해 주세요.',
-    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+    quickReplies: ['메뉴로 돌아가기'],
   },
   timeout: {
     message: '응답이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.',
-    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+    quickReplies: ['메뉴로 돌아가기'],
   },
   server: {
     message: '일시적인 오류가 발생했어요. 잠시 후 다시 시도해 주세요.',
-    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+    quickReplies: ['메뉴로 돌아가기'],
   },
   empty_response: {
     message: '응답을 불러오지 못했어요. 다시 시도해 주세요.',
-    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+    quickReplies: ['메뉴로 돌아가기'],
   },
   auth: {
     message: '로그인이 만료되었어요. 다시 로그인해 주세요.',
@@ -36,7 +36,7 @@ const ERROR_MESSAGES: Record<
   },
   unknown: {
     message: '요청 중 문제가 발생했어요. 다시 시도해 주세요.',
-    quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+    quickReplies: ['메뉴로 돌아가기'],
   },
 };
 

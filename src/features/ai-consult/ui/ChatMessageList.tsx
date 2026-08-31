@@ -109,6 +109,11 @@ export default function ChatMessageList({
   }, []);
 
   const lastIndex = messages.length - 1;
+  // 마지막 user 메시지 인덱스 — 수정 버튼은 이 메시지에만 표시
+  const lastUserIndex = messages.reduce(
+    (acc, m, i) => (m.type === 'user' ? i : acc),
+    -1,
+  );
 
   return (
     <div
@@ -148,13 +153,13 @@ export default function ChatMessageList({
               </>
             )}
             {message.type === 'user' && (
-              <div className="flex justify-end">
+              <div className="flex flex-col items-end">
                 <MyChat
                   sentence={message.sentence}
                   onEdit={
                     onEditMessage ? () => onEditMessage(message.id) : undefined
                   }
-                  showEdit={index === lastIndex && !isLoading}
+                  showEdit={index === lastUserIndex && !isLoading}
                 />
               </div>
             )}

@@ -286,7 +286,7 @@ export function useChat() {
               type: 'ai' as const,
               sentence:
                 '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
-              quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+              quickReplies: ['메뉴로 돌아가기'],
             },
           ]);
         } else {
@@ -355,7 +355,7 @@ export function useChat() {
               type: 'ai' as const,
               sentence:
                 '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
-              quickReplies: ['다시 시도', '메뉴로 돌아가기'],
+              quickReplies: ['메뉴로 돌아가기'],
             },
           ]);
         } else {

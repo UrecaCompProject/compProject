@@ -35,7 +35,7 @@ export default function AIChat({
         >
           {sentence}
         </div>
-        {showRegenerate && onRegenerate && variant !== 'error' && (
+        {showRegenerate && onRegenerate && variant === 'error' && (
           <button
             type="button"
             onClick={onRegenerate}
