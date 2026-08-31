@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useIsLoggedIn } from '@/entities/user';
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
+import { SigninModal } from '@/features/auth';
 import { useChatQuiz } from '@/features/chat-quiz';
 import type { QuizKind } from '@/features/chat-quiz';
 import { useGameStore, useActiveGameMeta } from '@/features/games';
@@ -23,7 +24,6 @@ import type {
 import {
   WELCOME_MESSAGE,
   buildErrorMessage,
-  formatFormSummary,
   getWelcomeQuickReplies,
 } from '../lib/chatHelpers';
 import { formatResponse } from '../lib/formatResponse';
@@ -71,6 +71,11 @@ export function useChat() {
   ]);
   const { recordPlay } = useMissionCompletion();
   const openModal = useModalStore((state) => state.open);
+
+  // 웰컴 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출 및 비로그인 게이팅에 사용
+  const aiResponseCount = messages.filter(
+    (m) => m.type === 'ai' && m.id !== 0,
+  ).length;
 
   // 퀴즈가 끝났을 때(정답/오답 관계없이 참여 보상) — 오늘의 플레이 기록 + 배지 잔액을 적립하고
   // GetBadgeModal로 알려준다. quizType으로 어느 미션인지(security-quiz/telecom-quiz) 찾는다.
@@ -257,7 +262,7 @@ export function useChat() {
     [recordPlay],
   );
 
-  const openSignupChat = () => {
+  const openSignupChat = useCallback(() => {
     setMessages((prev) => [
       ...prev,
       {
@@ -265,7 +270,16 @@ export function useChat() {
         type: 'signup',
       },
     ]);
-  };
+  }, [setMessages]);
+
+  // 회원관리(로그인/회원가입) 모달을 연다. 이미 채팅 페이지 안이므로 회원가입 버튼을
+  // 누르면 바로 채팅 안 가입 플로우로 넘어가도록 직접 연결한다.
+  const requireLogin = useCallback(() => {
+    openModal({
+      title: '회원관리',
+      content: <SigninModal onSignupClick={openSignupChat} />,
+    });
+  }, [openModal, openSignupChat]);
 
   // 바텀시트 게임(card-match, reaction, attendance) 실행/종료 — useGameStore 재활용
   const openGameStore = useGameStore((state) => state.openGame);
@@ -285,6 +299,13 @@ export function useChat() {
     async (text: string, options?: { skipUserMessage?: boolean }) => {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
+
+      // 비로그인 상태로 5회 이상 대화했다면, 퀵리플라이 등 어떤 버튼을 눌러도
+      // 실제 동작 대신 로그인 모달을 띄운다 (텍스트 입력은 ChatInput에서 이미 항상 막혀있음).
+      if (!isLoggedIn && aiResponseCount >= 5) {
+        requireLogin();
+        return;
+      }
 
       // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
       const signal = startRequest();
@@ -379,10 +400,13 @@ export function useChat() {
       isLoading,
       messages,
       isLoggedIn,
+      aiResponseCount,
+      requireLogin,
       profile,
       effectiveCurrentPlan,
       startQuiz,
       openSubscription,
+      openSignupChat,
       openSheetGame,
       fetchCompare,
       startCompareFlow,
@@ -397,10 +421,9 @@ export function useChat() {
   );
 
   const handleFormSubmit = useCallback(
-    async (values: Partial<ConsultInput>) => {
+    async (values: Partial<ConsultInput>, summary: string) => {
       if (isLoading) return;
 
-      const summary = formatFormSummary(values);
       setMessages((prev) => [
         ...prev,
         {
@@ -415,9 +438,18 @@ export function useChat() {
       const signal = startRequest();
 
       try {
+        // skippedFields는 매 제출마다 "이번에 새로 건너뛴 필드"만 담겨 있으므로,
+        // 이전 턴에서 건너뛴 필드까지 합쳐야 서버가 계속 기억할 수 있다.
+        const skippedFields = Array.from(
+          new Set([
+            ...(profile.skippedFields ?? []),
+            ...(values.skippedFields ?? []),
+          ]),
+        );
         const merged: ConsultInput = {
           ...profile,
           ...values,
+          skippedFields,
           userMessage: '정보 입력 완료',
           mode: 'recommend',
           isLoggedIn,
@@ -504,11 +536,20 @@ export function useChat() {
     [isLoading, setMessages, setInput],
   );
 
-  // 웰컱 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출
-  const aiResponseCount = messages.filter(
-    (m) => m.type === 'ai' && m.id !== 0,
-  ).length;
   const canShowReportButton = aiResponseCount >= 5;
+
+  // 비로그인 상태로 5회 이상 대화하면 로그인 모달을 한 번 자동으로 띄워 가입을 유도한다.
+  const hasPromptedLoginRef = useRef(false);
+  useEffect(() => {
+    if (isLoggedIn) {
+      hasPromptedLoginRef.current = false;
+      return;
+    }
+    if (aiResponseCount >= 5 && !hasPromptedLoginRef.current) {
+      hasPromptedLoginRef.current = true;
+      requireLogin();
+    }
+  }, [isLoggedIn, aiResponseCount, requireLogin]);
 
   return {
     messages,
@@ -522,6 +563,7 @@ export function useChat() {
     handleRegenerate,
     handleEditMessage,
     handleSignupFinished,
+    openSignupChat,
     handleFormSubmit,
     handleGenerateReport,
     handlePlanCompare,

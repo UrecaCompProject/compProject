@@ -1,3 +1,4 @@
+import { useIsLoggedIn } from '@/entities/user';
 import { ReportCard } from '@/features/consult-report';
 import { CompareResultSheet } from '@/features/plan-compare';
 import { PlanSelector } from '@/features/plan-subscription';
@@ -21,7 +22,7 @@ interface AIChatExtrasProps {
   onSelectCurrentPlan?: (planName: string) => void;
   onSelectTargetPlan?: (planName: string) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
-  onFormSubmit?: (values: Partial<ConsultInput>) => void;
+  onFormSubmit?: (values: Partial<ConsultInput>, summary: string) => void;
   formDefaults?: Partial<ConsultInput>;
 }
 
@@ -39,6 +40,7 @@ export default function AIChatExtras({
   onFormSubmit,
   formDefaults,
 }: AIChatExtrasProps) {
+  const isLoggedIn = useIsLoggedIn();
   const hasRecommendations =
     !!message.recommendations && message.recommendations.length > 0;
 
@@ -58,11 +60,12 @@ export default function AIChatExtras({
 
       {message.report && <ReportCard report={message.report} />}
 
-      {/* 요금제 추천이 없는 일반 대화에서 5회 AI 응답 후 리포트 생성 버튼 노출 */}
+      {/* 요금제 추천이 없는 일반 대화에서 5회 AI 응답 후 리포트 생성 버튼 노출 (회원 전용) */}
       {isLast &&
         canShowReportButton &&
         !hasRecommendations &&
-        !message.report && (
+        !message.report &&
+        isLoggedIn && (
           <ReportGenerateButton
             onGenerate={() => onGenerateReport?.([])}
             isLoading={isLoading}

@@ -9,7 +9,7 @@ import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { preloadLottiePlayer } from '@/features/ai-consult/lib/preloadLottie';
 import { useChat } from '@/features/ai-consult/model/useChat';
 import { GameLayer } from '@/features/games';
-import { BottomSheet } from '@/shared';
+import { BottomSheet, useSignupIntentStore } from '@/shared';
 
 export default function ChatPage() {
   const [isQuickRepliesCollapsed, setIsQuickRepliesCollapsed] = useState(false);
@@ -25,6 +25,7 @@ export default function ChatPage() {
     handleRegenerate,
     handleEditMessage,
     handleSignupFinished,
+    openSignupChat,
     handleFormSubmit,
     handleGenerateReport,
     handlePlanCompare,
@@ -51,6 +52,26 @@ export default function ChatPage() {
   useEffect(() => {
     preloadLottiePlayer();
   }, []);
+
+  // 헤더 등 채팅 페이지 밖에서 회원가입을 눌러 이동해온 경우, 여기서 가입 플로우를 이어 시작한다.
+  const signupPending = useSignupIntentStore((state) => state.pending);
+  const consumeSignup = useSignupIntentStore((state) => state.consumeSignup);
+  useEffect(() => {
+    if (signupPending) {
+      openSignupChat();
+      consumeSignup();
+    }
+  }, [signupPending, openSignupChat, consumeSignup]);
+
+  // 질문을 보내면 퀵 리플라이를 접고, 응답이 오면(성공/오류 모두 handleSend가 resolve됨) 다시 펼친다.
+  const handleSendAndCollapse = async (text: string) => {
+    setIsQuickRepliesCollapsed(true);
+    try {
+      await handleSend(text);
+    } finally {
+      setIsQuickRepliesCollapsed(false);
+    }
+  };
 
   const lastMessage = messages[messages.length - 1];
   // 퀴즈·게임 진행 중에도 메뉴 퀵 리플라이를 항상 유지
@@ -87,7 +108,7 @@ export default function ChatPage() {
       />
       <QuickReplies
         replies={quickReplies}
-        onReply={handleSend}
+        onReply={handleSendAndCollapse}
         disabled={isLoading}
         isLoggedIn={isLoggedIn}
         collapsed={isQuickRepliesCollapsed}
@@ -98,10 +119,11 @@ export default function ChatPage() {
       <ChatInput
         value={input}
         onChange={setInput}
-        onSend={handleSend}
+        onSend={handleSendAndCollapse}
         onStop={handleStop}
         onStartQuiz={startQuiz}
         onStartScratch={startScratch}
+        onSignupClick={openSignupChat}
         disabled={isLoading}
       />
 
