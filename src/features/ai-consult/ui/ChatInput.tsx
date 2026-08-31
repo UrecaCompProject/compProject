@@ -13,6 +13,7 @@ interface ChatInputProps {
   onChange: (value: string) => void;
   onSend: (text: string) => void;
   onStartQuiz?: (quizType: QuizKind) => void;
+  onStartScratch?: (reward?: number) => void;
   disabled?: boolean;
 }
 
@@ -21,6 +22,7 @@ export default function ChatInput({
   onChange,
   onSend,
   onStartQuiz,
+  onStartScratch,
   disabled = false,
 }: ChatInputProps) {
   const isLogin = useIsLoggedIn();
@@ -87,6 +89,7 @@ export default function ChatInput({
         isMenuOpen={isMenuOpen}
         onMenuClose={() => setIsMenuOpen(false)}
         onStartQuiz={onStartQuiz}
+        onStartScratch={onStartScratch}
       />
     </div>
   );

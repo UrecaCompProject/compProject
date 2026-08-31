@@ -19,6 +19,7 @@ type RewardSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStartQuiz?: (quizType: QuizKind) => void;
+  onStartScratch?: (reward?: number) => void;
 };
 
 type RewardView = 'reward' | 'store' | 'coupon';
@@ -33,6 +34,7 @@ export default function RewardSheet({
   open,
   onOpenChange,
   onStartQuiz,
+  onStartScratch,
 }: RewardSheetProps) {
   const [activeView, setActiveView] = useState<RewardView>('reward');
   const activeGame = useActiveGameMeta();
@@ -53,13 +55,14 @@ export default function RewardSheet({
   };
 
   const handleMissionAction = (mission: Mission) => {
-    // 스크래치 이벤트는 채팅 쪽에서 별도로 처리될 예정이라, 지금은
-    // GameLayer로 열지 않고 바텀시트만 닫아서 안 보이게 한다.
-
-    // if (mission.id === 'scratch') {
-    //   handleOpenChange(false);
-    //   return;
-    // }
+    // 스크래치 이벤트는 GameLayer(바텀시트)가 아니라 채팅 쪽에서 진행한다.
+    // isGameId보다 먼저 체크해야 한다 — GameId 타입에는 더 이상 'scratch'가 없지만,
+    // 혹시 남아있더라도 이 분기가 우선한다.
+    if (mission.id === 'scratch') {
+      handleOpenChange(false);
+      onStartScratch?.(mission.reward);
+      return;
+    }
 
     if (isGameId(mission.id)) {
       openGame(mission.id, { reward: mission.reward });

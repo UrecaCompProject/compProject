@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { useModalStore } from '@/shared';
 
+import { useBadgeBalance } from '../../model/useBadgeBalance';
 import { useProducts } from '../../model/useProducts';
 import Badge from '../shared/Badge';
 import ProductCard from '../shared/ProductCard';
@@ -18,7 +19,7 @@ type StoreContentProps = {
 export default function StoreContent({ onGoToCoupon }: StoreContentProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const openModal = useModalStore((state) => state.open);
-  const badgeBalance = 100;
+  const badgeBalance = useBadgeBalance();
 
   const { data: products = [], isLoading, error } = useProducts();
 

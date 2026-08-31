@@ -10,5 +10,6 @@ export { missions } from './mocks/missions';
 export { useProducts } from './model/useProducts';
 export { useMyCoupons } from './model/useMyCoupons';
 export { useAttendance } from './model/useAttendance';
+export { useBadgeBalance } from './model/useBadgeBalance';
 
 export type { Mission, RewardProduct } from './types';

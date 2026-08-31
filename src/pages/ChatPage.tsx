@@ -34,6 +34,7 @@ export default function ChatPage() {
     closeSubscription,
     isLoggedIn,
     startQuiz,
+    startScratch,
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
@@ -94,6 +95,7 @@ export default function ChatPage() {
         onChange={setInput}
         onSend={handleSend}
         onStartQuiz={startQuiz}
+        onStartScratch={startScratch}
         disabled={isLoading}
       />
 
