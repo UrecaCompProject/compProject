@@ -341,15 +341,19 @@ export default function PlanSubscriptionSheet({
 
   const footer = (
     <div className="flex flex-col gap-2 w-full">
-      {showHelper && (
-        <p className="text-center text-caption text-error">{helperText}</p>
-      )}
+      {/* 단계 전환 시 높이가 흔들리지 않도록 안내 문구 영역을 항상 한 줄 확보 */}
+      <p
+        className={`text-center text-caption text-error ${showHelper ? '' : 'invisible'}`}
+      >
+        {showHelper ? helperText : '\u00A0'}
+      </p>
       {submitError && (
         <p className="text-center text-caption text-error">{submitError}</p>
       )}
       <div className="flex gap-2 w-full">
         {step !== 'planSelect' && step !== 'complete' && (
           <Button
+            key={`nav-prev-${step}`}
             variant="outline"
             size="md"
             className="flex-1"
@@ -361,6 +365,7 @@ export default function PlanSubscriptionSheet({
         )}
         {step === 'complete' ? (
           <Button
+            key="nav-confirm"
             size="md"
             className="flex-1"
             onClick={() => {
@@ -372,7 +377,9 @@ export default function PlanSubscriptionSheet({
             확인
           </Button>
         ) : (
+          // step마다 새 DOM으로 마운트해서 이전 단계 클릭의 :active/hover 잔상 제거
           <Button
+            key={`nav-next-${step}`}
             size="md"
             className="flex-1"
             disabled={!canProceed || isSubmitting}
