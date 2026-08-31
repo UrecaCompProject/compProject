@@ -3,9 +3,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIsLoggedIn } from '@/entities/user';
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { useChatQuiz } from '@/features/chat-quiz';
+import type { QuizKind } from '@/features/chat-quiz';
 import { useGameStore, useActiveGameMeta } from '@/features/games';
 import type { GameId } from '@/features/games';
 import { useSubscriptionStore } from '@/features/plan-subscription';
+import {
+  GetBadgeModal,
+  missions,
+  useMissionCompletion,
+} from '@/features/reward';
+import { useModalStore } from '@/shared';
 import { requestConsult } from '@/shared/lib/aiConsult';
 import type {
   ChatMode,
@@ -27,6 +34,18 @@ import { useChatReport } from './useChatReport';
 import { useChatSubscription } from './useChatSubscription';
 
 import type { ChatMessage, MessageCategory } from '../types';
+
+// 스크래치 이벤트 미션의 game_results.game_id (missions.ts의 mission.uuid)
+const SCRATCH_MISSION_UUID = missions.find(
+  (mission) => mission.id === 'scratch',
+)?.uuid;
+
+// 퀴즈 종류별 미션의 game_results.game_id
+const QUIZ_MISSION_UUID: Record<QuizKind, string | undefined> = {
+  ox: missions.find((mission) => mission.id === 'security-quiz')?.uuid,
+  'multiple-choice': missions.find((mission) => mission.id === 'telecom-quiz')
+    ?.uuid,
+};
 
 // AI 응답 모드를 리포트 대화 로그 분류용 category로 변환
 function modeToCategory(
@@ -50,13 +69,24 @@ export function useChat() {
       quickReplies: getWelcomeQuickReplies(isLoggedIn),
     },
   ]);
-  const {
-    startQuiz,
-    answerOx,
-    selectMultipleChoice,
-    confirmMultipleChoice,
-    finishQuiz,
-  } = useChatQuiz({ setMessages });
+  const { recordPlay } = useMissionCompletion();
+  const openModal = useModalStore((state) => state.open);
+
+  // 퀴즈가 끝났을 때(정답/오답 관계없이 참여 보상) — 오늘의 플레이 기록 + 배지 잔액을 적립하고
+  // GetBadgeModal로 알려준다. quizType으로 어느 미션인지(security-quiz/telecom-quiz) 찾는다.
+  const handleQuizFinish = useCallback(
+    (quizType: QuizKind, rewardCount: number) => {
+      const gameId = QUIZ_MISSION_UUID[quizType];
+      if (gameId) {
+        recordPlay({ gameId, score: rewardCount });
+      }
+      openModal({ content: <GetBadgeModal badgeCount={rewardCount} /> });
+    },
+    [openModal, recordPlay],
+  );
+
+  const { startQuiz, answerOx, selectMultipleChoice, confirmMultipleChoice } =
+    useChatQuiz({ setMessages, onQuizFinish: handleQuizFinish });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState<ConsultInput>({
@@ -215,6 +245,16 @@ export function useChat() {
       ]);
     },
     [setMessages],
+  );
+
+  // 스크래치를 다 긁어서 배지를 획득했을 때 — 오늘의 플레이 기록 + 배지 잔액 적립.
+  // ScratchGame 자체가 이미 "배지 N개 획득!" UI를 보여주므로 별도 모달은 띄우지 않는다.
+  const onScratchWin = useCallback(
+    (reward: number) => {
+      if (!SCRATCH_MISSION_UUID) return;
+      recordPlay({ gameId: SCRATCH_MISSION_UUID, score: reward });
+    },
+    [recordPlay],
   );
 
   const openSignupChat = () => {
@@ -495,10 +535,10 @@ export function useChat() {
     isLoggedIn,
     startQuiz,
     startScratch,
+    onScratchWin,
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    finishQuiz,
     closeSheetGame,
     activeGameMeta,
   };

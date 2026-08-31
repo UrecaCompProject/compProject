@@ -63,8 +63,6 @@ function OxQuizConversation() {
               <QuizResult
                 isCorrect={isCorrect}
                 explanation={question.explanation}
-                actionLabel="다음 문제"
-                onNext={() => undefined}
               />
             }
           />

@@ -33,7 +33,6 @@ interface ChatMessageListProps {
   onQuizOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
   onQuizMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onQuizMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
-  onQuizNext: () => void;
   onScratchWin?: (reward: number) => void;
   onScratchClose?: () => void;
   onRegenerate?: () => void;
@@ -59,7 +58,6 @@ export default function ChatMessageList({
   onQuizOxAnswer,
   onQuizMultipleChoiceSelect,
   onQuizMultipleChoiceConfirm,
-  onQuizNext,
   onScratchWin,
   onScratchClose,
   onRegenerate,
@@ -175,7 +173,6 @@ export default function ChatMessageList({
                 onOxAnswer={onQuizOxAnswer}
                 onMultipleChoiceSelect={onQuizMultipleChoiceSelect}
                 onMultipleChoiceConfirm={onQuizMultipleChoiceConfirm}
-                onNext={onQuizNext}
               />
             )}
 

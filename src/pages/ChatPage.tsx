@@ -38,10 +38,10 @@ export default function ChatPage() {
     isLoggedIn,
     startQuiz,
     startScratch,
+    onScratchWin,
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    finishQuiz,
     closeSheetGame,
     activeGameMeta,
   } = useChat();
@@ -80,7 +80,7 @@ export default function ChatPage() {
         onQuizOxAnswer={answerOx}
         onQuizMultipleChoiceSelect={selectMultipleChoice}
         onQuizMultipleChoiceConfirm={confirmMultipleChoice}
-        onQuizNext={finishQuiz}
+        onScratchWin={onScratchWin}
         onScratchClose={closeSheetGame}
         onRegenerate={handleRegenerate}
         onEditMessage={handleEditMessage}
@@ -106,7 +106,7 @@ export default function ChatPage() {
       />
 
       <BottomSheet
-        open={!!activeGameMeta}
+        open={!!activeGameMeta && activeGameMeta.source === 'chat'}
         onOpenChange={(open) => {
           if (!open) closeSheetGame();
         }}

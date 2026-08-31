@@ -24,13 +24,24 @@ type QuizSession =
 
 type UseChatQuizParams = {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  onQuizFinish?: (quizType: QuizKind, rewardCount: number) => void;
 };
 
 type StartQuizOptions = {
   includeUserMessage?: boolean;
+  // 게임 목록에서 시작할 때는 호출부(gameRouter)가 이미 자체 안내 메시지를
+  // 보여주므로, "네, ~ 진행하겠습니다." 안내를 중복으로 보여주지 않기 위한 옵션.
+  includeIntroMessage?: boolean;
 };
 
 const QUIZ_START_DELAY = 800;
+// 정답/오답 설명을 읽을 시간을 준 뒤, 버튼 클릭 없이 자동으로 종료 메시지를 보여준다.
+const QUIZ_RESULT_DELAY = 1500;
+
+// useChat.tsx 등 다른 곳의 메시지 id는 순수 Date.now()를 그대로 쓴다.
+// 이 훅의 id도 Date.now() 기반이라 같은 밀리초에 다른 곳의 메시지가 생성되면
+// (동일 tick에서 Date.now() 호출이 겹치는 경우) id가 충돌할 수 있어 큰 오프셋으로 구간을 분리한다.
+const ID_OFFSET = 10_000_000_000;
 
 function createQuestionMessage(
   id: number,
@@ -53,25 +64,30 @@ function createQuestionMessage(
       };
 }
 
-export function useChatQuiz({ setMessages }: UseChatQuizParams) {
+export function useChatQuiz({ setMessages, onQuizFinish }: UseChatQuizParams) {
   const [session, setSession] = useState<QuizSession | null>(null);
   const idRef = useRef(0);
   const questionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextId = useCallback(() => {
-    idRef.current = Math.max(idRef.current + 1, Date.now());
+    idRef.current = Math.max(idRef.current + 1, Date.now() + ID_OFFSET);
     return idRef.current;
   }, []);
 
   useEffect(() => {
     return () => {
       if (questionTimerRef.current) clearTimeout(questionTimerRef.current);
+      if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
     };
   }, []);
 
   const startQuiz = useCallback(
     (
       quizType: QuizKind,
-      { includeUserMessage = true }: StartQuizOptions = {},
+      {
+        includeUserMessage = true,
+        includeIntroMessage = true,
+      }: StartQuizOptions = {},
     ) => {
       const introduction =
         quizType === 'ox'
@@ -97,7 +113,9 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
         ...(includeUserMessage
           ? [{ id: nextId(), type: 'user' as const, sentence: userRequest }]
           : []),
-        { id: nextId(), type: 'ai', sentence: introduction },
+        ...(includeIntroMessage
+          ? [{ id: nextId(), type: 'ai' as const, sentence: introduction }]
+          : []),
       ]);
       questionTimerRef.current = setTimeout(() => {
         setMessages((previous) => [
@@ -109,6 +127,24 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
     },
     [nextId, setMessages],
   );
+
+  // 퀴즈 결과(정답/설명)를 보여준 뒤 QUIZ_RESULT_DELAY만큼 지나면 버튼 없이 자동으로
+  // "퀴즈가 끝났어요!" 메시지를 붙이고, 미션 완료 콜백(배지 적립 등)을 호출한다.
+  const finishQuiz = useCallback(() => {
+    if (!session) return;
+
+    const rewardCount = 1;
+    setMessages((previous) => [
+      ...previous,
+      {
+        id: nextId(),
+        type: 'ai',
+        sentence: `퀴즈가 끝났어요! 배지 ${rewardCount}개를 획득하였습니다.`,
+      },
+    ]);
+    onQuizFinish?.(session.quizType, rewardCount);
+    setSession(null);
+  }, [nextId, onQuizFinish, session, setMessages]);
 
   const appendAnswerResult = useCallback(
     ({
@@ -142,8 +178,14 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
         { id: nextId(), type: 'user', sentence: answerLabel },
         resultMessage,
       ]);
+
+      if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
+      resultTimerRef.current = setTimeout(() => {
+        finishQuiz();
+        resultTimerRef.current = null;
+      }, QUIZ_RESULT_DELAY);
     },
-    [nextId, session, setMessages],
+    [finishQuiz, nextId, session, setMessages],
   );
   const answerOx = useCallback(
     (messageId: number, answer: 'o' | 'x') => {
@@ -212,27 +254,11 @@ export function useChatQuiz({ setMessages }: UseChatQuizParams) {
     [appendAnswerResult, session],
   );
 
-  const finishQuiz = useCallback(() => {
-    if (!session) return;
-
-    const rewardCount = 1;
-    setMessages((previous) => [
-      ...previous,
-      {
-        id: nextId(),
-        type: 'ai',
-        sentence: `퀴즈가 끝났어요! 배지 ${rewardCount}개를 획득하였습니다.`,
-      },
-    ]);
-    setSession(null);
-  }, [nextId, session, setMessages]);
-
   return {
     session,
     startQuiz,
     answerOx,
     selectMultipleChoice,
     confirmMultipleChoice,
-    finishQuiz,
   };
 }
