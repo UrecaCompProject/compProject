@@ -393,6 +393,29 @@ export function useChat() {
     handleSend(lastInput);
   }, [isLoading, handleSend, setMessages]);
 
+  // 사용자 메시지 수정 — 해당 메시지 이후 대화를 잘라내고 입력창에 원문 주입
+  const handleEditMessage = useCallback(
+    (messageId: number) => {
+      if (isLoading) return;
+
+      setMessages((prev) => {
+        const targetIndex = prev.findIndex(
+          (m) => m.id === messageId && m.type === 'user',
+        );
+        if (targetIndex === -1) return prev;
+
+        const targetMessage = prev[targetIndex];
+        if (targetMessage.type !== 'user') return prev;
+
+        // 입력창에 원문 주입
+        setInput(targetMessage.sentence);
+        // 해당 메시지까지 포함하여 이후 메시지 제거 (메시지 자체도 제거)
+        return prev.slice(0, targetIndex);
+      });
+    },
+    [isLoading, setMessages, setInput],
+  );
+
   // 웰컱 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출
   const aiResponseCount = messages.filter(
     (m) => m.type === 'ai' && m.id !== 0,
@@ -409,6 +432,7 @@ export function useChat() {
     handleSend,
     handleStop,
     handleRegenerate,
+    handleEditMessage,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,

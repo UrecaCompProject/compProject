@@ -22,6 +22,7 @@ export default function ChatPage() {
     handleSend,
     handleStop,
     handleRegenerate,
+    handleEditMessage,
     handleSignupFinished,
     handleFormSubmit,
     handleGenerateReport,
@@ -80,6 +81,7 @@ export default function ChatPage() {
         onQuizNext={finishQuiz}
         onScratchClose={closeSheetGame}
         onRegenerate={handleRegenerate}
+        onEditMessage={handleEditMessage}
       />
       <QuickReplies
         replies={quickReplies}

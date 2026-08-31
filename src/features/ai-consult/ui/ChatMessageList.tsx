@@ -37,6 +37,7 @@ interface ChatMessageListProps {
   onScratchWin?: (reward: number) => void;
   onScratchClose?: () => void;
   onRegenerate?: () => void;
+  onEditMessage?: (messageId: number) => void;
 }
 
 export default function ChatMessageList({
@@ -62,6 +63,7 @@ export default function ChatMessageList({
   onScratchWin,
   onScratchClose,
   onRegenerate,
+  onEditMessage,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -147,7 +149,13 @@ export default function ChatMessageList({
             )}
             {message.type === 'user' && (
               <div className="flex justify-end">
-                <MyChat sentence={message.sentence} />
+                <MyChat
+                  sentence={message.sentence}
+                  onEdit={
+                    onEditMessage ? () => onEditMessage(message.id) : undefined
+                  }
+                  showEdit={index === lastIndex && !isLoading}
+                />
               </div>
             )}
 
