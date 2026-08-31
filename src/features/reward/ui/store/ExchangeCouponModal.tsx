@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button, useModalStore } from '@/shared';
 import couponExchangeImage from '@/shared/assets/images/coupon-exchange.svg';
 
+import { useExchangeProduct } from '../../model/useExchangeProduct';
 import ProductCard from '../shared/ProductCard';
 
 import type { RewardProduct } from '../../types';
@@ -19,7 +20,24 @@ export default function ExchangeCouponModal({
   onGoToCoupon,
 }: ExchangeContentProps) {
   const [phase, setPhase] = useState<ExchangePhase>('confirm');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const closeModal = useModalStore((state) => state.close);
+  const exchangeProduct = useExchangeProduct();
+
+  const handleExchange = async () => {
+    setErrorMessage(null);
+    try {
+      await exchangeProduct.mutateAsync({
+        productId: product.id,
+        badgeCost: product.badgeCost,
+      });
+      setPhase('success');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : '교환에 실패했습니다.',
+      );
+    }
+  };
 
   const handleGoToCoupon = () => {
     closeModal();
@@ -67,19 +85,25 @@ export default function ExchangeCouponModal({
         이 상품을 교환할까요?
       </p>
 
+      {errorMessage && (
+        <p className="text-caption text-semantic-error">{errorMessage}</p>
+      )}
+
       <div className="flex w-full flex-col gap-2">
         <Button
           type="button"
           className="w-full"
-          onClick={() => setPhase('success')}
+          onClick={handleExchange}
+          disabled={exchangeProduct.isPending}
         >
-          교환하기
+          {exchangeProduct.isPending ? '교환 중...' : '교환하기'}
         </Button>
         <Button
           type="button"
           variant="secondary"
           className="w-full"
           onClick={closeModal}
+          disabled={exchangeProduct.isPending}
         >
           취소
         </Button>
