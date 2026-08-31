@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   ChatInput,
@@ -12,6 +12,7 @@ import { GameLayer } from '@/features/games';
 import { BottomSheet } from '@/shared';
 
 export default function ChatPage() {
+  const [isQuickRepliesCollapsed, setIsQuickRepliesCollapsed] = useState(false);
   const {
     messages,
     input,
@@ -81,6 +82,10 @@ export default function ChatPage() {
         onReply={handleSend}
         disabled={isLoading}
         isLoggedIn={isLoggedIn}
+        collapsed={isQuickRepliesCollapsed}
+        onToggleCollapse={() =>
+          setIsQuickRepliesCollapsed((previous) => !previous)
+        }
       />
       <ChatInput
         value={input}
