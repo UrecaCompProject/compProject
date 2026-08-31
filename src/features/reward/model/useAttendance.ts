@@ -45,6 +45,7 @@ export function useAttendance() {
     mutationFn: postCheckIn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['badge', 'balance'] });
     },
   });
 

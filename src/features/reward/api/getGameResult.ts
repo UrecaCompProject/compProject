@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 
 import { supabase } from '@/shared/lib/supabaseClient';
 
+import { addBadgeBalance } from './getBadge';
+
 // 게임 플레이 보상이 적립되는 배지 (20260831000001_seed_game_reward_badge.sql 참고)
 const GAME_REWARD_BADGE_ID = '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f201';
 
@@ -74,34 +76,5 @@ export async function recordGamePlay(
 
   if (score <= 0) return;
 
-  await addBadgeReward(userId, score);
-}
-
-// user_badges의 balance/total_earned에 reward만큼 더하고 updated_at을 갱신한다.
-async function addBadgeReward(userId: string, reward: number): Promise<void> {
-  const { data: existing, error: selectError } = await supabase
-    .from('user_badges')
-    .select('balance, total_earned')
-    .eq('user_id', userId)
-    .eq('badge_id', GAME_REWARD_BADGE_ID)
-    .maybeSingle();
-
-  if (selectError) {
-    throw new Error(`배지 잔액 조회 실패: ${selectError.message}`);
-  }
-
-  const { error: upsertError } = await supabase.from('user_badges').upsert(
-    {
-      user_id: userId,
-      badge_id: GAME_REWARD_BADGE_ID,
-      balance: (existing?.balance ?? 0) + reward,
-      total_earned: (existing?.total_earned ?? 0) + reward,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,badge_id' },
-  );
-
-  if (upsertError) {
-    throw new Error(`배지 잔액 적립 실패: ${upsertError.message}`);
-  }
+  await addBadgeBalance(userId, GAME_REWARD_BADGE_ID, score);
 }
