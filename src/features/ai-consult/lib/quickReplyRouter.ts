@@ -87,11 +87,12 @@ export async function routeQuickReply(
     const gameTitles = GAME_LIST.map((g) => g.title);
     setMessages((prev) => [
       ...prev,
-      { id: Date.now(), type: 'user', sentence: '게임 하기' },
-      buildAIMessage('원하는 게임을 선택해 주세요!', [
-        ...gameTitles,
-        '메뉴로 돌아가기',
-      ]),
+      { id: Date.now(), type: 'user', sentence: '게임 하기', category: 'game' },
+      buildAIMessage(
+        '원하는 게임을 선택해 주세요!',
+        [...gameTitles, '메뉴로 돌아가기'],
+        { category: 'game' },
+      ),
     ]);
     return 'handled';
   }
@@ -109,6 +110,15 @@ export async function routeQuickReply(
 
   // "출석체크" 퀵 리플라이 — 출석 룰렛 바텀시트 게임으로 바로 연결
   if (text === '출석체크') {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'user',
+        sentence: '출석체크',
+        category: 'attendance',
+      },
+    ]);
     openSheetGame('attendance', 5);
     return 'handled';
   }

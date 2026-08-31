@@ -36,6 +36,8 @@ export interface ReportInput {
   conversation: string;
   currentPlan: string;
   recommendationResult: string;
+  // 'plan' = 요금제 추천 기반 요약, 'general' = 일반 대화 요약 (요금제 필드 빈값)
+  reportKind?: 'plan' | 'general';
 }
 
 export interface RecommendedPlan {
@@ -82,6 +84,11 @@ export interface ConsultResponse {
   compareResult?: CompareResult;
 }
 
+export interface ReportQAPair {
+  question: string;
+  answer: string;
+}
+
 export interface ReportOutput {
   summary: string;
   usageType: string;
@@ -90,6 +97,7 @@ export interface ReportOutput {
   recommendationReason: string;
   monthlySavingAmount: number;
   importantConditions: string[];
+  qaPairs: ReportQAPair[];
 }
 
 export interface CompareResult {

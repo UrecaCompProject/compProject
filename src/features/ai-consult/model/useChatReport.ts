@@ -18,6 +18,7 @@ interface UseChatReportParams {
   isLoading: boolean;
   setIsLoading: (v: boolean) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  resetChat: () => void;
 }
 
 // 레포트 생성 요청과 저장, 결과 메시지 추가를 관리
@@ -27,6 +28,7 @@ export function useChatReport({
   isLoading,
   setIsLoading,
   setMessages,
+  resetChat,
 }: UseChatReportParams) {
   // 레포트 생성 중 상태를 일반 로딩과 분리해, 비교 로딩 시 레포트 버튼이
   // "생성 중..."으로 잘못 표시되는 문제를 방지
@@ -36,8 +38,10 @@ export function useChatReport({
     async (
       recommendations: RecommendedPlan[],
     ): Promise<ReportOutput | undefined> => {
-      if (isLoading || isGeneratingReport || recommendations.length === 0)
-        return;
+      if (isLoading || isGeneratingReport) return;
+      // 요금제 추천이 없으면 일반 대화 요약 리포트로 생성
+      const reportKind: 'plan' | 'general' =
+        recommendations.length > 0 ? 'plan' : 'general';
       setIsGeneratingReport(true);
       setIsLoading(true);
 
@@ -46,8 +50,11 @@ export function useChatReport({
           conversation: buildConversationLog(messages),
           currentPlan: effectiveCurrentPlan || '미등록',
           recommendationResult: buildRecommendationResult(recommendations),
+          reportKind,
         });
         await saveReport(report);
+        // 리포트 결과만 남기고 채팅방을 웰컱+리포트 상태로 초기화
+        resetChat();
         setMessages((prev) => [
           ...prev,
           {
@@ -79,6 +86,7 @@ export function useChatReport({
       effectiveCurrentPlan,
       setIsLoading,
       setMessages,
+      resetChat,
     ],
   );
 

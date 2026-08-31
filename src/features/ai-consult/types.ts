@@ -12,6 +12,9 @@ import type {
 export type MessageType =
   'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result' | 'scratch-game';
 
+// 리포트 대화 로그에서 게임/출석 맥락 메시지를 제외하기 위한 분류
+export type MessageCategory = 'plan' | 'game' | 'attendance' | 'general';
+
 export type ChatMessage =
   | {
       id: number;
@@ -28,8 +31,9 @@ export type ChatMessage =
       planSelectorMode?: 'current' | 'target';
       // 에러 메시지 여부 — AIChat에 error variant 적용 + 재시도 퀵리플라이 표시
       isError?: boolean;
+      category?: MessageCategory;
     }
-  | { id: number; type: 'user'; sentence: string }
+  | { id: number; type: 'user'; sentence: string; category?: MessageCategory }
   | { id: number; type: 'signup' }
   | QuizQuestionMessage
   | QuizResultMessage

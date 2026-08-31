@@ -16,6 +16,7 @@ interface RecommendationCardsProps {
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   isLoading?: boolean;
   isGeneratingReport?: boolean;
+  canShowReportButton?: boolean;
 }
 
 export default function RecommendationCards({
@@ -25,6 +26,7 @@ export default function RecommendationCards({
   onGenerateReport,
   isLoading = false,
   isGeneratingReport = false,
+  canShowReportButton = false,
 }: RecommendationCardsProps) {
   const isLoggedIn = useIsLoggedIn();
   const [open, setOpen] = useState(false);
@@ -85,7 +87,7 @@ export default function RecommendationCards({
         </div>
       </div>
 
-      {isLoggedIn ? (
+      {isLoggedIn && canShowReportButton && (
         <Button
           variant="secondary"
           size="md"
@@ -95,10 +97,6 @@ export default function RecommendationCards({
         >
           {isGeneratingReport ? '레포트 생성 중...' : '레포트 생성'}
         </Button>
-      ) : (
-        <p className="text-body-sm text-fg-secondary px-1">
-          레포트 저장은 로그인 후에 가능해요.
-        </p>
       )}
 
       <RecommendationDetailSheet

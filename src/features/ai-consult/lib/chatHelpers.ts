@@ -1,7 +1,7 @@
 import type { QuizKind } from '@/features/chat-quiz';
 import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
-import type { ChatMessage } from '../types';
+import type { ChatMessage, MessageCategory } from '../types';
 
 export const WELCOME_MESSAGE =
   '안녕하세요! AI 요금제 도우미 해리에요.\n\n아래 메뉴에서 원하는 항목을 선택해 주세요.';
@@ -86,9 +86,17 @@ export function findLastRecommendations(
   return [];
 }
 
+// 리포트 대화 로그에 포함할 메시지인지 확인 — 게임/출석 맥락은 제외
+function isLoggableMessage(
+  m: ChatMessage,
+): m is Extract<ChatMessage, { type: 'ai' | 'user' }> {
+  if (m.type !== 'ai' && m.type !== 'user') return false;
+  return m.category !== 'game' && m.category !== 'attendance';
+}
+
 export function buildConversationLog(messages: ChatMessage[]): string {
   return messages
-    .filter((m) => m.type === 'ai' || m.type === 'user')
+    .filter(isLoggableMessage)
     .map((m) => {
       const role = m.type === 'ai' ? 'AI' : '사용자';
       return `${role}: ${m.sentence}`;
@@ -130,6 +138,7 @@ export function buildAIMessage(
   extra?: Partial<{
     planSelector: boolean;
     planSelectorMode: 'current' | 'target';
+    category: MessageCategory;
   }>,
 ) {
   return {
