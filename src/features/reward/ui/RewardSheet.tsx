@@ -106,7 +106,9 @@ export default function RewardSheet({
           <StoreContent onGoToCoupon={() => setActiveView('coupon')} />
         )}
 
-        {activeView === 'coupon' && <MyCouponContent />}
+        {activeView === 'coupon' && (
+          <MyCouponContent onGoToReward={handleBack} />
+        )}
       </GameLayer>
     </BottomSheet>
   );
