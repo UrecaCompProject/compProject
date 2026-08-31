@@ -26,16 +26,23 @@ const missionIcons: Record<MissionIcon, LucideIcon> = {
 type MissionItemProps = {
   mission: Mission;
   onAction?: (mission: Mission) => void;
+  finished?: boolean;
 };
 
 // 게임 리스트 카드 컴포넌트
 
-export default function MissionItem({ mission, onAction }: MissionItemProps) {
+export default function MissionItem({
+  mission,
+  onAction,
+  finished,
+}: MissionItemProps) {
   const Icon = missionIcons[mission.icon];
 
   return (
     <li className="flex items-center gap-2.5 rounded-xl bg-surface-card px-2.5 py-2.5">
-      <span className="inline-flex items-center justify-center rounded-lg h-9 w-9 shrink-0 bg-brand-soft text-brand-promo-primary">
+      <span
+        className={`inline-flex items-center justify-center rounded-lg h-9 w-9 shrink-0 bg-brand-soft text-brand-promo-primary ${finished ? 'border-[3px] border-brand-promo-primary' : ''}`}
+      >
         <Icon size={20} strokeWidth={1.8} />
       </span>
 
