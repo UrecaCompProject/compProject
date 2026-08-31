@@ -13,7 +13,7 @@ function formatReportDate(iso: string): string {
 }
 
 export default function PreviewReport({ report, onClick }: PreviewReportProps) {
-  const planCount = report.analysis_input.recommendedPlans.length;
+  const planCount = report.analysis_input.recommendedPlans?.length ?? 0;
 
   return (
     <div

@@ -7,7 +7,11 @@ import { useGameStore, useActiveGameMeta } from '@/features/games';
 import type { GameId } from '@/features/games';
 import { useSubscriptionStore } from '@/features/plan-subscription';
 import { requestConsult } from '@/shared/lib/aiConsult';
-import type { ConsultInput, ConsultResponse } from '@/shared/lib/aiConsult';
+import type {
+  ChatMode,
+  ConsultInput,
+  ConsultResponse,
+} from '@/shared/lib/aiConsult';
 
 import {
   WELCOME_MESSAGE,
@@ -22,7 +26,19 @@ import { useChatCompare } from './useChatCompare';
 import { useChatReport } from './useChatReport';
 import { useChatSubscription } from './useChatSubscription';
 
-import type { ChatMessage } from '../types';
+import type { ChatMessage, MessageCategory } from '../types';
+
+// AI 응답 모드를 리포트 대화 로그 분류용 category로 변환
+function modeToCategory(
+  mode: ChatMode | undefined,
+): MessageCategory | undefined {
+  if (mode === 'game') return 'game';
+  if (mode === 'attendance') return 'attendance';
+  if (mode === 'general') return 'general';
+  if (mode === 'recommend' || mode === 'compare' || mode === 'subscribe')
+    return 'plan';
+  return undefined;
+}
 
 export function useChat() {
   const isLoggedIn = useIsLoggedIn();
@@ -73,6 +89,7 @@ export function useChat() {
           form: response.form,
           recommendations: response.recommendations,
           compareResult: response.compareResult,
+          category: modeToCategory(response.mode ?? defaultMode),
         },
       ]);
     },
@@ -153,9 +170,11 @@ export function useChat() {
   const { isGeneratingReport, handleGenerateReport } = useChatReport({
     messages,
     effectiveCurrentPlan,
+    userProfile: profile,
     isLoading,
     setIsLoading,
     setMessages,
+    resetChat,
   });
 
   const openSignupChat = () => {
@@ -228,7 +247,12 @@ export function useChat() {
       // fall-through: 일반 상담 요청
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), type: 'user', sentence: trimmed },
+        {
+          id: Date.now(),
+          type: 'user',
+          sentence: trimmed,
+          category: modeToCategory(profile.mode) ?? 'general',
+        },
       ]);
       setInput('');
 
@@ -285,6 +309,7 @@ export function useChat() {
           id: Date.now(),
           type: 'user',
           sentence: summary || '정보를 입력했습니다.',
+          category: 'plan',
         },
       ]);
       setIsLoading(true);
@@ -314,12 +339,19 @@ export function useChat() {
     [isLoading, profile, isLoggedIn, addAIResponse, setMessages],
   );
 
+  // 웰컱 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출
+  const aiResponseCount = messages.filter(
+    (m) => m.type === 'ai' && m.id !== 0,
+  ).length;
+  const canShowReportButton = aiResponseCount >= 5;
+
   return {
     messages,
     input,
     setInput,
     isLoading,
     isGeneratingReport,
+    canShowReportButton,
     handleSend,
     handleSignupFinished,
     handleFormSubmit,

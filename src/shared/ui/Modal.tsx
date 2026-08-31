@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 import { useEscapeKey } from '../hooks/useEscapeKey';
@@ -75,6 +76,15 @@ export default function Modal() {
         }}
         className={`p-5 relative z-10 flex max-h-[85dvh] w-full max-w-[320px] flex-col rounded-2xl bg-surface-card outline-none ${isClosing ? 'animate-scale-out' : 'animate-scale-in'} ${className}`}
       >
+        <button
+          type="button"
+          aria-label="모달 닫기"
+          onClick={close}
+          className="absolute right-4 top-4 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
+        >
+          <X size={18} />
+        </button>
+
         <header className="shrink-0">
           {title && (
             <h2

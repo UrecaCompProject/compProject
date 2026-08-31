@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { Drawer } from 'vaul';
 
 type BottomSheetSize = 'content' | 'large' | 'full';
@@ -97,9 +97,18 @@ export default function BottomSheet({
                   </button>
                 </span>
 
-                <Drawer.Title className="text-title text-fg-primary">
+                <Drawer.Title className="min-w-0 flex-1 truncate text-title text-fg-primary">
                   {title}
                 </Drawer.Title>
+
+                <button
+                  type="button"
+                  aria-label="바텀시트 닫기"
+                  onClick={() => onOpenChange(false)}
+                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
               {description && (

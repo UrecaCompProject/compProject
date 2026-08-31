@@ -6,9 +6,24 @@ const model = Deno.env.get('OPENAI_MODEL') || 'gpt-4o-mini';
 export async function chatOpenAI(
   system: string,
   user: string,
+  maxTokens = 500,
+  jsonMode = false,
 ): Promise<string> {
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.');
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    temperature: 0.1,
+    max_tokens: maxTokens,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
   }
 
   const res = await fetch(`${baseUrl}/chat/completions`, {
@@ -17,15 +32,7 @@ export async function chatOpenAI(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: user },
-      ],
-      temperature: 0.1,
-      max_tokens: 500,
-    }),
+    body: JSON.stringify(body),
   });
 
   const text = await res.text();

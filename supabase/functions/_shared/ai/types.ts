@@ -105,6 +105,14 @@ export interface ReportInput {
   conversation: string;
   currentPlan: string;
   recommendationResult: string;
+  reportKind?: 'plan' | 'general';
+  // 상담에서 확정된 사용자 조건 요약
+  userProfile?: string;
+}
+
+export interface ReportQAPair {
+  question: string;
+  answer: string;
 }
 
 export interface ReportOutput {
@@ -115,4 +123,5 @@ export interface ReportOutput {
   recommendationReason: string;
   monthlySavingAmount: number;
   importantConditions: string[];
+  qaPairs: ReportQAPair[];
 }
