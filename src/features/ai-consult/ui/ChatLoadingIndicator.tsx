@@ -15,12 +15,12 @@ export default function ChatLoadingIndicator() {
   return (
     <div className="flex gap-2">
       <div className="rounded-full w-7 h-7 bg-gray-300 shrink-0">
-        <img src="/bot_profile.png" alt="bot-profile" />
+        <img src="/bot_profile.png" alt="AI 도우미 해리" />
       </div>
-      <div className="shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 mt-2 bg-surface-card overflow-visible">
+      <div className="shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 mt-2 bg-surface-card overflow-hidden">
         <Suspense
           fallback={
-            <div className="w-[60px] h-[40px] flex items-center justify-center overflow-visible">
+            <div className="w-[120px] h-[80px] flex items-center justify-center">
               <span className="w-2.5 h-2.5 rounded-full bg-fg-disabled animate-pulse" />
             </div>
           }
@@ -30,10 +30,8 @@ export default function ChatLoadingIndicator() {
             loop
             src={loadingAnimation}
             style={{
-              width: '60px',
-              height: '40px',
-              transform: 'scale(2.2)',
-              transformOrigin: 'center center',
+              width: '120px',
+              height: '80px',
             }}
           />
         </Suspense>
