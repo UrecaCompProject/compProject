@@ -20,7 +20,7 @@ interface ChatMessageListProps {
   isGeneratingReport?: boolean;
   canShowReportButton?: boolean;
   onSignupFinished?: () => void;
-  onFormSubmit?: (values: Partial<ConsultInput>) => void;
+  onFormSubmit?: (values: Partial<ConsultInput>, summary: string) => void;
   formDefaults?: Partial<ConsultInput>;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
   onPlanCompare?: (plan: RecommendedPlan) => void;
@@ -189,9 +189,7 @@ export default function ChatMessageList({
       </div>
 
       <PlanSubscriptionSheet
-        key={
-          subscriptionOpen ? (subscriptionPlan?.planId ?? 'catalog') : 'closed'
-        }
+        active={subscriptionOpen}
         open={subscriptionOpen}
         onOpenChange={onSubscriptionClose ?? (() => {})}
         plan={subscriptionPlan ?? null}

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { postChangePlan } from '@/entities/plan';
+import { ensureCurrentMonthUsage } from '@/entities/usage';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import { submitSubscription } from '../api/submitSubscription';
@@ -27,10 +28,12 @@ export function useSubmitSubscription() {
         currentPlanId: form.type === 'change' ? (currentPlanId ?? null) : null,
       });
       await postChangePlan(Number(plan.planId));
+      await ensureCurrentMonthUsage();
       return applicationId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plans', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['usage'] });
     },
   });
 }

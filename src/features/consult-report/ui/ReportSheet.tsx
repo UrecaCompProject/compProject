@@ -95,9 +95,7 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
       </BottomSheet>
 
       <PlanSubscriptionSheet
-        key={
-          subscriptionOpen ? (subscriptionPlan?.planId ?? 'catalog') : 'closed'
-        }
+        active={subscriptionOpen}
         open={subscriptionOpen}
         onOpenChange={setSubscriptionOpen}
         plan={subscriptionPlan}

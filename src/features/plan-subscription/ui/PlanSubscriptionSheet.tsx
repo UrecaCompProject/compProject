@@ -9,8 +9,8 @@ import {
 
 import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
-import { usePlanCatalog } from '@/entities/plan';
-import { useAuth } from '@/entities/user';
+import { usePlanCatalog, useCurrentPlan } from '@/entities/plan';
+import { useAuth, useIsLoggedIn } from '@/entities/user';
 import { BottomSheet, Button, Input } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -182,10 +182,12 @@ function PlanSummary({ plan }: { plan: RecommendedPlan }) {
 function PlanSelectItem({
   plan,
   selected,
+  isCurrent,
   onClick,
 }: {
   plan: RecommendedPlan;
   selected: boolean;
+  isCurrent: boolean;
   onClick: () => void;
 }) {
   return (
@@ -199,8 +201,13 @@ function PlanSelectItem({
       }`}
     >
       <div className="flex items-baseline justify-between">
-        <span className="text-body font-semibold text-fg-primary">
+        <span className="flex items-center gap-1.5 text-body font-semibold text-fg-primary">
           {plan.planName}
+          {isCurrent && (
+            <span className="rounded-full bg-brand-promo-primary/10 px-2 py-0.5 text-caption font-semibold text-brand-promo-primary">
+              현재 요금제
+            </span>
+          )}
         </span>
         <span className="text-body font-bold text-brand-promo-secondary">
           월 {plan.monthlyFee?.toLocaleString()}원
@@ -260,6 +267,11 @@ export default function PlanSubscriptionSheet({
     isLoading: isPlanListLoading,
     error: planListError,
   } = usePlanCatalog();
+
+  // 현재 가입된 요금제 — 1단계 "현재 요금제" 표시, 2단계 가입 유형 제한에 사용
+  const isLoggedIn = useIsLoggedIn();
+  const { data: currentPlan = null } = useCurrentPlan(isLoggedIn);
+  const hasCurrentPlan = !!currentPlan;
 
   // 가입 신청 뮤테이션 — 성공 시 현재 요금제 캐시 자동 무효화
   const submitMutation = useSubmitSubscription();
@@ -341,7 +353,11 @@ export default function PlanSubscriptionSheet({
     if (step === 'agreement') {
       if (!selectedPlan) return;
       submitMutation.mutate(
-        { plan: selectedPlan, form },
+        {
+          plan: selectedPlan,
+          // 2단계 체크박스 상태와 무관하게, 현재 요금제 보유 여부로 최종 확정한다.
+          form: { ...form, type: hasCurrentPlan ? 'change' : 'new' },
+        },
         {
           onSuccess: () => setStep('complete'),
         },
@@ -379,9 +395,11 @@ export default function PlanSubscriptionSheet({
     update('agreedMarketing', checked);
   };
 
+  // 현재 가입된 요금제가 없으면 신규 가입만, 있으면 요금제 변경만 선택 가능하다.
   const typeOptions: { value: SubscriptionType; label: string }[] = [
-    { value: 'new', label: '신규 가입' },
-    { value: 'change', label: '요금제 변경' },
+    hasCurrentPlan
+      ? { value: 'change', label: '요금제 변경' }
+      : { value: 'new', label: '신규 가입' },
   ];
 
   const title = STEP_TITLES[step].title;
@@ -422,9 +440,17 @@ export default function PlanSubscriptionSheet({
             size="md"
             className="flex-1"
             onClick={() => {
-              onComplete?.();
-              // onComplete 후 vaul 닫기 애니메이션이 정상 동작하도록 약간 지연
-              setTimeout(() => onOpenChange(false), 100);
+              if (renderShell) {
+                // renderShell 모드는 이 컴포넌트가 자체 BottomSheet를 렌더링하지
+                // 않으므로(onOpenChange가 실제로 아무 시트도 닫지 않음), 호출부가
+                // 자신의 시트를 직접 애니메이션과 함께 닫도록 바로 onComplete를 넘긴다.
+                onComplete?.();
+                return;
+              }
+              // vaul 기본 닫기 애니메이션(500ms)이 다 재생되도록 시트를 먼저 닫고,
+              // 그 이후에 후속 처리(안내 메시지 추가, 목록 갱신 등)를 실행한다.
+              onOpenChange(false);
+              setTimeout(() => onComplete?.(), 500);
             }}
           >
             확인
@@ -492,6 +518,7 @@ export default function PlanSubscriptionSheet({
                 key={p.planId}
                 plan={p}
                 selected={p.planId === selectedPlan?.planId}
+                isCurrent={p.planId === currentPlan?.planId}
                 onClick={() => setSelectedPlan(p)}
               />
             ))}
@@ -508,7 +535,9 @@ export default function PlanSubscriptionSheet({
             </h5>
             <div className="space-y-3">
               {typeOptions.map((option) => {
-                const selected = form.type === option.value;
+                // 현재는 항상 옵션이 하나뿐이라(신규 가입/요금제 변경 중 확정된 것)
+                // 그 하나가 곧 선택된 상태다.
+                const selected = true;
                 return (
                   <label
                     key={option.value}
@@ -716,8 +745,7 @@ export default function PlanSubscriptionSheet({
           <CheckCircle2 size={48} className="text-semantic-success" />
           <div>
             <h5 className="text-title font-bold text-fg-primary">
-              {form.type === 'change' ? '요금제 변경' : '요금제 가입'}이
-              완료되었어요
+              {hasCurrentPlan ? '요금제 변경' : '요금제 가입'}이 완료되었어요
             </h5>
             <p className="text-body-sm text-fg-secondary mt-1">
               {selectedPlan.planName} · 월{' '}
@@ -742,9 +770,7 @@ export default function PlanSubscriptionSheet({
             )}
             <InfoRow
               label="가입 유형"
-              value={
-                typeOptions.find((t) => t.value === form.type)?.label ?? ''
-              }
+              value={hasCurrentPlan ? '요금제 변경' : '신규 가입'}
             />
             <InfoRow label="USIM" value={form.simType.toUpperCase()} />
           </div>
