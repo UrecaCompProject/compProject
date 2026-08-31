@@ -30,6 +30,9 @@ export interface ConsultInput {
   comparePlanB?: string;
   // "다른 요금제 보기" 재질의 시 이미 추천한 요금제 planId 배열
   excludePlanIds?: string[];
+  // 추천 정보 입력 폼에서 사용자가 "무관/미확인"을 선택해 명시적으로 건너뛴 필드명
+  // (ageGroup/dataUsage/budget). 값이 비어있어도 다시 물어보지 않도록 서버가 참고한다.
+  skippedFields?: string[];
 }
 
 export interface ReportInput {

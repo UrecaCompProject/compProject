@@ -9,6 +9,64 @@ const PRIORITY_LABELS: Record<string, string> = {
   max_data: '최대 데이터',
 };
 
+// 나이 필드에서 "무관"을 고르면 서버가 "값 없음"으로 취급하는 사실 값을 그대로 제출한다.
+const AGE_NO_PREFERENCE = '미제공';
+const AGE_NO_PREFERENCE_LABEL = '무관';
+
+// 데이터 사용량/예산은 서버가 숫자 입력 필드로 내려주지만, 정확한 수치 대신
+// 구간(칩)으로 고르게 하고 선택한 구간의 대표값을 실제 제출값으로 사용한다.
+// "미확인/무관" 칩은 이 문자열 sentinel을 값으로 가지며, 숫자로 변환할 수 없어
+// handleSubmit에서 자연히 제출 대상에서 빠진다 (서버 쪽 "값 없음" 처리와 동일).
+const NO_PREFERENCE = 'no_preference';
+
+const DATA_USAGE_BUCKETS: { label: string; value: number | string }[] = [
+  { label: '5GB 이하', value: 5 },
+  { label: '5GB ~ 10GB', value: 10 },
+  { label: '10GB ~ 20GB', value: 20 },
+  { label: '20GB ~ 40GB', value: 40 },
+  { label: '무제한', value: 100 },
+  { label: '미확인', value: NO_PREFERENCE },
+];
+
+const BUDGET_BUCKETS: { label: string; value: number | string }[] = [
+  { label: '5만원 이하', value: 50000 },
+  { label: '5만원 ~ 10만원', value: 100000 },
+  { label: '10만원 ~ 20만원', value: 200000 },
+  { label: '20만원 ~ 30만원', value: 300000 },
+  { label: '무관', value: NO_PREFERENCE },
+];
+
+function NumberBucketGroup({
+  buckets,
+  value,
+  onSelect,
+  disabled,
+}: {
+  buckets: { label: string; value: number | string }[];
+  value: number | string;
+  onSelect: (value: number | string) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {buckets.map((bucket) => (
+        <Button
+          key={bucket.label}
+          type="button"
+          variant="chip"
+          size="chip"
+          active={bucket.value === value}
+          aria-pressed={bucket.value === value}
+          disabled={disabled}
+          onClick={() => onSelect(bucket.value)}
+        >
+          {bucket.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 // 받침 유무에 따른 조사 선택 — "나이"는 받침 없음 → "를", "예산"은 받침 있음 → "을"
 function josa(word: string, tail: string): string {
   const last = word[word.length - 1];
@@ -19,7 +77,7 @@ function josa(word: string, tail: string): string {
 
 interface RecommendationFormProps {
   form: ConsultForm;
-  onSubmit: (values: Partial<ConsultInput>) => void;
+  onSubmit: (values: Partial<ConsultInput>, summary: string) => void;
   defaultValues?: Partial<ConsultInput>;
   disabled?: boolean;
 }
@@ -54,9 +112,8 @@ export default function RecommendationForm({
     setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  const handleNumber = (name: string, value: string) => {
-    const numberValue = value === '' ? '' : Number(value);
-    setValues((prev) => ({ ...prev, [name]: numberValue }));
+  const handleNumberBucket = (name: string, value: number | string) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
@@ -102,67 +159,114 @@ export default function RecommendationForm({
     e.preventDefault();
     if (!validateRequired()) return;
     const result: Partial<ConsultInput> = {};
+    const summaryParts: string[] = [];
+    // "무관/미확인" 선택은 result(실제 서버 제출값)에서는 빼고 skippedFields에 필드명만
+    // 남긴다 — 서버가 "값이 없다"와 "명시적으로 무관을 골랐다"를 구분할 수 있도록.
+    const skippedFields: string[] = [];
     for (const field of form.fields) {
       const key = field.name as keyof ConsultInput;
       const value = values[field.name];
       if (field.type === 'number') {
-        const number = typeof value === 'number' ? value : Number(value);
-        if (!isNaN(number)) (result as Record<string, unknown>)[key] = number;
+        if (value === NO_PREFERENCE) {
+          skippedFields.push(field.name);
+          summaryParts.push(
+            `${field.label}: ${field.name === 'budget' ? '무관' : '미확인'}`,
+          );
+        } else {
+          const number = typeof value === 'number' ? value : Number(value);
+          if (!isNaN(number)) {
+            (result as Record<string, unknown>)[key] = number;
+            summaryParts.push(
+              `${field.label}: ${
+                field.name === 'budget'
+                  ? `${number.toLocaleString()}원`
+                  : `${number}GB`
+              }`,
+            );
+          }
+        }
       } else if (field.type === 'multi-select') {
-        (result as Record<string, unknown>)[key] = (value as string[]) ?? [];
+        const selected = (value as string[]) ?? [];
+        (result as Record<string, unknown>)[key] = selected;
+        if (selected.length > 0) {
+          summaryParts.push(`${field.label}: ${selected.join(', ')}`);
+        }
       } else if (typeof value === 'string' && value.trim()) {
-        (result as Record<string, unknown>)[key] = value.trim();
+        if (value === AGE_NO_PREFERENCE) {
+          skippedFields.push(field.name);
+          summaryParts.push(`${field.label}: ${AGE_NO_PREFERENCE_LABEL}`);
+        } else {
+          (result as Record<string, unknown>)[key] = value.trim();
+          summaryParts.push(
+            `${field.label}: ${PRIORITY_LABELS[value] ?? value}`,
+          );
+        }
       }
     }
-    onSubmit(result);
+    if (skippedFields.length > 0) {
+      result.skippedFields = skippedFields;
+    }
+    onSubmit(result, summaryParts.join(' / '));
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-4 bg-surface-page rounded-2xl p-4 border border-border"
+      className="flex flex-col gap-5 bg-surface-page rounded-2xl p-4 border border-border"
     >
       {form.title && (
         <h4 className="text-body-lg font-semibold text-fg-primary">
           {form.title}
         </h4>
       )}
-      {form.fields.map((field) => {
+      {form.fields.map((field, index) => {
         const hasError = !!errors[field.name];
         const errorBorder = hasError
           ? 'border-semantic-error'
           : 'border-border';
         return (
-          <div key={field.name} className="flex flex-col gap-1.5">
-            <label className="text-body-sm font-medium text-fg-secondary">
+          <div key={field.name} className="flex flex-col gap-3">
+            {index > 0 && <div className="h-px bg-border" />}
+
+            <h4 className="text-body font-semibold text-fg-primary">
               {field.label}
-              {field.required && <span className="text-error ml-1">*</span>}
-            </label>
+              {field.required && (
+                <span className="text-brand-promo-primary ml-1">*</span>
+              )}
+            </h4>
 
             {field.type === 'select' && (
-              <select
-                value={String(values[field.name] ?? '')}
-                onChange={(e) => handleText(field.name, e.target.value)}
-                disabled={disabled}
-                className={`w-full h-11.25 px-4 rounded-full border ${errorBorder} bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled`}
-              >
-                <option value="">선택해주세요</option>
-                {field.options?.map((option) => (
-                  <option key={option} value={option}>
-                    {PRIORITY_LABELS[option] ?? option}
-                  </option>
+              <div className="flex flex-wrap gap-2">
+                {(field.name === 'ageGroup'
+                  ? [...(field.options ?? []), AGE_NO_PREFERENCE]
+                  : (field.options ?? [])
+                ).map((option) => (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="chip"
+                    size="chip"
+                    active={values[field.name] === option}
+                    aria-pressed={values[field.name] === option}
+                    disabled={disabled}
+                    onClick={() => handleText(field.name, option)}
+                  >
+                    {option === AGE_NO_PREFERENCE
+                      ? AGE_NO_PREFERENCE_LABEL
+                      : (PRIORITY_LABELS[option] ?? option)}
+                  </Button>
                 ))}
-              </select>
+              </div>
             )}
 
             {field.type === 'number' && (
-              <input
-                type="number"
-                value={values[field.name] ?? ''}
-                onChange={(e) => handleNumber(field.name, e.target.value)}
-                placeholder={field.name === 'budget' ? '50000' : '10'}
+              <NumberBucketGroup
+                buckets={
+                  field.name === 'budget' ? BUDGET_BUCKETS : DATA_USAGE_BUCKETS
+                }
+                value={values[field.name] as number | string}
+                onSelect={(value) => handleNumberBucket(field.name, value)}
                 disabled={disabled}
-                className={`w-full h-11.25 px-4 rounded-full border ${errorBorder} bg-surface-card text-fg-primary outline-none focus:border-brand-promo-primary disabled:bg-surface-pressed disabled:text-fg-disabled`}
               />
             )}
 
@@ -183,31 +287,18 @@ export default function RecommendationForm({
                     (values[field.name] as string[]) ?? []
                   ).includes(option);
                   return (
-                    <label
+                    <Button
                       key={option}
-                      className={`cursor-pointer inline-flex items-center px-3 py-2 rounded-full text-caption border transition-colors ${
-                        selected
-                          ? 'bg-brand-promo-primary text-surface-card border-brand-promo-primary'
-                          : 'bg-white text-fg-tertiary border-border hover:bg-surface-pressed'
-                      }`}
+                      type="button"
+                      variant="chip"
+                      size="chip"
+                      active={selected}
+                      aria-pressed={selected}
+                      disabled={disabled}
+                      onClick={() => handleOttToggle(field.name, option)}
                     >
-                      <input
-                        type="checkbox"
-                        value={option}
-                        checked={selected}
-                        onChange={(e) => {
-                          handleOttToggle(field.name, option);
-                          // 체크박스가 포커스를 유지하면 모바일 브라우저가
-                          // 화면에 보이지 않는 sr-only 요소를 뷰포트 안으로
-                          // 끌어오려 스크롤을 튕겨 페이지가 엉뚱한 위치로
-                          // 점프한다. 토글 직후 바로 blur해 방지한다.
-                          e.target.blur();
-                        }}
-                        disabled={disabled}
-                        className="sr-only"
-                      />
                       {option}
-                    </label>
+                    </Button>
                   );
                 })}
               </div>
