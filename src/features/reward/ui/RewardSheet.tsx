@@ -7,9 +7,12 @@ import {
   useActiveGameMeta,
   useGameStore,
 } from '@/features/games';
-import { BottomSheet } from '@/shared';
+import { BottomSheet, useModalStore } from '@/shared';
+
+import { useMissionCompletion } from '../model/useMissionCompletion';
 
 import MyCouponContent from './coupon/MyCouponContent';
+import GetBadgeModal from './GetBadgeModal';
 import RewardHome from './RewardHome';
 import StoreContent from './store/StoreContent';
 
@@ -40,6 +43,8 @@ export default function RewardSheet({
   const activeGame = useActiveGameMeta();
   const openGame = useGameStore((state) => state.openGame);
   const closeGame = useGameStore((state) => state.closeGame);
+  const { recordPlay } = useMissionCompletion();
+  const openModal = useModalStore((state) => state.open);
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -65,7 +70,22 @@ export default function RewardSheet({
     }
 
     if (isGameId(mission.id)) {
-      openGame(mission.id, { reward: mission.reward });
+      // source: 'reward'로 열면 ChatPage의 채팅 전용 게임 시트는 열리지 않고,
+      // 이 시트(RewardSheet) 안의 GameLayer가 게임을 보여준다.
+      // 게임이 끝나면(closeGame) 이 시트는 계속 열려있던 상태라 자연스럽게 미션 목록으로 돌아간다.
+      openGame(mission.id, {
+        reward: mission.reward,
+        source: 'reward',
+        onWin: (reward) =>
+          recordPlay(
+            { gameId: mission.uuid, score: reward },
+            {
+              onSuccess: () => {
+                openModal({ content: <GetBadgeModal badgeCount={reward} /> });
+              },
+            },
+          ),
+      });
       return;
     }
 
@@ -84,8 +104,7 @@ export default function RewardSheet({
     <BottomSheet
       open={open}
       onOpenChange={handleOpenChange}
-      // title={activeGame?.title ?? titles[activeView]}
-      title="혜택/이벤트"
+      title={activeGame?.title ?? '혜택/이벤트'}
       onBack={
         activeGame?.onBack ?? (activeView === 'reward' ? undefined : handleBack)
       }
