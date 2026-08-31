@@ -5,6 +5,7 @@ import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
+import ReportGenerateButton from './ReportGenerateButton';
 
 import type { ChatMessage } from '../types';
 
@@ -14,6 +15,7 @@ interface AIChatExtrasProps {
   isLast: boolean;
   isLoading: boolean;
   isGeneratingReport: boolean;
+  canShowReportButton: boolean;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
   onPlanCompare?: (plan: RecommendedPlan) => void;
   onSelectCurrentPlan?: (planName: string) => void;
@@ -28,6 +30,7 @@ export default function AIChatExtras({
   isLast,
   isLoading,
   isGeneratingReport,
+  canShowReportButton,
   onPlanSubscribe,
   onPlanCompare,
   onSelectCurrentPlan,
@@ -36,9 +39,12 @@ export default function AIChatExtras({
   onFormSubmit,
   formDefaults,
 }: AIChatExtrasProps) {
+  const hasRecommendations =
+    !!message.recommendations && message.recommendations.length > 0;
+
   return (
     <>
-      {message.recommendations && message.recommendations.length > 0 && (
+      {hasRecommendations && message.recommendations && (
         <RecommendationCards
           plans={message.recommendations}
           onPlanSubscribe={onPlanSubscribe}
@@ -46,10 +52,23 @@ export default function AIChatExtras({
           onGenerateReport={onGenerateReport}
           isLoading={isLoading}
           isGeneratingReport={isGeneratingReport}
+          canShowReportButton={canShowReportButton}
         />
       )}
 
       {message.report && <ReportCard report={message.report} />}
+
+      {/* 요금제 추천이 없는 일반 대화에서 5회 AI 응답 후 리포트 생성 버튼 노출 */}
+      {isLast &&
+        canShowReportButton &&
+        !hasRecommendations &&
+        !message.report && (
+          <ReportGenerateButton
+            onGenerate={() => onGenerateReport?.([])}
+            isLoading={isLoading}
+            isGeneratingReport={isGeneratingReport}
+          />
+        )}
 
       {message.compareResult && (
         <CompareResultSheet

@@ -18,7 +18,6 @@ type ReportView = 'list' | 'detail';
 
 export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
   const { data: reports = [] } = useReports(open);
-  console.log('ReportSheet reports', reports);
   const [activeView, setActiveView] = useState<ReportView>('list');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);

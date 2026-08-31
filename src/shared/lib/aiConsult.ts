@@ -36,6 +36,10 @@ export interface ReportInput {
   conversation: string;
   currentPlan: string;
   recommendationResult: string;
+  // 'plan' = 요금제 추천 기반 요약, 'general' = 일반 대화 요약 (요금제 필드 빈값)
+  reportKind?: 'plan' | 'general';
+  // 상담에서 확정된 사용자 조건 요약(연령, 데이터, 예산, OTT 등)
+  userProfile?: string;
 }
 
 export interface RecommendedPlan {
@@ -45,18 +49,18 @@ export interface RecommendedPlan {
   savingAmount: number;
   monthlyFee?: number;
   data?: string;
+  dataAmountGb?: number;
   benefits?: string[];
   category?: string;
   targetAge?: string;
   dataSpeedAfter?: string;
   voice?: string;
+  callAmountMin?: number;
   message?: string;
+  smsAmount?: number;
   shareData?: string;
   tethering?: string;
   notes?: string;
-  dataAmountGb?: number;
-  callAmountMin?: number;
-  smsAmount?: number;
 }
 
 export interface ConsultFormField {
@@ -82,6 +86,11 @@ export interface ConsultResponse {
   compareResult?: CompareResult;
 }
 
+export interface ReportQAPair {
+  question: string;
+  answer: string;
+}
+
 export interface ReportOutput {
   summary: string;
   usageType: string;
@@ -90,6 +99,7 @@ export interface ReportOutput {
   recommendationReason: string;
   monthlySavingAmount: number;
   importantConditions: string[];
+  qaPairs: ReportQAPair[];
 }
 
 export interface CompareResult {

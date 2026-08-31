@@ -1,22 +1,30 @@
-import { useState } from 'react';
-
 import { ChevronRight } from 'lucide-react';
 
 import { Button, useModalStore } from '@/shared';
 import badgeImage from '@/shared/assets/images/badge.png';
 
+import { useAttendance } from '../model/useAttendance';
+
+import GetBadgeModal from './GetBadgeModal';
+
 const days = ['월', '화', '수', '목', '금', '토', '일'];
-const todayIndex = (new Date().getDay() + 6) % 7;
 
 export default function CheckIn() {
-  const [isTodayChecked, setIsTodayChecked] = useState(false);
+  const { weekChecks, todayIndex, currentStreak, checkIn, isCheckingIn } =
+    useAttendance();
+  const isCheckedToday = weekChecks[todayIndex];
 
   const openModal = useModalStore((state) => state.open);
   const closeModal = useModalStore((state) => state.close);
 
-  const handleConfirmCheckIn = () => {
-    setIsTodayChecked(true);
-    closeModal();
+  const handleConfirmCheckIn = async () => {
+    try {
+      const { badgeCount } = await checkIn();
+      openModal({ content: <GetBadgeModal badgeCount={badgeCount} /> });
+    } catch (error) {
+      console.error(error);
+      closeModal();
+    }
   };
 
   const handleOpenCheckInModal = () => {
@@ -37,6 +45,7 @@ export default function CheckIn() {
               type="button"
               className="flex-1"
               onClick={handleConfirmCheckIn}
+              disabled={isCheckingIn}
             >
               출석하기
             </Button>
@@ -51,26 +60,23 @@ export default function CheckIn() {
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[16px] font-bold">
           연속 출석{' '}
-          <span className="text-brand-promo-primary">
-            {isTodayChecked ? 12 : 11}일째
-          </span>
+          <span className="text-brand-promo-primary">{currentStreak}일째</span>
         </h2>
 
         <button
           type="button"
           onClick={handleOpenCheckInModal}
-          disabled={isTodayChecked}
+          disabled={isCheckedToday}
           className="inline-flex items-center text-regular-12-130 text-fg-tertiary disabled:text-fg-disabled"
         >
-          {isTodayChecked ? '출석 완료' : '출석 체크'}
-          {!isTodayChecked && <ChevronRight size={12} />}
+          {isCheckedToday ? '출석 완료' : '출석 체크'}
+          {!isCheckedToday && <ChevronRight size={12} />}
         </button>
       </div>
 
       <ol className="mx-auto flex w-full min-w-[288px] max-w-100 items-start justify-between">
         {days.map((day, index) => {
-          const checked =
-            index === 0 || (index === todayIndex && isTodayChecked);
+          const checked = weekChecks[index];
 
           return (
             <li
@@ -81,13 +87,13 @@ export default function CheckIn() {
               <span
                 className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-full ${
                   checked
-                    ? 'border-border-brand bg-brand-promo-soft'
+                    ? 'border border-border-brand bg-brand-promo-soft'
                     : 'bg-brand-promo-soft'
                 }
                 `}
               >
                 {checked && (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-promo-light">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-reward-locked">
                     <img
                       src={badgeImage}
                       alt=""

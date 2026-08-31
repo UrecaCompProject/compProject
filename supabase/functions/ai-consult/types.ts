@@ -25,6 +25,10 @@ export interface ConsultRequest {
   // 레포트 생성용 필드
   conversation?: string;
   recommendationResult?: string;
+  // 'plan' = 요금제 추천 기반 요약, 'general' = 일반 대화 요약
+  reportKind?: 'plan' | 'general';
+  // 상담에서 확정된 사용자 조건 요약
+  userProfile?: string;
   // 요금제 비교용 필드
   comparePlanA?: string;
   comparePlanB?: string;

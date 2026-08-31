@@ -6,7 +6,7 @@ import { useIsLoggedIn, SigninModal } from '@/features/auth';
 import type { QuizKind } from '@/features/chat-quiz';
 import { Button, Input, useModalStore } from '@/shared';
 
-import ChatMenuSheet from './ChatMenuSheet';
+import ChatMenuBar from './ChatMenuBar';
 
 interface ChatInputProps {
   value: string;
@@ -77,13 +77,13 @@ export default function ChatInput({
           size="icon"
           round
           onClick={handleSend}
-          disabled={disabled || (isLogin && !value.trim())}
+          disabled={disabled || !isLogin || !value.trim()}
         >
           <ArrowUp size={16} />
         </Button>
       </div>
 
-      <ChatMenuSheet
+      <ChatMenuBar
         isMenuOpen={isMenuOpen}
         onMenuClose={() => setIsMenuOpen(false)}
         onStartQuiz={onStartQuiz}
