@@ -24,7 +24,8 @@ interface UseChatReportParams {
   setIsLoading: (v: boolean) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   resetChat: () => void;
-  getSignal?: () => AbortSignal | undefined;
+  startRequest: () => AbortSignal;
+  clearRequest: () => void;
 }
 
 // 상담에 확정된 사용자 조건을 문자열로 요약
@@ -55,7 +56,8 @@ export function useChatReport({
   setIsLoading,
   setMessages,
   resetChat,
-  getSignal,
+  startRequest,
+  clearRequest,
 }: UseChatReportParams) {
   // 레포트 생성 중 상태를 일반 로딩과 분리해, 비교 로딩 시 레포트 버튼이
   // "생성 중..."으로 잘못 표시되는 문제를 방지
@@ -72,6 +74,8 @@ export function useChatReport({
       setIsGeneratingReport(true);
       setIsLoading(true);
 
+      const signal = startRequest();
+
       try {
         const report = await generateReport(
           {
@@ -81,7 +85,7 @@ export function useChatReport({
             reportKind,
             userProfile: buildUserProfile(userProfile),
           },
-          getSignal?.(),
+          signal,
         );
         await saveReport(report, recommendations);
         // 리포트 결과만 남기고 채팅방을 웰컱+리포트 상태로 초기화
@@ -105,6 +109,7 @@ export function useChatReport({
       } finally {
         setIsLoading(false);
         setIsGeneratingReport(false);
+        clearRequest();
       }
     },
     [
@@ -116,7 +121,8 @@ export function useChatReport({
       setIsLoading,
       setMessages,
       resetChat,
-      getSignal,
+      startRequest,
+      clearRequest,
     ],
   );
 
