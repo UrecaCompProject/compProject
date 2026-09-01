@@ -118,7 +118,7 @@ export default function ChatMessageList({
       ref={scrollContainerRef}
       className="min-h-0 flex-1 overflow-y-auto py-4"
     >
-      <div ref={contentRef} className="flex flex-col gap-4 px-4">
+      <div ref={contentRef} className="flex flex-col gap-4 ">
         {messages.map((message, index) => (
           <div
             key={message.id}

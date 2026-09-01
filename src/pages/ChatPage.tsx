@@ -6,7 +6,6 @@ import {
   QuickReplies,
 } from '@/features/ai-consult';
 import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
-import { preloadLottiePlayer } from '@/features/ai-consult/lib/preloadLottie';
 import { useChat } from '@/features/ai-consult/model/useChat';
 import { GameLayer } from '@/features/games';
 import { BottomSheet, useSignupIntentStore } from '@/shared';
@@ -46,12 +45,6 @@ export default function ChatPage() {
     closeSheetGame,
     activeGameMeta,
   } = useChat();
-
-  // 채팅 페이지 진입 즉시 Lottie 청크를 백그라운드에서 미리 로드
-  // 사용자가 첫 메시지를 보내 로딩 인디케이터가 표시될 때 청크가 이미 캐시되어 있도록
-  useEffect(() => {
-    preloadLottiePlayer();
-  }, []);
 
   // 헤더 등 채팅 페이지 밖에서 회원가입을 누른 경우, 여기서 신호를 받아 가입 플로우를 시작한다.
   const signupPending = useSignupIntentStore((state) => state.pending);

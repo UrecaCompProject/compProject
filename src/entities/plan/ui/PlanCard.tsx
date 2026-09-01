@@ -12,7 +12,8 @@ export interface PlanCardBenefit {
 type PlanCardContext = 'chat' | 'report';
 
 const contextWidth: Record<PlanCardContext, string> = {
-  chat: 'w-fit min-w-[240px]',
+  // 뷰포트 너비의 85% — 기기 크기와 무관하게 카드가 항상 같은 비율로 보이도록
+  chat: 'w-[85vw]',
   report: 'w-[350px]',
 };
 

@@ -44,7 +44,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     isLoggedIn || step === 'completed' || step === 'already-member';
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 px-4">
       {!hideSignupUI && (
         <AIChat sentence="회원 가입을 위해 몇 가지만 확인할게요. 편하게 답해주세요 :)" />
       )}

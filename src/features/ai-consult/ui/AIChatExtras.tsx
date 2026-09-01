@@ -68,7 +68,7 @@ export default function AIChatExtras({
   );
 
   return (
-    <>
+    <div>
       {hasRecommendations && message.recommendations && (
         <RecommendationCards
           plans={message.recommendations}
@@ -125,6 +125,6 @@ export default function AIChatExtras({
           />
         </div>
       )}
-    </>
+    </div>
   );
 }
