@@ -38,7 +38,6 @@ export default function SpeedGame({ onWin, onClose }: SpeedGameProps) {
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [elapsed, setElapsed] = useState(0);
   const [diff, setDiff] = useState<number | null>(null);
-  const [earnedReward, setEarnedReward] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const startedAtRef = useRef<number | null>(null);
   const rafRef = useRef(0);
@@ -69,7 +68,6 @@ export default function SpeedGame({ onWin, onClose }: SpeedGameProps) {
   const handleStart = () => {
     setElapsed(0);
     setDiff(null);
-    setEarnedReward(0);
     setTimedOut(false);
     setPhase('playing');
   };
@@ -84,7 +82,6 @@ export default function SpeedGame({ onWin, onClose }: SpeedGameProps) {
     const reward = getReward(tapDiff);
 
     setDiff(tapDiff);
-    setEarnedReward(reward);
     onWin?.(reward);
     setPhase('result');
   };
@@ -117,7 +114,6 @@ export default function SpeedGame({ onWin, onClose }: SpeedGameProps) {
                 ? `${TARGET_SECONDS}초와 ${diff.toFixed(DISPLAY_PRECISION)}초 차이가 났어요.`
                 : ''
           }
-          rewardCount={timedOut ? undefined : earnedReward}
           onClose={onClose}
         />
       }

@@ -17,7 +17,7 @@ type ReportSheetProps = {
 type ReportView = 'list' | 'detail';
 
 export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
-  const { data: reports = [] } = useReports(open);
+  const { data: reports = [], isLoading } = useReports(open);
   const [activeView, setActiveView] = useState<ReportView>('list');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
@@ -70,13 +70,24 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
         <div className="relative h-full overflow-hidden">
           <div className="h-full overflow-y-auto px-5 pb-6">
             <div className="flex flex-col gap-2">
-              {reports.map((report) => (
-                <PreviewReport
-                  key={report.id}
-                  report={report}
-                  onClick={() => handleSelectReport(report.id)}
-                />
-              ))}
+              {isLoading && (
+                <p className="py-8 text-center text-caption text-fg-tertiary">
+                  상담 리포트를 불러오는 중...
+                </p>
+              )}
+              {!isLoading && reports.length === 0 && (
+                <p className="py-8 text-center text-caption text-fg-tertiary">
+                  아직 생성된 상담 리포트가 없어요.
+                </p>
+              )}
+              {!isLoading &&
+                reports.map((report) => (
+                  <PreviewReport
+                    key={report.id}
+                    report={report}
+                    onClick={() => handleSelectReport(report.id)}
+                  />
+                ))}
             </div>
           </div>
 
@@ -95,9 +106,7 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
       </BottomSheet>
 
       <PlanSubscriptionSheet
-        key={
-          subscriptionOpen ? (subscriptionPlan?.planId ?? 'catalog') : 'closed'
-        }
+        active={subscriptionOpen}
         open={subscriptionOpen}
         onOpenChange={setSubscriptionOpen}
         plan={subscriptionPlan}

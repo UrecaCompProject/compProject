@@ -14,7 +14,10 @@ type SetMessages = React.Dispatch<React.SetStateAction<ChatMessage[]>>;
 
 export interface GameSelectContext {
   setMessages: SetMessages;
-  startQuiz: (kind: QuizKind, opts?: { includeUserMessage: boolean }) => void;
+  startQuiz: (
+    kind: QuizKind,
+    opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
+  ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
 }
 
@@ -62,9 +65,12 @@ function handleChatGame(
     },
   ]);
 
-  // 퀴즈 게임 — startQuiz로 시작 (사용자 메시지는 위에서 추가했으므로 중복 방지)
+  // 퀴즈 게임 — startQuiz로 시작 (사용자 메시지·안내 메시지는 위에서 이미 추가했으므로 중복 방지)
   if (quizKind) {
-    ctx.startQuiz(quizKind, { includeUserMessage: false });
+    ctx.startQuiz(quizKind, {
+      includeUserMessage: false,
+      includeIntroMessage: false,
+    });
     return;
   }
 

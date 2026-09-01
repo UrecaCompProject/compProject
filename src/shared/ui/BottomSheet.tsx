@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 import { ChevronLeft, X } from 'lucide-react';
@@ -17,6 +18,9 @@ type BottomSheetProps = {
   dismissible?: boolean;
   className?: string;
   bodyClassName?: string;
+  // 이 값이 바뀔 때마다 본문 스크롤을 맨 위로 되돌린다.
+  // (children이 바뀌어도 스크롤 컨테이너 자체는 계속 마운트되어 있어 scrollTop이 유지되기 때문)
+  scrollResetKey?: string | number;
 };
 
 const sizeClasses: Record<BottomSheetSize, string> = {
@@ -37,7 +41,14 @@ export default function BottomSheet({
   dismissible = true,
   className = '',
   bodyClassName = 'px-5',
+  scrollResetKey,
 }: BottomSheetProps) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0 });
+  }, [scrollResetKey]);
+
   return (
     <Drawer.Root
       open={open}
@@ -118,7 +129,10 @@ export default function BottomSheet({
               )}
             </header>
 
-            <div className={`min-h-0 flex-1 overflow-y-auto ${bodyClassName}`}>
+            <div
+              ref={bodyRef}
+              className={`min-h-0 flex-1 overflow-y-auto ${bodyClassName}`}
+            >
               {children}
             </div>
 

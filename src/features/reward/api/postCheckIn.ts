@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 
 import { supabase } from '@/shared/lib/supabaseClient';
 
+import { addBadgeBalance } from './getBadge';
+
 export type CheckInResult = {
   streak: number;
   badgeCount: number;
@@ -9,6 +11,9 @@ export type CheckInResult = {
 
 // 출석 1회당 지급하는 배지 수 (attendances.reward_type/reward_value 시드 값과 동일)
 const CHECK_IN_REWARD_VALUE = 1;
+
+// 출석 체크 보상이 적립되는 배지 (20260901000000_seed_attendance_reward_badge.sql 참고)
+const ATTENDANCE_REWARD_BADGE_ID = '1498c68c-7d17-4c8e-9217-e22c5c1298bd';
 
 // 출석 체크: attendances에 오늘 날짜로 기록을 추가하고,
 // attendance_streaks의 연속 출석일을 규칙에 맞게 갱신한다.
@@ -71,6 +76,12 @@ export async function postCheckIn(): Promise<CheckInResult> {
   if (upsertError) {
     throw new Error(`연속 출석일 갱신 실패: ${upsertError.message}`);
   }
+
+  await addBadgeBalance(
+    userId,
+    ATTENDANCE_REWARD_BADGE_ID,
+    attendance.reward_value,
+  );
 
   return { streak: nextStreak, badgeCount: attendance.reward_value };
 }

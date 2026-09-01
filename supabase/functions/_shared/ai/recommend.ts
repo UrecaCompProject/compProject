@@ -73,23 +73,41 @@ function hasOttMatch(
 }
 
 // 추천 전 반드시 필요한 정보가 누락되었는지 확인.
+// skippedFields에 있는 필드는 사용자가 "무관/미확인"을 명시적으로 선택한 것이므로
+// 값이 비어있어도(undefined) 다시 묻지 않는다 — "아직 안 물어봄"과 구분하기 위한 용도.
 function buildInfoRequest(input: ConsultInput): string | undefined {
+  const skipped = input.skippedFields ?? [];
   const critical: string[] = [];
-  if (!input.ageGroup || input.ageGroup === '미제공') critical.push('나이');
-  if (input.dataUsage === undefined) critical.push('월 데이터 사용량');
+  if (
+    (!input.ageGroup || input.ageGroup === '미제공') &&
+    !skipped.includes('ageGroup')
+  )
+    critical.push('나이');
+  if (input.dataUsage === undefined && !skipped.includes('dataUsage'))
+    critical.push('월 데이터 사용량');
 
   if (critical.length === 0) return undefined;
 
-  if (input.budget === undefined) critical.push('예산');
-  const requestText = critical.map((w) => josa(w, '을/를')).join(', ');
+  if (input.budget === undefined && !skipped.includes('budget'))
+    critical.push('예산');
+  // 나열된 항목 각각에 조사를 붙이면 "나이를, 예산을"처럼 어색해지므로,
+  // 마지막 항목에만 조사를 붙인다 (예: "나이, 데이터 사용량, 예산을").
+  const last = critical[critical.length - 1];
+  const requestText = [...critical.slice(0, -1), josa(last, '을/를')].join(
+    ', ',
+  );
   return `상세 정보를 입력하시면 더 자세한 맞춤 요금제를 추천해드릴 수 있어요! (${requestText} 알려주세요)`;
 }
 
 // 누락된 추천 조건을 form으로 입력받을 수 있도록 구성합니다.
 function buildInfoForm(input: ConsultInput): ConsultForm {
+  const skipped = input.skippedFields ?? [];
   const fields: ConsultForm['fields'] = [];
 
-  if (!input.ageGroup || input.ageGroup === '미제공') {
+  if (
+    (!input.ageGroup || input.ageGroup === '미제공') &&
+    !skipped.includes('ageGroup')
+  ) {
     fields.push({
       name: 'ageGroup',
       label: '나이',
@@ -99,7 +117,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     });
   }
 
-  if (input.dataUsage === undefined) {
+  if (input.dataUsage === undefined && !skipped.includes('dataUsage')) {
     fields.push({
       name: 'dataUsage',
       label: '월 데이터 사용량',
@@ -108,7 +126,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     });
   }
 
-  if (input.budget === undefined) {
+  if (input.budget === undefined && !skipped.includes('budget')) {
     fields.push({
       name: 'budget',
       label: '예산 (원)',

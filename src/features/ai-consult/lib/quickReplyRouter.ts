@@ -43,7 +43,10 @@ export interface QuickReplyContext {
   startCompareFlow: () => void;
   setPendingComparePlan: (planName: string) => void;
   fetchCompare: (planBName: string, planAName?: string) => Promise<void>;
-  startQuiz: (kind: QuizKind, opts?: { includeUserMessage: boolean }) => void;
+  startQuiz: (
+    kind: QuizKind,
+    opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
+  ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
   // AbortController signal — 비동기 requestConsult 호출 취소에 사용
   signal?: AbortSignal;

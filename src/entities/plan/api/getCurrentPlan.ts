@@ -16,11 +16,9 @@ export async function getCurrentPlanRow(): Promise<PlanRow | null> {
   const { data, error } = await supabase
     .from('current_plans')
     .select('plan_id, plans(*)')
-    .single();
+    .maybeSingle();
 
   if (error) {
-    // 현재 요금제가 등록되지 않은 경우 null 반환
-    if (error.code === 'PGRST116') return null;
     throw new Error(`현재 요금제 조회 실패: ${error.message}`);
   }
 

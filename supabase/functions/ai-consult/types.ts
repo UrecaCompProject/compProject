@@ -32,6 +32,8 @@ export interface ConsultRequest {
   // 요금제 비교용 필드
   comparePlanA?: string;
   comparePlanB?: string;
+  // 추천 정보 입력 폼에서 사용자가 "무관/미확인"을 선택해 명시적으로 건너뛴 필드명
+  skippedFields?: string[];
 }
 
 export interface ConsultResponse {

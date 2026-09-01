@@ -1,5 +1,5 @@
 import type { QuizKind } from '@/features/chat-quiz';
-import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import { classifyError } from './classifyError';
 
@@ -51,18 +51,6 @@ export function getQuizIntent(message: string): QuizKind | null {
   if (/(ox|오엑스|보안).*(퀴즈|게임)/.test(normalized)) return 'ox';
   if (/통신.*(퀴즈|게임)/.test(normalized)) return 'multiple-choice';
   return null;
-}
-
-export function formatFormSummary(values: Partial<ConsultInput>): string {
-  const parts: string[] = [];
-  if (values.ageGroup) parts.push(`연령대: ${values.ageGroup}`);
-  if (values.dataUsage !== undefined)
-    parts.push(`데이터: ${values.dataUsage}GB`);
-  if (values.budget !== undefined)
-    parts.push(`예산: ${values.budget.toLocaleString()}원`);
-  if (values.ott && values.ott.length > 0)
-    parts.push(`OTT: ${values.ott.join(', ')}`);
-  return parts.join(' / ');
 }
 
 export function findLastRecommendedPlan(

@@ -153,7 +153,7 @@ export const GAME_LIST: GameMeta[] = [
 
 // 게임 설명 — 채팅에서 진행하는 게임만 설명 제공
 export const GAME_INTRO: Record<ChatGameId, string> = {
-  ox: '보안 OX 퀴즈를 시작할게요!\nO 또는 X를 선택해 주세요. 정답 여부와 해설이 바로 표시돼요.',
+  ox: '보안 OX 퀴즈를 시작할게요!\n문제를 읽고 O 또는 X를 선택해 주세요.',
   'multiple-choice':
     '통신 상식 퀴즈를 시작할게요!\n보기 중 정답을 선택하고 확인 버튼을 눌러주세요.',
   scratch: '스크래치 이벤트를 시작할게요!\n카드를 긁어서 배지를 받아보세요.',

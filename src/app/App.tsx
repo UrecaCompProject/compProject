@@ -1,7 +1,12 @@
-import AppRouter from './router';
+import { ChatPage } from '@/pages';
+import { Layout } from '@/widgets/layout';
 
 function App() {
-  return <AppRouter />;
+  return (
+    <Layout>
+      <ChatPage />
+    </Layout>
+  );
 }
 
 export default App;

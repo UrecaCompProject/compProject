@@ -8,7 +8,6 @@ type ChatQuizMessageProps = {
   onOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
   onMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
-  onNext: () => void;
 };
 
 export default function ChatQuizMessage({
@@ -16,7 +15,6 @@ export default function ChatQuizMessage({
   onOxAnswer,
   onMultipleChoiceSelect,
   onMultipleChoiceConfirm,
-  onNext,
 }: ChatQuizMessageProps) {
   if (message.type === 'quiz-result') {
     return (
@@ -25,8 +23,6 @@ export default function ChatQuizMessage({
           <QuizResult
             isCorrect={message.isCorrect}
             explanation={message.explanation}
-            actionLabel={message.isLastQuestion ? '결과 보기' : '다음 문제'}
-            onNext={onNext}
           />
         }
       />

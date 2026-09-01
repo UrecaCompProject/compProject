@@ -9,8 +9,6 @@ const meta = {
     isCorrect: true,
     explanation:
       '서비스마다 서로 다른 비밀번호를 사용하면 계정 피해를 줄일 수 있습니다.',
-    actionLabel: '다음 문제',
-    onNext: () => undefined,
   },
   parameters: { layout: 'centered' },
   decorators: [

@@ -4,7 +4,6 @@ type GameResultCardProps = {
   image: string;
   title: string;
   description: string;
-  rewardCount?: number;
   closeLabel?: string;
   onClose?: () => void;
 };
@@ -13,7 +12,6 @@ export default function GameResultCard({
   image,
   title,
   description,
-  rewardCount,
   closeLabel = '확인',
   onClose,
 }: GameResultCardProps) {
@@ -34,12 +32,6 @@ export default function GameResultCard({
           {description}
         </p>
       </div>
-
-      {rewardCount !== undefined && (
-        <p className="mt-3 font-semibold text-body text-brand-promo-primary">
-          배지 {rewardCount}개 획득!
-        </p>
-      )}
 
       <div className="flex w-full mt-auto">
         <Button className="flex-1" onClick={onClose}>

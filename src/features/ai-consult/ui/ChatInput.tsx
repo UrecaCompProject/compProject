@@ -15,6 +15,7 @@ interface ChatInputProps {
   onStop?: () => void;
   onStartQuiz?: (quizType: QuizKind) => void;
   onStartScratch?: (reward?: number) => void;
+  onSignupClick?: () => void;
   disabled?: boolean;
 }
 
@@ -25,6 +26,7 @@ export default function ChatInput({
   onStop,
   onStartQuiz,
   onStartScratch,
+  onSignupClick,
   disabled = false,
 }: ChatInputProps) {
   const isLogin = useIsLoggedIn();
@@ -32,7 +34,10 @@ export default function ChatInput({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const requireLogin = () => {
-    openModal({ title: '로그인', content: <SigninModal /> });
+    openModal({
+      title: '회원관리',
+      content: <SigninModal onSignupClick={onSignupClick} />,
+    });
   };
 
   const handleSend = () => {

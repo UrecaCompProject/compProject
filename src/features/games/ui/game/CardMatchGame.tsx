@@ -190,7 +190,6 @@ export default function CardMatchGame({
               ? `${moves}번 만에 모든 짝을 맞췄어요.`
               : `${matchedCount}/${PAIR_COUNT}쌍을 맞췄어요. 다시 도전해보세요!`
           }
-          rewardCount={isCleared ? reward : undefined}
           onClose={onClose}
         />
       }

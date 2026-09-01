@@ -25,7 +25,6 @@ export default function RuletteGame({
 }: RuletteGameProps) {
   const [phase, setPhase] = useState<GamePhase>('intro');
   const [isSpinning, setIsSpinning] = useState(false);
-  const [wonReward, setWonReward] = useState(0);
 
   const handleStart = () => {
     setPhase('playing');
@@ -39,7 +38,6 @@ export default function RuletteGame({
       const picked =
         reward ??
         REWARD_OPTIONS[Math.floor(Math.random() * REWARD_OPTIONS.length)];
-      setWonReward(picked);
       setIsSpinning(false);
       onWin?.(picked);
       setPhase('result');
@@ -74,7 +72,6 @@ export default function RuletteGame({
           image={ATTENDANCE_RULES.image}
           title="오늘의 혜택 획득!"
           description="내일 또 출석하고 룰렛을 돌려보세요."
-          rewardCount={wonReward}
           onClose={onClose}
         />
       }

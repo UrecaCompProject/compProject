@@ -1,27 +1,15 @@
-import { Outlet, useLocation } from 'react-router';
+import type { ReactNode } from 'react';
 
 import { Modal } from '@/shared';
 
 import Header from './Header';
 
-export default function Layout() {
-  const { pathname } = useLocation();
-  const isChatPage = pathname === '/';
-  // const notShowNavbar = pathname.startsWith('/chat');
-
+export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <div
-      className={`relative ${
-        isChatPage
-          ? 'flex h-screen flex-col overflow-clip bg-surface-pressed'
-          : 'min-h-screen bg-surface-page'
-      }`}
-    >
+    <div className="relative flex h-screen flex-col overflow-clip bg-surface-pressed">
       <Header />
 
-      <Outlet />
-
-      {/* {!notShowNavbar && <Navbar />} */}
+      {children}
 
       <Modal />
     </div>
