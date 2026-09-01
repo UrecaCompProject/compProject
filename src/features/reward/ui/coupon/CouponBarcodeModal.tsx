@@ -41,9 +41,9 @@ export default function CouponBarcodeModal({
     <div className="flex flex-col items-center gap-4 text-center">
       <ProductCard product={coupon} />
 
-      <div className="w-full rounded-2xl border border-border bg-surface-card px-4 py-5">
+      <div className="w-full rounded-2xl border border-border bg-surface-card px-4 py-3">
         <div
-          className="mx-auto flex h-24 w-full max-w-[240px] items-stretch justify-center gap-px"
+          className="mx-auto flex h-16 w-full max-w-[200px] items-stretch justify-center gap-px"
           aria-label={`바코드 번호 ${normalizedBarcode}`}
           role="img"
         >
@@ -56,7 +56,7 @@ export default function CouponBarcodeModal({
           ))}
         </div>
 
-        <p className="mt-3 font-mono text-body-lg font-bold text-fg-primary">
+        <p className="mt-2 font-mono text-caption font-bold text-fg-primary">
           {normalizedBarcode.replace(/(\d{4})(\d{4})(\d{5})/, '$1 $2 $3')}
         </p>
       </div>

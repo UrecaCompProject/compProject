@@ -23,8 +23,9 @@ export default function CouponBox({ onGoToReward }: CouponBoxProps) {
   const usableCoupons = coupons.filter(
     (coupon) => coupon.status === 'available',
   );
+  const normalizedQuery = query.trim().toLowerCase();
   const availableCoupons = usableCoupons.filter((coupon) =>
-    coupon.name.toLowerCase().includes(query.toLowerCase()),
+    `${coupon.brand} ${coupon.name}`.toLowerCase().includes(normalizedQuery),
   );
 
   const handleSelectCoupon = (coupon: Coupon) => {
