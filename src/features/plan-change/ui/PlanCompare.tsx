@@ -275,7 +275,9 @@ export default function PlanCompare({
     showDiffOnly &&
     visibleBenefitRows.length === 0 &&
     !showBenefitListRow &&
-    visibleSimpleRows.every((row) => row.current === row.selected);
+    visibleSimpleRows.every(
+      (row) => row.key === 'planName' || row.current === row.selected,
+    );
 
   return (
     <div className={`flex flex-col pt-4 ${className ?? 'w-[358px]'}`}>
@@ -376,7 +378,7 @@ export default function PlanCompare({
           size="lg"
           className="w-full"
           onClick={onChangePlan}
-          disabled={selectedIsMine}
+          disabled={selectedIsMine || !onChangePlan}
         >
           요금제 변경하기
         </Button>

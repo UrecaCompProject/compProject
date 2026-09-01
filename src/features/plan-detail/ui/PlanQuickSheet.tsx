@@ -62,6 +62,7 @@ export default function PlanQuickSheet({
       currentShareData: currentPlan.shareData ?? '-',
       currentVoice: currentPlan.voice ?? '-',
       currentMessage: currentPlan.message ?? '-',
+      currentBenefits: currentPlan.benefits ?? [],
       selectedPlanName: selectedPlan.name,
       selectedFee: `${selectedPlan.monthlyFee.toLocaleString()}원`,
       selectedDiscount: '-',
@@ -70,6 +71,7 @@ export default function PlanQuickSheet({
       selectedShareData: selectedPlan.shareData ?? '-',
       selectedVoice: selectedPlan.voice ?? '-',
       selectedMessage: selectedPlan.message ?? '-',
+      selectedBenefits: selectedPlan.benefits ?? [],
     };
   }, [selectedPlan, currentPlan]);
 
