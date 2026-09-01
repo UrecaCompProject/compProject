@@ -25,6 +25,7 @@ const meta = {
       currentShareData: '월 제공량 내 차감',
       currentVoice: '기본 제공 (월 300분)',
       currentMessage: '기본 제공 (월 300건)',
+      currentBenefits: [],
 
       selectedPlanName: '데이터 플랜 31GB(유쓰혜택)',
       selectedFee: '61,000원',
@@ -34,6 +35,10 @@ const meta = {
       selectedShareData: '월 제공량 내 차감',
       selectedVoice: '기본 제공 (월 300분)',
       selectedMessage: '기본 제공 (월 300건)',
+      selectedBenefits: [
+        'OTT결합(디즈니 스탠다드+티빙 베이직, 월 19,400원 상당)',
+        '너겟쿠폰 18만원',
+      ],
 
       benefitRows: [
         {
@@ -102,6 +107,30 @@ export const QuickReplyEntry: Story = {
         onSelectCurrentPlan={setCurrentPlanId}
         onSelectSelectedPlan={setSelectedPlanId}
       />
+    );
+  },
+};
+
+export const CompactInline: Story = {
+  render: (args) => {
+    const [currentPlanId, setCurrentPlanId] = useState('p1');
+    const [selectedPlanId, setSelectedPlanId] = useState('p2');
+
+    return (
+      <div className="w-[358px]">
+        <PlanCompare
+          {...args}
+          variant="compact"
+          className="w-full"
+          planOptions={samplePlanOptions}
+          currentPlanId={currentPlanId}
+          selectedPlanId={selectedPlanId}
+          onSelectCurrentPlan={setCurrentPlanId}
+          onSelectSelectedPlan={setSelectedPlanId}
+          currentHighlighted={currentPlanId !== 'p1'}
+          onShowFullCompare={() => alert('전체 비교 보기')}
+        />
+      </div>
     );
   },
 };

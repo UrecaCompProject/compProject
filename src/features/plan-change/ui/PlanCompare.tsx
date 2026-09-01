@@ -5,6 +5,7 @@ import { Check, CircleCheck } from 'lucide-react';
 import { Button } from '@/shared';
 import TicketCard from '@/shared/ui/TicketCard';
 
+import PlanCompareBenefitListRow from './PlanCompareBenefitListRow';
 import PlanCompareBenefitRow, {
   type BenefitOption,
 } from './PlanCompareBenefitRow';
@@ -22,6 +23,8 @@ export interface PlanCompareData {
   currentShareData: string;
   currentVoice: string;
   currentMessage: string;
+  /** 대표 혜택 불릿 목록 */
+  currentBenefits?: string[];
 
   selectedPlanName: string;
   selectedFee: string;
@@ -31,6 +34,7 @@ export interface PlanCompareData {
   selectedShareData: string;
   selectedVoice: string;
   selectedMessage: string;
+  selectedBenefits?: string[];
 
   benefitRows?: {
     key: string;
@@ -44,6 +48,8 @@ export interface PlanCompareData {
 
 export interface PlanCompareProps {
   data: PlanCompareData;
+  /** 'compact' = 챗봇 인라인 요약 카드, 'full' = 상세 바텀시트 */
+  variant?: 'compact' | 'full';
   /** 기본 '이용중인 요금제'. 상세요금제 화면의 '비교하기'로 들어온 경우처럼
    *  왼쪽 컬럼이 실사용 요금제가 아닐 때 '선택한 요금제' 등으로 바꿔서 사용. */
   currentLabel?: string;
@@ -55,9 +61,13 @@ export interface PlanCompareProps {
   selectedPlanId?: string;
   onSelectCurrentPlan?: (planId: string) => void;
   onSelectSelectedPlan?: (planId: string) => void;
+  /** 왼쪽 컬럼이 실제 내 요금제가 아니라 드롭다운으로 바꾼 요금제일 때 파란색 강조 */
+  currentHighlighted?: boolean;
   onDetailCurrent?: () => void;
   onDetailSelected?: () => void;
   onChangePlan?: () => void;
+  /** compact 카드의 '전체 비교 보기' 버튼 */
+  onShowFullCompare?: () => void;
   className?: string;
 }
 
@@ -68,8 +78,12 @@ interface SimpleRow {
   selected: string;
 }
 
+const COMPACT_ROW_KEYS_BEFORE_BENEFIT = ['planName', 'fee', 'data'];
+const COMPACT_ROW_KEYS_AFTER_BENEFIT = ['voice', 'message'];
+
 export default function PlanCompare({
   data,
+  variant = 'full',
   currentLabel = '이용중인 요금제',
   selectedLabel = '선택한 요금제',
   planOptions,
@@ -77,11 +91,14 @@ export default function PlanCompare({
   selectedPlanId,
   onSelectCurrentPlan,
   onSelectSelectedPlan,
+  currentHighlighted = false,
   onDetailCurrent,
   onDetailSelected,
   onChangePlan,
+  onShowFullCompare,
   className,
 }: PlanCompareProps) {
+  const isCompact = variant === 'compact';
   const [showDiffOnly, setShowDiffOnly] = useState(false);
 
   const simpleRows: SimpleRow[] = useMemo(
@@ -138,6 +155,83 @@ export default function PlanCompare({
     [data],
   );
 
+  const currentBenefits = data.currentBenefits ?? [];
+  const selectedBenefits = data.selectedBenefits ?? [];
+
+  // compact: 요금제명 / 월정액 / 데이터 / 대표 혜택 / 음성 통화 / 메세지만 노출
+  if (isCompact) {
+    const rowsBefore = simpleRows.filter((row) =>
+      COMPACT_ROW_KEYS_BEFORE_BENEFIT.includes(row.key),
+    );
+    const rowsAfter = simpleRows.filter((row) =>
+      COMPACT_ROW_KEYS_AFTER_BENEFIT.includes(row.key),
+    );
+
+    return (
+      <div className={`flex flex-col ${className ?? 'w-[358px]'}`}>
+        <TicketCard>
+          <div className="grid grid-cols-2 gap-4 pb-3">
+            <PlanCompareHeaderSelect
+              label={currentLabel}
+              options={planOptions}
+              activeId={currentPlanId}
+              onSelect={onSelectCurrentPlan}
+              colorClassName={
+                currentHighlighted ? 'text-brand-primary' : 'text-fg-primary'
+              }
+            />
+            <PlanCompareHeaderSelect
+              label={selectedLabel}
+              options={planOptions}
+              activeId={selectedPlanId}
+              onSelect={onSelectSelectedPlan}
+              colorClassName="text-compare-selected"
+            />
+          </div>
+          <div className="border-b border-fg-primary" />
+
+          {rowsBefore.map((row) => (
+            <PlanCompareRow
+              key={row.key}
+              label={row.label}
+              current={row.current}
+              selected={row.selected}
+              currentHighlighted={currentHighlighted}
+            />
+          ))}
+
+          <PlanCompareBenefitListRow
+            label="대표 혜택"
+            current={currentBenefits}
+            selected={selectedBenefits}
+            currentHighlighted={currentHighlighted}
+          />
+
+          {rowsAfter.map((row) => (
+            <PlanCompareRow
+              key={row.key}
+              label={row.label}
+              current={row.current}
+              selected={row.selected}
+              currentHighlighted={currentHighlighted}
+            />
+          ))}
+
+          <div className="mt-3 border-t border-border pt-3">
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full"
+              onClick={onShowFullCompare}
+            >
+              전체 비교 보기
+            </Button>
+          </div>
+        </TicketCard>
+      </div>
+    );
+  }
+
   const visibleSimpleRows = showDiffOnly
     ? simpleRows.filter((row) => row.current !== row.selected)
     : simpleRows;
@@ -151,8 +245,11 @@ export default function PlanCompare({
       )
     : benefitRows;
 
+  const showBenefitListRow =
+    !showDiffOnly || currentBenefits.join('|') !== selectedBenefits.join('|');
+
   return (
-    <div className={`flex w-[358px] flex-col gap-3 ${className ?? ''}`}>
+    <div className={`flex flex-col gap-3 ${className ?? 'w-[358px]'}`}>
       <button
         type="button"
         onClick={() => setShowDiffOnly((prev) => !prev)}
@@ -179,14 +276,16 @@ export default function PlanCompare({
             options={planOptions}
             activeId={currentPlanId}
             onSelect={onSelectCurrentPlan}
-            colorClassName="text-fg-primary"
+            colorClassName={
+              currentHighlighted ? 'text-brand-primary' : 'text-fg-primary'
+            }
           />
           <PlanCompareHeaderSelect
             label={selectedLabel}
             options={planOptions}
             activeId={selectedPlanId}
             onSelect={onSelectSelectedPlan}
-            colorClassName="text-reward-active"
+            colorClassName="text-compare-selected"
           />
         </div>
         <div className="border-b border-fg-primary" />
@@ -197,8 +296,18 @@ export default function PlanCompare({
             label={row.label}
             current={row.current}
             selected={row.selected}
+            currentHighlighted={currentHighlighted}
           />
         ))}
+
+        {showBenefitListRow && (
+          <PlanCompareBenefitListRow
+            label="대표 혜택"
+            current={currentBenefits}
+            selected={selectedBenefits}
+            currentHighlighted={currentHighlighted}
+          />
+        )}
 
         {visibleBenefitRows.map((row) => (
           <PlanCompareBenefitRow
@@ -208,14 +317,17 @@ export default function PlanCompare({
             selectedSummary={row.selectedSummary}
             selectedSubtext={row.selectedSubtext}
             selectedOptions={row.selectedOptions}
+            currentHighlighted={currentHighlighted}
           />
         ))}
 
-        {visibleSimpleRows.length === 0 && visibleBenefitRows.length === 0 && (
-          <p className="py-6 text-center text-[13px] text-fg-tertiary">
-            차이가 있는 항목이 없어요.
-          </p>
-        )}
+        {visibleSimpleRows.length === 0 &&
+          visibleBenefitRows.length === 0 &&
+          !showBenefitListRow && (
+            <p className="py-6 text-center text-[13px] text-fg-tertiary">
+              차이가 있는 항목이 없어요.
+            </p>
+          )}
 
         {/* 상세보기 링크 / 안내 문구 / 변경 버튼 — 16px 간격 고정 */}
         <div className="flex flex-col gap-4 pt-3">
@@ -230,7 +342,7 @@ export default function PlanCompare({
             <button
               type="button"
               onClick={onDetailSelected}
-              className="text-left text-[13px] font-medium text-reward-active"
+              className="text-left text-[13px] font-medium text-compare-selected"
             >
               요금제 상세보기 &gt;
             </button>

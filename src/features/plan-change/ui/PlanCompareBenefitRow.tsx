@@ -11,6 +11,7 @@ interface PlanCompareBenefitRowProps {
   selectedSummary: string;
   selectedSubtext?: string;
   selectedOptions?: BenefitOption[];
+  currentHighlighted?: boolean;
 }
 
 export default function PlanCompareBenefitRow({
@@ -19,12 +20,25 @@ export default function PlanCompareBenefitRow({
   selectedSummary,
   selectedSubtext,
   selectedOptions = [],
+  currentHighlighted = false,
 }: PlanCompareBenefitRowProps) {
   return (
     <div className="grid grid-cols-2 gap-4 py-3">
       <div className="flex flex-col gap-1">
-        <p className="text-[12px] font-medium text-compare-neutral">{label}</p>
-        <p className="text-[14px] font-semibold text-fg-primary">{current}</p>
+        <p
+          className={`text-[12px] font-medium ${
+            currentHighlighted ? 'text-brand-primary' : 'text-compare-neutral'
+          }`}
+        >
+          {label}
+        </p>
+        <p
+          className={`text-[14px] font-semibold ${
+            currentHighlighted ? 'text-brand-primary' : 'text-fg-primary'
+          }`}
+        >
+          {current}
+        </p>
       </div>
       <div className="flex flex-col gap-2">
         <p className="text-[12px] font-medium text-compare-selected">{label}</p>
