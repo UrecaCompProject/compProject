@@ -4,7 +4,7 @@ import { useModalStore } from '@/shared';
 
 import { usePlanFilters } from '../model/usePlanFilters';
 import { usePlans } from '../model/usePlans';
-import { nextSort, sortPlans } from '../types';
+import { sortPlans } from '../types';
 
 import PlanFilterModal from './PlanFilterModal';
 import PlanListCard from './PlanListCard';
@@ -47,7 +47,7 @@ export default function PlanCatalogList({
       <PlanSearchBar
         sort={sort}
         onOpenFilter={handleOpenFilter}
-        onCycleSort={() => setSort((prev) => nextSort(prev))}
+        onSortChange={setSort}
       />
 
       {isLoading && (

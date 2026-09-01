@@ -1,4 +1,4 @@
-import { Bell, Astroid, DoorOpen } from 'lucide-react';
+import { Bell, UserRound, DoorOpen } from 'lucide-react';
 
 import { useExpiringCoupons } from '@/entities/reward';
 import { useIsLoggedIn, SigninModal, LogoutCheckModal } from '@/features/auth';
@@ -42,7 +42,7 @@ export default function Header() {
           }
         />
       ) : (
-        <Astroid
+        <UserRound
           size={22}
           className="shrink-0"
           onClick={() =>
