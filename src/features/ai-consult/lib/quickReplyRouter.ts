@@ -74,7 +74,6 @@ export async function routeQuickReply(
     addAIResponse,
     openSubscription,
     openSignupChat,
-    startCompareFlow,
     setPendingComparePlan,
     fetchCompare,
     startQuiz,
@@ -207,9 +206,22 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // 요금제 비교하기 메뉴 - 현재 요금제가 없으면 드랍다운으로 선택
+  // 요금제 비교하기 메뉴 - AI 호출 없이 카탈로그 기반 비교 컴포넌트를 바로 렌더링.
+  // 두 컬럼 모두 드롭다운으로 요금제를 골라 비교한다. (왼쪽 기본값은 내 요금제)
   if (text === '요금제 비교하기') {
-    startCompareFlow();
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'user',
+        sentence: '요금제 비교하기',
+        category: 'plan',
+      },
+      buildAIMessage('비교할 요금제를 선택해 주세요.', ['메뉴로 돌아가기'], {
+        planCompare: true,
+        category: 'plan',
+      }),
+    ]);
     return 'handled';
   }
 

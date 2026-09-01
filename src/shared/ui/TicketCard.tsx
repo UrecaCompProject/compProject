@@ -7,6 +7,8 @@ interface TicketCardProps {
   startOffset?: number;
   fill?: string;
   className?: string;
+  /** 내용 영역 패딩. 기본 'px-4 py-8'. */
+  contentClassName?: string;
   children: ReactNode;
 }
 
@@ -52,6 +54,7 @@ export default function TicketCard({
   startOffset,
   fill = 'var(--color-surface-card)',
   className = '',
+  contentClassName = 'px-4 py-8',
   children,
 }: TicketCardProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -86,7 +89,7 @@ export default function TicketCard({
         {pathData && <path d={pathData} fill={fill} fillRule="evenodd" />}
       </svg>
 
-      <div className="relative px-4 py-8">{children}</div>
+      <div className={`relative ${contentClassName}`}>{children}</div>
     </div>
   );
 }

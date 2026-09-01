@@ -102,9 +102,13 @@ export default function AIChatExtras({
         <CompareResultSheet
           key={`${message.compareResult.planA.planId}-${message.compareResult.planB.planId}`}
           result={message.compareResult}
-          onSubscribe={() => onPlanSubscribe?.(message.compareResult!.planB)}
+          onSubscribe={(plan) => onPlanSubscribe?.(plan)}
           onRecompare={onRecompare}
         />
+      )}
+
+      {message.planCompare && (
+        <CompareResultSheet onSubscribe={(plan) => onPlanSubscribe?.(plan)} />
       )}
 
       {message.planSelector && (

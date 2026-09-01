@@ -123,6 +123,7 @@ export function buildAIMessage(
   sentence: string,
   quickReplies?: string[],
   extra?: Partial<{
+    planCompare: boolean;
     planSelector: boolean;
     planSelectorMode: 'current' | 'target';
     category: MessageCategory;
