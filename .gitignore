@@ -45,7 +45,7 @@ storybook-static
 e2e/_explore*.spec.ts
 e2e/.artifacts/
 e2e/.auth/
-test-results/
+test-results/.last-run.json
 playwright-report/
 blob-report/
 playwright/.cache/
