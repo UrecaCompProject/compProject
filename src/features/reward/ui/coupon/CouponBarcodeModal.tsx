@@ -27,7 +27,7 @@ export default function CouponBarcodeModal({
     <div className="flex flex-col items-center gap-4 text-center">
       <ProductCard product={coupon} />
 
-      <div className="w-full rounded-2xl border border-border bg-surface-card px-4 py-3">
+      <div>
         <div className="flex w-full justify-center overflow-hidden">
           <Barcode
             value={normalizedBarcode}
