@@ -14,6 +14,8 @@ interface PlanCompareHeaderSelectProps {
   options?: PlanCompareOption[];
   onSelect?: (id: string) => void;
   activeId?: string;
+  /** 사용자가 실제 이용 중인 요금제 id — 목록에서 '현재' 배지로 표시 */
+  myPlanId?: string;
   colorClassName: string;
 }
 
@@ -27,6 +29,7 @@ export default function PlanCompareHeaderSelect({
   options,
   onSelect,
   activeId,
+  myPlanId,
   colorClassName,
 }: PlanCompareHeaderSelectProps) {
   const [open, setOpen] = useState(false);
@@ -56,26 +59,36 @@ export default function PlanCompareHeaderSelect({
       </button>
 
       {open && hasOptions && (
-        <ul className="absolute left-0 top-[calc(100%+8px)] z-10 max-h-[240px] w-[200px] overflow-y-auto rounded-xl border border-fg-disabled bg-surface-card py-1 shadow-shadow">
-          {options!.map((option) => (
-            <li key={option.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  onSelect?.(option.id);
-                  setOpen(false);
-                }}
-                className={`block w-full px-3 py-2 text-left text-[13px] ${
-                  option.id === activeId
-                    ? 'font-semibold text-brand-promo-primary'
-                    : 'font-normal text-fg-secondary'
-                }`}
-              >
-                {option.name}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="absolute left-0 top-[calc(100%+8px)] z-10 w-[150px] max-w-[70vw] overflow-hidden rounded-xl border border-fg-disabled bg-surface-card shadow-shadow">
+          <ul className="max-h-[240px] overflow-y-auto overscroll-contain py-1">
+            {options!.map((option) => {
+              const isMyPlan = !!myPlanId && option.id === myPlanId;
+              return (
+                <li key={option.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect?.(option.id);
+                      setOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between gap-1.5 px-3 py-2 text-left text-[13px] ${
+                      option.id === activeId
+                        ? 'font-semibold text-brand-promo-primary'
+                        : 'font-normal text-fg-secondary'
+                    }`}
+                  >
+                    <span className="truncate">{option.name}</span>
+                    {isMyPlan && (
+                      <span className="shrink-0 rounded-full bg-brand-promo-primary px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        현재
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );

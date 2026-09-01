@@ -38,23 +38,29 @@ export default function PlanCompareBenefitListRow({
       <div className="flex flex-col gap-1">
         <p
           className={`text-[12px] font-medium ${
-            currentHighlighted ? 'text-brand-primary' : 'text-compare-neutral'
+            currentHighlighted
+              ? 'text-compare-selected-strong'
+              : 'text-compare-neutral'
           }`}
         >
           {label}
         </p>
         <BulletList
           items={current}
-          className={`font-semibold ${
-            currentHighlighted ? 'text-brand-primary' : 'text-fg-tertiary'
+          className={`font-bold ${
+            currentHighlighted
+              ? 'text-compare-selected-strong'
+              : 'text-fg-tertiary'
           }`}
         />
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-[12px] font-medium text-compare-selected">{label}</p>
+        <p className="text-[12px] font-medium text-compare-selected-strong">
+          {label}
+        </p>
         <BulletList
           items={selected}
-          className="font-bold text-compare-selected"
+          className="font-bold text-compare-selected-strong"
         />
       </div>
     </div>

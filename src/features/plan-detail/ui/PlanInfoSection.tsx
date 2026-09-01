@@ -127,7 +127,7 @@ export default function PlanInfoSection({ plan }: PlanInfoSectionProps) {
       </section>
 
       {plan.notes && (
-        <p className="mb-4 text-[10px] font-normal text-fg-tertiary">
+        <p className="-mt-2 mb-4 text-[12px] font-normal text-fg-tertiary">
           · {plan.notes}
         </p>
       )}

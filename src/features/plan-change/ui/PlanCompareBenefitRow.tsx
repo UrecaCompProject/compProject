@@ -27,22 +27,28 @@ export default function PlanCompareBenefitRow({
       <div className="flex flex-col gap-1">
         <p
           className={`text-[12px] font-medium ${
-            currentHighlighted ? 'text-brand-primary' : 'text-compare-neutral'
+            currentHighlighted
+              ? 'text-compare-selected-strong'
+              : 'text-compare-neutral'
           }`}
         >
           {label}
         </p>
         <p
-          className={`text-[14px] font-semibold ${
-            currentHighlighted ? 'text-brand-primary' : 'text-fg-primary'
+          className={`text-[14px] font-bold ${
+            currentHighlighted
+              ? 'text-compare-selected-strong'
+              : 'text-fg-primary'
           }`}
         >
           {current}
         </p>
       </div>
       <div className="flex flex-col gap-2">
-        <p className="text-[12px] font-medium text-compare-selected">{label}</p>
-        <p className="whitespace-pre-line text-[14px] font-bold text-compare-selected">
+        <p className="text-[12px] font-medium text-compare-selected-strong">
+          {label}
+        </p>
+        <p className="whitespace-pre-line text-[14px] font-bold text-compare-selected-strong">
           {selectedSummary}
         </p>
         {selectedSubtext && (

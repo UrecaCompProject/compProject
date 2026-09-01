@@ -55,7 +55,7 @@ export default function PlanDetailContent({
   }
 
   return (
-    <div ref={rootRef} className="flex flex-col gap-6 px-4 pt-4">
+    <div ref={rootRef} className="flex flex-col gap-4 px-4 pt-4">
       {/* 상단 요금제 섹션: 태그 / 타이틀+가격+쿠폰 */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
