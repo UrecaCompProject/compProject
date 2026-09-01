@@ -101,7 +101,14 @@ export default function Modal() {
           )}
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pt-3">{content}</div>
+        <div
+          data-vaul-no-drag
+          className="min-h-0 flex-1 touch-pan-y overscroll-contain overflow-y-auto pt-3"
+          onWheel={(event) => event.stopPropagation()}
+          onTouchMove={(event) => event.stopPropagation()}
+        >
+          {content}
+        </div>
 
         {footer && (
           <footer className="shrink-0 border-t border-border pb-5 pt-5">

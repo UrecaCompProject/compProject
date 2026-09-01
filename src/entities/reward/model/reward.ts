@@ -25,6 +25,7 @@ export type Coupon = {
   name: string;
   brand: string;
   imageUrl: string;
+  barcode: string;
   expiresAt: string;
   status: CouponStatus;
 };
