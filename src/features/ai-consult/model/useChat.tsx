@@ -591,6 +591,7 @@ export function useChat() {
     handlePlanCompare,
     handleSelectCurrentPlan,
     handleSelectTargetPlan,
+    fetchCompare,
     profile,
     subscriptionOpen,
     subscriptionPlan,

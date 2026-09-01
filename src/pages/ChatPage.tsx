@@ -31,6 +31,7 @@ export default function ChatPage() {
     handlePlanCompare,
     handleSelectCurrentPlan,
     handleSelectTargetPlan,
+    fetchCompare,
     profile,
     subscriptionOpen,
     subscriptionPlan,
@@ -96,6 +97,9 @@ export default function ChatPage() {
         onPlanCompare={handlePlanCompare}
         onSelectCurrentPlan={handleSelectCurrentPlan}
         onSelectTargetPlan={handleSelectTargetPlan}
+        onRecompare={(planAName, planBName) =>
+          fetchCompare(planBName, planAName)
+        }
         onGenerateReport={handleGenerateReport}
         subscriptionOpen={subscriptionOpen}
         subscriptionPlan={subscriptionPlan}
