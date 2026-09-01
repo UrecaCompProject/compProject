@@ -27,6 +27,7 @@ interface AIChatExtrasProps {
   onPlanCompare?: (plan: RecommendedPlan) => void;
   onSelectCurrentPlan?: (planName: string) => void;
   onSelectTargetPlan?: (planName: string) => void;
+  onRecompare?: (planAName: string, planBName: string) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   onFormSubmit?: (values: Partial<ConsultInput>, summary: string) => void;
   formDefaults?: Partial<ConsultInput>;
@@ -42,6 +43,7 @@ export default function AIChatExtras({
   onPlanCompare,
   onSelectCurrentPlan,
   onSelectTargetPlan,
+  onRecompare,
   onGenerateReport,
   onFormSubmit,
   formDefaults,
@@ -98,8 +100,10 @@ export default function AIChatExtras({
 
       {message.compareResult && (
         <CompareResultSheet
+          key={`${message.compareResult.planA.planId}-${message.compareResult.planB.planId}`}
           result={message.compareResult}
           onSubscribe={() => onPlanSubscribe?.(message.compareResult!.planB)}
+          onRecompare={onRecompare}
         />
       )}
 

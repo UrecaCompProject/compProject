@@ -26,6 +26,7 @@ interface ChatMessageListProps {
   onPlanCompare?: (plan: RecommendedPlan) => void;
   onSelectCurrentPlan?: (planName: string) => void;
   onSelectTargetPlan?: (planName: string) => void;
+  onRecompare?: (planAName: string, planBName: string) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   subscriptionOpen?: boolean;
   subscriptionPlan?: RecommendedPlan | null;
@@ -51,6 +52,7 @@ export default function ChatMessageList({
   onPlanCompare,
   onSelectCurrentPlan,
   onSelectTargetPlan,
+  onRecompare,
   onGenerateReport,
   subscriptionOpen = false,
   subscriptionPlan,
@@ -144,6 +146,7 @@ export default function ChatMessageList({
                   onPlanCompare={onPlanCompare}
                   onSelectCurrentPlan={onSelectCurrentPlan}
                   onSelectTargetPlan={onSelectTargetPlan}
+                  onRecompare={onRecompare}
                   onGenerateReport={onGenerateReport}
                   onFormSubmit={onFormSubmit}
                   formDefaults={formDefaults}

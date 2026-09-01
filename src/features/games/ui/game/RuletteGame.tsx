@@ -10,7 +10,7 @@ import GameShell from '../GameShell';
 import type { GamePhase } from '../../types';
 
 const SPIN_DURATION = 1200; // ms
-const REWARD_OPTIONS = [1, 3, 5, 10];
+const MAX_BADGE_REWARD = 5;
 
 type RuletteGameProps = {
   reward?: number;
@@ -35,9 +35,7 @@ export default function RuletteGame({
     setIsSpinning(true);
 
     setTimeout(() => {
-      const picked =
-        reward ??
-        REWARD_OPTIONS[Math.floor(Math.random() * REWARD_OPTIONS.length)];
+      const picked = reward ?? Math.floor(Math.random() * MAX_BADGE_REWARD) + 1;
       setIsSpinning(false);
       onWin?.(picked);
       setPhase('result');

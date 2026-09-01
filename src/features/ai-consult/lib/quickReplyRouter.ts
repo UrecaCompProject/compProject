@@ -48,6 +48,7 @@ export interface QuickReplyContext {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  playedTodayGameIds: Set<string>;
   // AbortController signal — 비동기 requestConsult 호출 취소에 사용
   signal?: AbortSignal;
   // "다시 시도" 시 마지막 사용자 입력을 재전송 — useChat의 lastUserInputRef와 handleSend 재귀 호출을 캡슐화
@@ -78,6 +79,7 @@ export async function routeQuickReply(
     fetchCompare,
     startQuiz,
     openSheetGame,
+    playedTodayGameIds,
     signal,
     retryLastInput,
   } = ctx;
@@ -88,24 +90,40 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // "게임 하기" 퀵 리플라이 — 게임 이름들을 퀵 리플라이로 표시
+  // "게임 하기" 퀵 리플라이 — 오늘 완료한 게임을 제외하고 게임 이름들을 퀵 리플라이로 표시
   if (text === '게임 하기') {
-    const gameTitles = GAME_LIST.map((g) => g.title);
+    const availableGames = GAME_LIST.filter(
+      (g) => !playedTodayGameIds.has(g.missionUuid),
+    );
+    const gameTitles = availableGames.map((g) => g.title);
+    const message =
+      availableGames.length === 0
+        ? '오늘은 모든 게임을 플레이하셨어요! 내일 다시 만나요.'
+        : '원하는 게임을 선택해 주세요!';
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), type: 'user', sentence: '게임 하기', category: 'game' },
-      buildAIMessage(
-        '원하는 게임을 선택해 주세요!',
-        [...gameTitles, '메뉴로 돌아가기'],
-        { category: 'game' },
-      ),
+      buildAIMessage(message, [...gameTitles, '메뉴로 돌아가기'], {
+        category: 'game',
+      }),
     ]);
     return 'handled';
   }
 
-  // 게임 이름 퀵 리플라이 매칭 — 게임 리스트에서 선택 시 해당 게임 실행
+  // 게임 이름 퀵 리플라이 매칭 — 오늘 완료한 게임은 진입 차단
   const matchedGame = GAME_LIST.find((g) => g.title === text);
   if (matchedGame) {
+    if (playedTodayGameIds.has(matchedGame.missionUuid)) {
+      setMessages((prev) => [
+        ...prev,
+        buildAIMessage(
+          '오늘은 이미 플레이한 게임이에요. 내일 다시 도전해 주세요!',
+          ['게임 하기', '메뉴로 돌아가기'],
+          { category: 'game' },
+        ),
+      ]);
+      return 'handled';
+    }
     handleGameSelect(matchedGame.id as ChatGameId | SheetGameId, {
       setMessages,
       startQuiz,
@@ -125,7 +143,7 @@ export async function routeQuickReply(
         category: 'attendance',
       },
     ]);
-    openSheetGame('attendance', 5);
+    openSheetGame('attendance');
     return 'handled';
   }
 
