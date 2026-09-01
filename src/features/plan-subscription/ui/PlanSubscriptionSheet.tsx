@@ -1,6 +1,7 @@
 import {
   Fragment,
   type ReactNode,
+  type RefObject,
   useEffect,
   useMemo,
   useRef,
@@ -18,9 +19,7 @@ import { useSubmitSubscription } from '../model/useSubmitSubscription';
 
 import type { SubscriptionForm } from '../types';
 
-type SubscriptionStep =
-  'planSelect' | 'confirm' | 'delivery' | 'agreement' | 'complete';
-type SubscriptionType = 'new' | 'change';
+type SubscriptionStep = 'planSelect' | 'delivery' | 'agreement' | 'complete';
 
 const initialForm: SubscriptionForm = {
   type: 'new',
@@ -57,8 +56,15 @@ interface PlanSubscriptionSheetProps {
   active?: boolean;
   /** 첫 단계에서 뒤로가기를 눌렀을 때 호출 — 상위에서 상세 화면으로 복귀시킨다. */
   onExit?: () => void;
-  /** 넘기면 자체 BottomSheet 대신 이 함수로 렌더링한다. */
-  renderShell?: (shell: SubscriptionShell) => ReactNode;
+  /**
+   * 넘기면 자체 BottomSheet 대신 이 함수로 렌더링한다.
+   * bodyRef는 호출부가 자신의 BottomSheet 본문 스크롤 컨테이너에 연결해야
+   * step 전환에 맞춰 스크롤이 제어된다.
+   */
+  renderShell?: (
+    shell: SubscriptionShell,
+    bodyRef: RefObject<HTMLDivElement | null>,
+  ) => ReactNode;
 }
 
 const STEP_TITLES: Record<
@@ -69,11 +75,6 @@ const STEP_TITLES: Record<
     title: '요금제 선택',
     label: '요금',
     desc: '가입할 요금제를 선택해주세요',
-  },
-  confirm: {
-    title: '가입 유형',
-    label: '유형',
-    desc: '가입 방법을 선택해주세요',
   },
   delivery: {
     title: '배송/유심',
@@ -90,7 +91,6 @@ const STEP_TITLES: Record<
 
 const STEPS: SubscriptionStep[] = [
   'planSelect',
-  'confirm',
   'delivery',
   'agreement',
   'complete',
@@ -238,7 +238,7 @@ export default function PlanSubscriptionSheet({
   renderShell,
 }: PlanSubscriptionSheetProps) {
   // plan을 미리 받고 진입하면(요금제 상세에서 선택) 1단계(요금제 선택)는 건너뛴다.
-  const firstStep: SubscriptionStep = plan ? 'confirm' : 'planSelect';
+  const firstStep: SubscriptionStep = plan ? 'delivery' : 'planSelect';
   const firstStepIndex = STEPS.indexOf(firstStep);
 
   const [step, setStep] = useState<SubscriptionStep>(firstStep);
@@ -253,13 +253,44 @@ export default function PlanSubscriptionSheet({
   const prevActiveRef = useRef(active);
   useEffect(() => {
     if (active && !prevActiveRef.current) {
-      setStep(plan ? 'confirm' : 'planSelect');
+      setStep(plan ? 'delivery' : 'planSelect');
       setSelectedPlan(plan);
       setForm(initialForm);
       setExpandedTerm(null);
     }
     prevActiveRef.current = active;
   }, [active, plan]);
+
+  // BottomSheet 본문 스크롤 컨테이너 — renderShell 모드에서는 호출부가
+  // 자신의 BottomSheet bodyRef에 연결하고, 단독 모드에서는 자체 BottomSheet에 연결한다.
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // planSelect 단계에서 사용자가 스크롤한 위치를 저장해 두고, 해당 단계로
+  // 다시 돌아왔을 때 복원한다.
+  const planSelectScrollTopRef = useRef(0);
+  const prevStepRef = useRef(step);
+
+  useEffect(() => {
+    if (prevStepRef.current === step) return;
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      // planSelect에서 벗어날 때 현재 스크롤 위치를 저장
+      if (prevStepRef.current === 'planSelect') {
+        planSelectScrollTopRef.current = container.scrollTop;
+      }
+
+      if (step === 'planSelect') {
+        // planSelect로 복귀 시 저장된 위치로 복원
+        container.scrollTo({ top: planSelectScrollTopRef.current });
+      } else if (step === 'complete') {
+        // 완료 단계 진입 시 항상 최상위
+        container.scrollTo({ top: 0 });
+      }
+    }
+
+    prevStepRef.current = step;
+  }, [step]);
 
   // 요금제 카탈로그 — TanStack Query로 캐싱·로딩·에러 상태 관리
   const {
@@ -312,8 +343,6 @@ export default function PlanSubscriptionSheet({
     switch (step) {
       case 'planSelect':
         return selectedPlan !== null;
-      case 'confirm':
-        return true;
       case 'delivery':
         if (form.simType === '') return false;
         // USIM은 물리 배송이 필요하므로 주소 필수, eSIM은 주소 불필요
@@ -332,8 +361,6 @@ export default function PlanSubscriptionSheet({
     switch (step) {
       case 'planSelect':
         return '가입할 요금제를 선택해주세요';
-      case 'confirm':
-        return '가입 유형을 선택해주세요';
       case 'delivery':
         return form.simType === 'usim'
           ? '배송 주소를 입력해주세요'
@@ -355,7 +382,7 @@ export default function PlanSubscriptionSheet({
       submitMutation.mutate(
         {
           plan: selectedPlan,
-          // 2단계 체크박스 상태와 무관하게, 현재 요금제 보유 여부로 최종 확정한다.
+          // 현재 요금제 보유 여부로 가입 유형(신규/변경)을 최종 확정한다.
           form: { ...form, type: hasCurrentPlan ? 'change' : 'new' },
         },
         {
@@ -365,23 +392,13 @@ export default function PlanSubscriptionSheet({
       return;
     }
 
-    const order: SubscriptionStep[] = [
-      'planSelect',
-      'confirm',
-      'delivery',
-      'agreement',
-    ];
+    const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
     const index = order.indexOf(step);
     setStep(order[index + 1] ?? 'complete');
   };
 
   const handlePrev = () => {
-    const order: SubscriptionStep[] = [
-      'planSelect',
-      'confirm',
-      'delivery',
-      'agreement',
-    ];
+    const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
     const index = order.indexOf(step);
     // 진입 단계(firstStep)보다 앞선 단계로는 돌아가지 않는다.
     setStep(order[Math.max(firstStepIndex, index - 1)] ?? firstStep);
@@ -395,20 +412,10 @@ export default function PlanSubscriptionSheet({
     update('agreedMarketing', checked);
   };
 
-  // 현재 가입된 요금제가 없으면 신규 가입만, 있으면 요금제 변경만 선택 가능하다.
-  const typeOptions: { value: SubscriptionType; label: string }[] = [
-    hasCurrentPlan
-      ? { value: 'change', label: '요금제 변경' }
-      : { value: 'new', label: '신규 가입' },
-  ];
-
   const title = STEP_TITLES[step].title;
   const description = useMemo(() => {
-    if (step === 'confirm' && selectedPlan) {
-      return `${selectedPlan.planName} · 월 ${selectedPlan.monthlyFee !== undefined ? selectedPlan.monthlyFee.toLocaleString() : '-'}원`;
-    }
     return STEP_TITLES[step].desc || undefined;
-  }, [step, selectedPlan]);
+  }, [step]);
 
   const footer = (
     <div className="flex flex-col gap-2 w-full">
@@ -479,8 +486,9 @@ export default function PlanSubscriptionSheet({
   // onExit이 없으면(단독 사용) 뒤로가기 자체를 숨긴다. 그 외 단계는 이전 단계로.
   const onBack =
     step === 'complete' ? undefined : step === firstStep ? onExit : handlePrev;
-  const size: SubscriptionShell['size'] =
-    step === 'complete' ? 'content' : 'large';
+  // 완료 단계에서도 이전 단계와 동일한 높이를 유지해 시트가 줄어들며 생기는
+  // 불필요한 스크롤을 방지한다.
+  const size: SubscriptionShell['size'] = 'large';
 
   const body = (
     <div className="space-y-5 pb-2">
@@ -522,50 +530,6 @@ export default function PlanSubscriptionSheet({
                 onClick={() => setSelectedPlan(p)}
               />
             ))}
-          </div>
-        </section>
-      )}
-
-      {step === 'confirm' && selectedPlan && (
-        <section className="space-y-5">
-          <PlanSummary plan={selectedPlan} />
-          <div>
-            <h5 className="text-body font-semibold text-fg-primary mb-3">
-              가입 유형을 선택해 주세요
-            </h5>
-            <div className="space-y-3">
-              {typeOptions.map((option) => {
-                // 현재는 항상 옵션이 하나뿐이라(신규 가입/요금제 변경 중 확정된 것)
-                // 그 하나가 곧 선택된 상태다.
-                const selected = true;
-                return (
-                  <label
-                    key={option.value}
-                    className={`flex items-center gap-3 rounded-2xl border p-4 transition-colors cursor-pointer ${
-                      selected
-                        ? 'border-brand-promo-primary bg-brand-promo-primary/5'
-                        : 'border-border bg-white hover:bg-surface-page'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => update('type', option.value)}
-                      className="size-5 shrink-0 accent-brand-promo-primary"
-                    />
-                    <span
-                      className={`text-body-sm font-medium ${
-                        selected
-                          ? 'text-brand-promo-primary'
-                          : 'text-fg-secondary'
-                      }`}
-                    >
-                      {option.label}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
           </div>
         </section>
       )}
@@ -743,17 +707,13 @@ export default function PlanSubscriptionSheet({
       {step === 'complete' && selectedPlan && (
         <section className="flex flex-col items-center gap-4 py-4 text-center">
           <CheckCircle2 size={48} className="text-semantic-success" />
-          <div>
-            <h5 className="text-title font-bold text-fg-primary">
-              {hasCurrentPlan ? '요금제 변경' : '요금제 가입'}이 완료되었어요
-            </h5>
-            <p className="text-body-sm text-fg-secondary mt-1">
-              {selectedPlan.planName} · 월{' '}
-              {selectedPlan.monthlyFee !== undefined
-                ? selectedPlan.monthlyFee.toLocaleString()
-                : '-'}
-              원
-            </p>
+          <h5 className="text-title font-bold text-fg-primary">
+            {hasCurrentPlan
+              ? '요금제 변경이 완료되었어요'
+              : '첫 에피라 요금제 가입이 완료되었습니다!'}
+          </h5>
+          <div className="w-full">
+            <PlanSummary plan={selectedPlan} />
           </div>
           <div className="w-full rounded-2xl bg-surface-page p-4 text-body-sm text-fg-secondary space-y-2 text-left">
             <InfoRow label="이름" value={userInfo.name || '-'} />
@@ -788,19 +748,20 @@ export default function PlanSubscriptionSheet({
     children: body,
   };
 
-  if (renderShell) return <>{renderShell(shell)}</>;
+  if (renderShell) return <>{renderShell(shell, scrollContainerRef)}</>;
 
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={shell.title}
-      description={shell.description}
-      footer={shell.footer}
-      onBack={shell.onBack}
-      size={shell.size}
+      title={title}
+      description={description}
+      footer={footer}
+      onBack={onBack}
+      size={size}
+      bodyRef={scrollContainerRef}
     >
-      {shell.children}
+      {body}
     </BottomSheet>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 
 import { ChevronLeft, X } from 'lucide-react';
 import { Drawer } from 'vaul';
@@ -21,6 +21,11 @@ type BottomSheetProps = {
   // 이 값이 바뀔 때마다 본문 스크롤을 맨 위로 되돌린다.
   // (children이 바뀌어도 스크롤 컨테이너 자체는 계속 마운트되어 있어 scrollTop이 유지되기 때문)
   scrollResetKey?: string | number;
+  /**
+   * 외부에서 본문 스크롤 컨테이너를 직접 제어해야 할 때 전달한다.
+   * 전달하지 않으면 내부 ref를 사용한다.
+   */
+  bodyRef?: RefObject<HTMLDivElement | null>;
 };
 
 const sizeClasses: Record<BottomSheetSize, string> = {
@@ -42,12 +47,14 @@ export default function BottomSheet({
   className = '',
   bodyClassName = 'px-5',
   scrollResetKey,
+  bodyRef: externalBodyRef,
 }: BottomSheetProps) {
-  const bodyRef = useRef<HTMLDivElement>(null);
+  const internalBodyRef = useRef<HTMLDivElement>(null);
+  const bodyRef = externalBodyRef ?? internalBodyRef;
 
   useEffect(() => {
     bodyRef.current?.scrollTo({ top: 0 });
-  }, [scrollResetKey]);
+  }, [scrollResetKey, bodyRef]);
 
   return (
     <Drawer.Root
