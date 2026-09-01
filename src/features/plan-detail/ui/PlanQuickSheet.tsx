@@ -100,10 +100,11 @@ export default function PlanQuickSheet({
         active={subscribing}
         onExit={() => setIsSubscribeOpen(false)}
         onComplete={() => setIsSubscribeOpen(false)}
-        renderShell={(shell) => (
+        renderShell={(shell, bodyRef) => (
           <BottomSheet
             open={open}
             onOpenChange={handleOpenChange}
+            bodyRef={bodyRef}
             onBack={
               subscribing ? shell.onBack : selectedPlan ? backToList : undefined
             }
