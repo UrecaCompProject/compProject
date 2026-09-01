@@ -143,7 +143,7 @@ export async function routeQuickReply(
         category: 'attendance',
       },
     ]);
-    openSheetGame('attendance', 5);
+    openSheetGame('attendance');
     return 'handled';
   }
 

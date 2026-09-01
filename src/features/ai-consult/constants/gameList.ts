@@ -48,7 +48,6 @@ export const GAME_LIST: GameMeta[] = [
     description: '스크래치 카드를 긁어 배지를 받아요',
     type: 'chat',
     icon: 'Sparkles',
-    reward: 3,
     missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f104',
   },
   {
@@ -75,7 +74,6 @@ export const GAME_LIST: GameMeta[] = [
     description: '출석하고 룰렛을 돌려 혜택을 받아요',
     type: 'sheet',
     icon: 'Gift',
-    reward: 5,
     missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f103',
   },
 ];

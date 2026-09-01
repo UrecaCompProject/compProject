@@ -51,7 +51,7 @@ export default function PlanSearchBar({
         </button>
 
         {isOpen && (
-          <ul className="absolute right-0 top-full z-10 mt-1 min-w-[120px] rounded-lg border border-border bg-surface-card py-1 shadow-md">
+          <ul className="absolute right-0 top-full z-10 mt-1 min-w-30 rounded-lg border border-border bg-surface-card py-1 shadow-md">
             {SORT_OPTIONS.map((option) => (
               <li key={option}>
                 <button
