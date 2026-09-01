@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import backImage1 from '@/shared/assets/images/card-match-back-01.svg';
-import backImage2 from '@/shared/assets/images/card-match-back-02.svg';
-import faceImage01 from '@/shared/assets/images/card-match-face-01.svg';
+import badgeImage from '@/shared/assets/images/badge.svg';
+import backImage from '@/shared/assets/images/card-match-back-03.svg';
 import faceImage02 from '@/shared/assets/images/card-match-face-02.svg';
 import faceImage03 from '@/shared/assets/images/card-match-face-03.svg';
-import faceImage04 from '@/shared/assets/images/card-match-face-04.svg';
 import faceImage05 from '@/shared/assets/images/card-match-face-05.svg';
 import faceImage06 from '@/shared/assets/images/card-match-face-06.svg';
+import faceImage11 from '@/shared/assets/images/card-match-face-11.svg';
+import faceImage19 from '@/shared/assets/images/card-match-face-19.svg';
 import introImage from '@/shared/assets/images/card-match-intro.svg';
 
 import { CARD_MATCH_RULES } from '../../mocks/rules';
@@ -26,18 +26,39 @@ type CardItem = {
 
 // TODO: 난이도별 쌍 개수/시간 나중에 추가 (지금은 무난하게 6쌍 고정)
 const FACE_IMAGES = [
-  faceImage01,
+  faceImage11,
   faceImage02,
   faceImage03,
-  faceImage04,
+  faceImage19,
   faceImage05,
   faceImage06,
 ];
 
-const BACK_IMAGES = [backImage1, backImage2];
+// 각 그림에서 스포이드로 뽑은 대표 색
+const FACE_COLORS = [
+  '#77af4e', // 11 green (배터리)
+  '#af98e5', // 02 purple
+  '#26a5f9', // 03 sky
+  '#fdb01f', // 19 gold (돈)
+  '#fd672c', // 05 orange
+  '#f96692', // 06 pink
+];
+
+// 앞면 배경색: 대표 색을 흰색과 섞어 아주 연하게
+const FACE_TINTS = [
+  '#ebf3e4', // 11 green
+  '#f3f0fb', // 02 purple
+  '#def2fe', // 03 sky
+  '#fff3dd', // 19 gold
+  '#ffe8df', // 05 orange
+  '#fee8ef', // 06 pink
+];
+
 const COLUMN_COUNT = 4;
 const PAIR_COUNT = FACE_IMAGES.length; // 6쌍 = 12장
-const TIME_LIMIT = 40; // 초
+const TIME_LIMIT = 30; // 초
+const PREVIEW_DELAY = 400; // 시작 후 카드를 뒤집기까지 기다리는 시간(ms)
+const PREVIEW_DURATION = 2500; // 전체 카드를 보여주는 시간(ms)
 
 function shuffle<T>(arr: T[]): T[] {
   const copy = [...arr];
@@ -59,12 +80,6 @@ function createDeck(): CardItem[] {
   }));
 }
 
-function getBackImage(id: number) {
-  const row = Math.floor(id / COLUMN_COUNT);
-  const col = id % COLUMN_COUNT;
-  return (row + col) % 2 === 0 ? BACK_IMAGES[0] : BACK_IMAGES[1];
-}
-
 type CardMatchGameProps = {
   reward?: number;
   onWin?: (reward: number) => void;
@@ -82,21 +97,40 @@ export default function CardMatchGame({
   const [lockBoard, setLockBoard] = useState(false);
   const [moves, setMoves] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
+  const [preview, setPreview] = useState(false);
+  const [previewDone, setPreviewDone] = useState(false);
+  // 맞춘 순서대로 쌓이는 faceIndex 목록 (점수 표시 칸을 카드 색으로 채우는 데 사용)
+  const [matchedFaces, setMatchedFaces] = useState<number[]>([]);
 
   const matchedCount = useMemo(
     () => deck.filter((card) => card.matched).length / 2,
     [deck],
   );
   const isCleared = matchedCount === PAIR_COUNT;
-  const score = Math.round((matchedCount / PAIR_COUNT) * 100);
 
   const phaseRef = useRef(phase);
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
 
+  // 시작하면 뒷면 상태 → 잠깐 뒤 전체를 뒤집어 보여줌 → 다시 덮는다
   useEffect(() => {
     if (phase !== 'playing') return;
+
+    const flipIn = setTimeout(() => setPreview(true), PREVIEW_DELAY);
+    const flipOut = setTimeout(() => {
+      setPreview(false);
+      setPreviewDone(true);
+    }, PREVIEW_DELAY + PREVIEW_DURATION);
+
+    return () => {
+      clearTimeout(flipIn);
+      clearTimeout(flipOut);
+    };
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || !previewDone) return;
 
     const timer = setTimeout(() => {
       setTimeLeft((t) => {
@@ -109,7 +143,7 @@ export default function CardMatchGame({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [phase, timeLeft]);
+  }, [phase, timeLeft, previewDone]);
 
   const setBackOverride = useGameStore((state) => state.setBackOverride);
 
@@ -130,10 +164,14 @@ export default function CardMatchGame({
     setFlipped([]);
     setMoves(0);
     setTimeLeft(TIME_LIMIT);
+    setPreview(false);
+    setPreviewDone(false);
+    setMatchedFaces([]);
     setPhase('playing');
   };
 
   const handleFlip = (id: number) => {
+    if (!previewDone) return;
     if (lockBoard) return;
     if (flipped.includes(id)) return;
     if (deck[id].matched) return;
@@ -149,6 +187,7 @@ export default function CardMatchGame({
 
       if (deck[firstId].faceIndex === deck[secondId].faceIndex) {
         const nextMatchedCount = matchedCount + 1;
+        const matchedFaceIndex = deck[firstId].faceIndex;
 
         setTimeout(() => {
           if (phaseRef.current !== 'playing') return;
@@ -160,6 +199,7 @@ export default function CardMatchGame({
                 : card,
             ),
           );
+          setMatchedFaces((prev) => [...prev, matchedFaceIndex]);
           setFlipped([]);
           setLockBoard(false);
 
@@ -194,89 +234,139 @@ export default function CardMatchGame({
         />
       }
       playing={
-        <div className="flex flex-col items-center h-full px-5 pt-10 pb-6">
+        <div className="flex flex-col items-center h-full px-4 pt-6 pb-6">
           <div className="w-full p-4 rounded-lg bg-surface-page">
-            <div className="flex items-center justify-between">
-              <span className="text-[16px] font-semibold text-fg-tertiary">
-                나의 점수
+            {/* 남은 시간: 라벨 + 초 + 줄어드는 게이지바 */}
+            <div className="flex items-baseline justify-between">
+              <span className="text-[15px] font-semibold text-fg-secondary">
+                남은 시간
               </span>
-              <span className="rounded-md bg-surface-pressed px-2 py-1 text-[12px] font-bold text-fg-tertiary">
-                {score}점
+              <span
+                className={`text-[14px] font-bold ${
+                  timeLeft <= 10 ? 'text-game-timer-alert' : 'text-fg-primary'
+                }`}
+              >
+                {timeLeft}
+                <span className="text-fg-tertiary">초</span>
               </span>
             </div>
 
-            <div className="mt-4 h-2 w-full rounded-[5px] bg-surface-pressed">
+            <div className="mt-2 h-2 w-full rounded-[5px] bg-border">
               <div
-                className="h-2 rounded-[5px] bg-brand-promo-primary transition-all duration-300"
-                style={{ width: `${score}%` }}
+                className={`h-2 rounded-[5px] transition-[width] duration-1000 ease-linear ${
+                  timeLeft <= 10
+                    ? 'bg-game-timer-alert'
+                    : 'bg-brand-promo-primary'
+                }`}
+                style={{ width: `${(timeLeft / TIME_LIMIT) * 100}%` }}
               />
             </div>
+
+            {/* 맞춘 짝: 쌍 수만큼 칸이 채워지는 카드 모양 표시 */}
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-[15px] font-semibold text-fg-secondary">
+                맞춘 짝
+              </span>
+              <div className="flex gap-1">
+                {Array.from({ length: PAIR_COUNT }).map((_, i) => {
+                  const faceIndex = matchedFaces[i];
+                  const filled = faceIndex !== undefined;
+                  return (
+                    <span
+                      key={i}
+                      className={`h-3.5 w-2.5 rounded-[3px] transition-colors duration-300 ${
+                        filled ? '' : 'bg-border'
+                      }`}
+                      style={
+                        filled
+                          ? { backgroundColor: FACE_COLORS[faceIndex] }
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          <p className="mt-3 text-caption text-fg-tertiary">
-            남은 시간{' '}
-            <strong
-              className={
-                timeLeft <= 10 ? 'text-semantic-error' : 'text-fg-primary'
-              }
-            >
-              {timeLeft}초
-            </strong>
-          </p>
+          <div className="flex flex-1 flex-col justify-center w-full gap-5 mt-8">
+            <div className="w-full p-4 rounded-lg bg-surface-card">
+              <div
+                className="grid gap-2.5"
+                style={{
+                  gridTemplateColumns: `repeat(${COLUMN_COUNT}, minmax(0, 1fr))`,
+                }}
+              >
+                {deck.map((card) => {
+                  const isFlipped =
+                    preview || flipped.includes(card.id) || card.matched;
 
-          <div
-            className="grid gap-4 mt-10"
-            style={{ gridTemplateColumns: `repeat(${COLUMN_COUNT}, 68px)` }}
-          >
-            {deck.map((card) => {
-              const isFlipped = flipped.includes(card.id) || card.matched;
-              const backImage = getBackImage(card.id);
+                  return (
+                    <div key={card.id} className="[perspective:1000px]">
+                      <button
+                        type="button"
+                        onClick={() => handleFlip(card.id)}
+                        disabled={isFlipped}
+                        style={{
+                          transform: `${
+                            isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                          }${card.matched ? ' scale(0.82)' : ''}`,
+                        }}
+                        className="
+                        relative aspect-[3/4] w-full
+                        transition-transform duration-500 ease-out [transform-style:preserve-3d]
+                      "
+                      >
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl [backface-visibility:hidden]">
+                          <img
+                            src={backImage}
+                            alt=""
+                            className="h-full w-full object-contain drop-shadow-sm"
+                          />
+                        </div>
 
-              return (
-                <div key={card.id} className="[perspective:1000px]">
-                  <button
-                    type="button"
-                    onClick={() => handleFlip(card.id)}
-                    disabled={isFlipped}
-                    style={{
-                      transform: isFlipped
-                        ? 'rotateY(180deg)'
-                        : 'rotateY(0deg)',
-                    }}
-                    className="
-                      relative aspect-[3/4] w-[68px]
-                      transition-transform duration-500 [transform-style:preserve-3d]
-                    "
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-xl [backface-visibility:hidden]">
-                      <img
-                        src={backImage}
-                        alt=""
-                        className="object-contain w-full h-full"
-                      />
+                        <div
+                          className={`
+                          absolute inset-0 flex items-center justify-center
+                          overflow-hidden rounded-xl border-[3px] drop-shadow-sm
+                          transition-colors duration-500
+                          [backface-visibility:hidden] [transform:rotateY(180deg)]
+                          ${
+                            card.matched
+                              ? 'border-border bg-surface-page'
+                              : 'bg-surface-card'
+                          }
+                        `}
+                          style={
+                            card.matched
+                              ? undefined
+                              : {
+                                  backgroundColor: FACE_TINTS[card.faceIndex],
+                                  borderColor: FACE_COLORS[card.faceIndex],
+                                }
+                          }
+                        >
+                          {/* 매칭 완료: 카드가 작아지고(버튼 scale) 앞면 그림은 회색으로 → '해결됨'이 명확 */}
+                          <img
+                            src={FACE_IMAGES[card.faceIndex]}
+                            alt=""
+                            className={`w-[68%] object-contain transition duration-500 ${
+                              card.matched ? 'opacity-50 grayscale' : ''
+                            }`}
+                          />
+                        </div>
+                      </button>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
 
-                    <div
-                      className={`
-                        absolute inset-0 flex items-center justify-center
-                        overflow-hidden rounded-xl border-2 border-border-brand
-                        [backface-visibility:hidden] [transform:rotateY(180deg)]
-                        ${card.matched ? 'bg-brand-promo-soft' : 'bg-surface-card'}
-                      `}
-                    >
-                      <img
-                        src={FACE_IMAGES[card.faceIndex]}
-                        alt=""
-                        className="w-[55px] object-contain"
-                      />
-                    </div>
-                  </button>
-                </div>
-              );
-            })}
+            <div className="flex items-center justify-center gap-1.5 text-caption font-medium text-fg-tertiary">
+              <img src={badgeImage} alt="" className="h-4 w-4" />
+              모든 짝을 맞추면 배지 {reward}개를 받아요
+            </div>
           </div>
-
-          {/* TODO: 나의 보유 뱃지/포인트 - 구현 여부 확정되면 추가 */}
         </div>
       }
     />
