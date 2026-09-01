@@ -1,4 +1,4 @@
-# QA 배치 수정 구현 계획
+﻿# QA 배치 수정 구현 계획
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `executing-plans` skill to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -22,307 +22,20 @@
 
 ## File Structure
 
-| 파일                                                   | 작업 | 책임                                                                             |
-| ------------------------------------------------------ | ---- | -------------------------------------------------------------------------------- |
-| `src/features/ai-consult/model/useChat.tsx`            | 수정 | `openSheetGame`에 `onWin` 콜백 연결, `playedTodayGameIds` 노출                   |
-| `src/features/ai-consult/lib/quickReplyRouter.ts`      | 수정 | "게임 하기" 시 완료된 게임 제외, `QuickReplyContext`에 `playedTodayGameIds` 추가 |
-| `src/features/ai-consult/lib/gameRouter.ts`            | 수정 | `GameSelectContext`에 `playedTodayGameIds` 전달, 완료된 게임 진입 차단           |
-| `src/features/ai-consult/constants/gameList.ts`        | 수정 | `GAME_LIST`에 `missionUuid` 필드 추가                                            |
-| `src/pages/ChatPage.tsx`                               | 수정 | 퀵리플라이 빈 배열 폴백 처리, `playedTodayGameIds` 전달                          |
-| `src/widgets/layout/Header.tsx`                        | 수정 | `Astroid` → `UserRound` 아이콘 교체                                              |
-| `src/features/ai-consult/ui/ChatMenuBar.tsx`           | 수정 | `useClickOutside` ref 확장, 레포트 버튼 추가                                     |
-| `src/features/games/ui/game/RuletteGame.tsx`           | 수정 | 휠/섹터 시각화 UI로 재작성                                                       |
-| `src/features/reward/ui/coupon/MyCouponContent.tsx`    | 수정 | 배지 잔액 표시, 쿠폰 클릭 시 바코드 모달                                         |
-| `src/features/reward/ui/coupon/CouponBarcodeModal.tsx` | 생성 | 바코드 표시 모달                                                                 |
-| `src/entities/reward/model/reward.ts`                  | 수정 | `Coupon` 타입에 `barcode` 필드 추가                                              |
-| `src/features/reward/api/getMyCoupons.ts`              | 수정 | 쿼리에 `barcode` 포함, 매핑에 추가                                               |
-| `src/features/ai-consult/ui/AIChatExtras.tsx`          | 수정 | 레포트 버튼 제거 (메뉴바로 이동)                                                 |
-| `src/features/ai-consult/ui/ReportGenerateButton.tsx`  | 수정 | 미사용 — 제거 또는 메뉴바용으로 이관                                             |
-
----
-
-## Task 1: 채팅 경로 게임 배지 정산 + 재진입 방지 (#3 + #6)
-
-**Files:**
-
-- Modify: `src/features/ai-consult/constants/gameList.ts`
-- Modify: `src/features/ai-consult/model/useChat.tsx:284-296`
-- Modify: `src/features/ai-consult/lib/quickReplyRouter.ts:31-55, 92-115`
-- Modify: `src/features/ai-consult/lib/gameRouter.ts:15-40`
-- Modify: `src/pages/ChatPage.tsx:76-81, 109-118`
-
-**Interfaces:**
-
-- Consumes: `useMissionCompletion`의 `playedTodayGameIds: Set<string>`, `recordPlay`
-- Produces: `openSheetGame`가 `onWin` 콜백을 내부적으로 연결, `QuickReplyContext.playedTodayGameIds` 필드
-
-**배경:** 현재 채팅 경로 `openSheetGame`이 `onWin`을 전달하지 않아 배지 적립이 안 되고, `playedTodayGameIds`가 퀵리플라이에 연결되지 않아 완료된 게임도 재진입 가능함.
-
-- [ ] **Step 1: `GAME_LIST`에 `missionUuid` 필드 추가**
-
-`src/features/ai-consult/constants/gameList.ts`의 `GameMeta` 타입과 `GAME_LIST` 배열에 각 게임의 미션 UUID를 추가한다. UUID는 `src/features/reward/mocks/missions.ts`에서 가져온다.
-
-```ts
-// GameMeta 타입에 missionUuid 추가 (line 10-17)
-export type GameMeta = {
-  id: ChatGameId | SheetGameId;
-  title: string;
-  description: string;
-  type: 'chat' | 'sheet';
-  icon: string;
-  reward?: number;
-  missionUuid: string; // game_results.game_id와 매핑되는 미션 UUID
-};
-
-// GAME_LIST 각 항목에 missionUuid 추가
-// 'card-match': '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f101'
-// 'reaction': '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f102'
-// 'attendance': '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f103'
-// 'scratch': '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f104'
-// 'ox': '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f105'
-// 'multiple-choice': '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f106'
-```
-
-- [ ] **Step 2: `useChat`의 `openSheetGame`에 `onWin` 연결**
-
-`src/features/ai-consult/model/useChat.tsx`의 `openSheetGame`(line 291-296)을 수정하여 `GameId` → `missionUuid` 매핑 후 `recordPlay` + `GetBadgeModal`을 `onWin`으로 연결한다.
-
-```tsx
-// line 291-296 수정
-const openSheetGame = useCallback(
-  (gameId: GameId, reward?: number) => {
-    const gameMeta = GAME_LIST.find((g) => g.id === gameId);
-    const missionUuid = gameMeta?.missionUuid;
-    openGameStore(gameId, {
-      reward,
-      source: 'chat',
-      onWin: (wonReward) => {
-        if (!missionUuid) return;
-        recordPlay(
-          { gameId: missionUuid, score: wonReward },
-          {
-            onSuccess: () => {
-              openModal({ content: <GetBadgeModal badgeCount={wonReward} /> });
-            },
-          },
-        );
-      },
-    });
-  },
-  [openGameStore, recordPlay, openModal],
-);
-```
-
-`GAME_LIST` import 추가: `import { GAME_LIST } from '../constants/gameList';` (이미 quickReplyRouter에서 사용 중이지만 useChat에는 없음)
-
-- [ ] **Step 3: `useChat`에서 `playedTodayGameIds` 노출**
-
-`useChat`의 return 객체(line 554-586)에 `playedTodayGameIds` 추가. `useMissionCompletion`는 이미 line 72에서 호출 중이므로 `playedTodayGameIds`를 가져온다.
-
-```tsx
-// line 72 근처 — useMissionCompletion에서 playedTodayGameIds도 가져오기
-const { recordPlay, playedTodayGameIds } = useMissionCompletion();
-
-// return 객체에 추가 (line 586 근처)
-return {
-  // ... 기존 필드들 ...
-  playedTodayGameIds,
-};
-```
-
-- [ ] **Step 4: `QuickReplyContext`에 `playedTodayGameIds` 추가**
-
-`src/features/ai-consult/lib/quickReplyRouter.ts`의 `QuickReplyContext` 인터페이스(line 31-55)에 필드 추가.
-
-```ts
-export interface QuickReplyContext {
-  // ... 기존 필드들 ...
-  playedTodayGameIds: Set<string>;
-  // ...
-}
-```
-
-`routeQuickReply` 함수 내 destructuring(line 64-83)에 `playedTodayGameIds` 추가.
-
-- [ ] **Step 5: "게임 하기" 퀵리플라이에서 완료된 게임 제외**
-
-`quickReplyRouter.ts`의 "게임 하기" 분기(line 92-104)를 수정하여 `playedTodayGameIds`에 포함된 게임을 제외한다.
-
-```ts
-// line 92-104 수정
-if (text === '게임 하기') {
-  const availableGames = GAME_LIST.filter(
-    (g) => !playedTodayGameIds.has(g.missionUuid),
-  );
-  const gameTitles = availableGames.map((g) => g.title);
-  const message =
-    availableGames.length === 0
-      ? '오늘은 모든 게임을 플레이하셨어요! 내일 다시 만나요.'
-      : '원하는 게임을 선택해 주세요!';
-  setMessages((prev) => [
-    ...prev,
-    { id: Date.now(), type: 'user', sentence: '게임 하기', category: 'game' },
-    buildAIMessage(message, [...gameTitles, '메뉴로 돌아가기'], {
-      category: 'game',
-    }),
-  ]);
-  return 'handled';
-}
-```
-
-- [ ] **Step 6: 게임 선택 시 완료 여부 재확인**
-
-`quickReplyRouter.ts`의 게임 매칭 분기(line 107-115)에 완료된 게임 차단 추가.
-
-```ts
-// line 107-115 수정
-const matchedGame = GAME_LIST.find((g) => g.title === text);
-if (matchedGame) {
-  if (playedTodayGameIds.has(matchedGame.missionUuid)) {
-    setMessages((prev) => [
-      ...prev,
-      buildAIMessage(
-        '오늘은 이미 플레이한 게임이에요. 내일 다시 도전해 주세요!',
-        ['게임 하기', '메뉴로 돌아가기'],
-        { category: 'game' },
-      ),
-    ]);
-    return 'handled';
-  }
-  handleGameSelect(matchedGame.id as ChatGameId | SheetGameId, {
-    setMessages,
-    startQuiz,
-    openSheetGame,
-  });
-  return 'handled';
-}
-```
-
-- [ ] **Step 7: `useChat.handleSend`에 `playedTodayGameIds` 전달**
-
-`useChat.tsx`의 `handleSend`(line 298-421)에서 `routeQuickReply` 호출(line 313-347)에 `playedTodayGameIds` 추가.
-
-```tsx
-// line 313-347의 routeQuickReply 호출에 추가
-const result = await routeQuickReply({
-  text: trimmed,
-  messages,
-  profile,
-  isLoggedIn,
-  effectiveCurrentPlan,
-  setMessages,
-  setProfile,
-  setIsLoading,
-  addAIResponse,
-  openSubscription,
-  openSignupChat,
-  startCompareFlow,
-  setPendingComparePlan,
-  fetchCompare,
-  startQuiz,
-  openSheetGame,
-  playedTodayGameIds,
-  signal,
-  retryLastInput: () => {
-    /* 기존 코드 유지 */
-  },
-});
-```
-
-`handleSend`의 dependency array(line 399-420)에 `playedTodayGameIds` 추가.
-
-- [ ] **Step 8: `ChatPage`에서 `playedTodayGameIds` 받아서 전달**
-
-`src/pages/ChatPage.tsx`의 `useChat()` destructuring(line 16-48)에 `playedTodayGameIds` 추가. 이 값은 `handleSend` 내부에서 사용되므로 별도 전달이 필요하지 않다 — `handleSend`가 `useChat` 내부에서 `playedTodayGameIds`를 참조하므로.
-
-실제로는 Step 7에서 `useChat` 내부의 `playedTodayGameIds`를 `routeQuickReply`에 넘기므로, `ChatPage`에서 추가로 넘겨줄 것은 없다. 이 스텝은 확인용이다.
-
-- [ ] **Step 9: lint 및 build 확인**
-
-Run: `npm run lint`
-Expected: PASS (에러 없음)
-
-Run: `npm run build`
-Expected: PASS (타입 에러 없음)
-
-- [ ] **Step 10: 수동 검증**
-
-개발 서버 실행 후:
-
-1. 채팅에서 "게임 하기" → 게임 목록 확인
-2. "반응속도 탭 게임" 선택 → 게임 완료 → 배지 획득 모달 확인
-3. 다시 "게임 하기" → 완료한 게임이 목록에서 제외되었는지 확인
-4. "카드 맞추기"도 동일하게 확인
-
-- [ ] **Step 11: Commit**
-
-```bash
-git add -A
-git commit -m "fix: 채팅 경로 게임 배지 정산 연결 및 완료된 게임 재진입 방지
-
-- openSheetGame에 onWin 콜백 연결 (recordPlay + GetBadgeModal)
-- GAME_LIST에 missionUuid 필드 추가
-- 퀵리플라이 '게임 하기'에서 오늘 완료한 게임 제외
-- 게임 선택 시 완료 여부 재확인 차단
-
-Generated with [Devin](https://devin.ai)
-
-Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-```
-
----
-
-## Task 2: 추천폼 진입 후 퀵리플라이 유지 (#8)
-
-**Files:**
-
-- Modify: `src/pages/ChatPage.tsx:76-81`
-
-**배경:** 백엔드가 폼 응답 시 `quickReplies: []`를 반환하면, 프론트가 빈 배열을 truthy로 처리해 `QuickReplies`가 `null`을 반환하여 퀵리플라이가 사라짐. 폼 진입 중에도 웰컴 메뉴를 유지하도록 폴백 처리.
-
-- [ ] **Step 1: `ChatPage` 퀵리플라이 계산 로직 수정**
-
-`src/pages/ChatPage.tsx` line 76-81을 수정하여 빈 배열일 때 웰컴 퀵리플라이로 폴백.
-
-```tsx
-// line 76-81 수정
-const lastMessage = messages[messages.length - 1];
-// 빈 배열일 때도 웰컴 퀵리플라이로 폴백 — 폼 진입 등으로 quickReplies: []가 내려올 때 메뉴 유지
-const quickReplies =
-  lastMessage?.type === 'ai' &&
-  lastMessage.quickReplies &&
-  lastMessage.quickReplies.length > 0
-    ? lastMessage.quickReplies
-    : getWelcomeQuickReplies(isLoggedIn);
-```
-
-- [ ] **Step 2: lint 및 build 확인**
-
-Run: `npm run lint`
-Expected: PASS
-
-Run: `npm run build`
-Expected: PASS
-
-- [ ] **Step 3: 수동 검증**
-
-1. "요금제 추천받기" 클릭 → 추천 폼 진입
-2. 폼 진입 후에도 퀵리플라이 메뉴가 유지되는지 확인
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add -A
-git commit -m "fix: 추천 폼 진입 후 퀵리플라이 사라짐 현상 수정
-
-빈 quickReplies 배열일 때 웰컴 퀵리플라이로 폴백하도록 수정
-
-Generated with [Devin](https://devin.ai)
-
-Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-```
-
----
+| 파일 | 작업 | 책임 |
+
+| 파일                                                   | 작업 | 책임                                         |
+| ------------------------------------------------------ | ---- | -------------------------------------------- |
+| `src/features/ai-consult/ui/ChatMenuBar.tsx`           | 수정 | `useClickOutside` ref 확장, 레포트 버튼 추가 |
+| `src/features/games/ui/game/RuletteGame.tsx`           | 수정 | 휠/섹터 시각화 UI로 재작성                   |
+| `src/features/reward/ui/coupon/MyCouponContent.tsx`    | 수정 | 배지 잔액 표시, 쿠폰 클릭 시 바코드 모달     |
+| `src/features/reward/ui/coupon/CouponBarcodeModal.tsx` | 생성 | 바코드 표시 모달                             |
+| `src/entities/reward/model/reward.ts`                  | 수정 | `Coupon` 타입에 `barcode` 필드 추가          |
+| `src/features/reward/api/getMyCoupons.ts`              | 수정 | 쿼리에 `barcode` 포함, 매핑에 추가           |
+| `src/features/ai-consult/ui/AIChatExtras.tsx`          | 수정 | 레포트 버튼 제거 (메뉴바로 이동)             |
+| `src/features/ai-consult/ui/ReportGenerateButton.tsx`  | 수정 | 미사용 — 제거 또는 메뉴바용으로 이관         |
+
+> **완료된 파일** (커밋 4cd743a): `useChat.tsx`, `quickReplyRouter.ts`, `gameList.ts`, `ChatPage.tsx`, `Header.tsx`, `PlanQuickSheet.tsx`, `PlanSearchBar.tsx`, `PlanCatalogList.tsx`
 
 ## Task 3: 알림 클릭 시 마이메뉴 닫힘 수정 (#19)
 
@@ -617,67 +330,6 @@ git commit -m "feat: 쿠폰함 바코드 모달 및 배지 잔액 표시 추가
 - CouponBarcodeModal 컴포넌트 생성
 - MyCouponContent 상단에 배지 잔액 표시
 - 쿠폰 카드 클릭 시 바코드 모달 열기
-
-Generated with [Devin](https://devin.ai)
-
-Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-```
-
----
-
-## Task 5: 헤더 아이콘 교체 (Astroid → UserRound) (#11)
-
-**Files:**
-
-- Modify: `src/widgets/layout/Header.tsx:1, 44-55`
-
-**배경:** 비로그인 상태에서 `Astroid` 아이콘을 사용 중이나, `lucide-react` 표준 이름인지 불확실하고 `UserRound`로 교체 요청.
-
-- [ ] **Step 1: `Header.tsx` import 및 아이콘 교체**
-
-`src/widgets/layout/Header.tsx` line 1의 import에서 `Astroid` 제거, `UserRound` 추가:
-
-```tsx
-// line 1 수정
-import { Bell, UserRound, DoorOpen } from 'lucide-react';
-```
-
-line 44-55의 비로그인 아이콘 교체:
-
-```tsx
-// line 44-55 수정
-) : (
-  <UserRound
-    size={22}
-    className="shrink-0"
-    onClick={() =>
-      open({
-        title: '회원관리',
-        content: <SigninModal />,
-      })
-    }
-  />
-)}
-```
-
-- [ ] **Step 2: lint 및 build 확인**
-
-Run: `npm run lint`
-Expected: PASS
-
-Run: `npm run build`
-Expected: PASS (Astroid 미존재로 인한 빌드 오류가 있었다면 해결됨)
-
-- [ ] **Step 3: 수동 검증**
-
-1. 비로그인 상태에서 Header 우측 아이콘이 UserRound(사람 모양)로 표시되는지 확인
-2. 클릭 시 회원관리 모달이 열리는지 확인
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add -A
-git commit -m "fix: 헤더 비로그인 아이콘 Astroid를 UserRound로 교체
 
 Generated with [Devin](https://devin.ai)
 
@@ -1420,264 +1072,6 @@ Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.
 
 ---
 
-## Task 12: navbar 요금제 비교하기 버튼 작동안함 + 현재 요금제 미적용 (#16 + #18)
-
-**Files:**
-
-- Modify: `src/features/plan-detail/ui/PlanQuickSheet.tsx:92-95`
-
-**배경:**
-
-- #18: "navbar 요금제에서 비교하기 클릭 시 작동안함" — `PlanQuickSheet`의 "비교 하기" 버튼(line 93)에 `onClick` 핸들러가 없음.
-- #16: "요금제 비교하기 버튼 시, 현재 요금제 적용 안됨" — 비교하기가 작동해도 현재 요금제가 자동으로 선택되지 않음.
-
-**접근:** `PlanQuickSheet`의 "비교 하기" 버튼에 비교 플로우를 연결. `useChatCompare`의 `fetchCompare`를 사용하거나, `PlanCompare` 컴포넌트를 직접 렌더. 단, `PlanQuickSheet`는 채팅 외부의 독립 시트이므로 채팅의 `useChatCompare`를 직접 사용할 수 없음.
-
-**구현:** "비교 하기" 클릭 시 `PlanCompare`를 별도 BottomSheet로 렌더. 현재 요금제는 `useCurrentPlan`으로 조회, 선택된 요금제는 `selectedPlan`을 사용.
-
-- [ ] **Step 1: PlanQuickSheet에 비교 시트 상태 추가**
-
-`PlanQuickSheet.tsx`에 비교 모달 상태와 데이터 준비.
-
-```tsx
-// import 추가
-import { useCurrentPlan } from '@/entities/plan';
-import { useIsLoggedIn } from '@/entities/user';
-import PlanCompare, {
-  type PlanCompareData,
-} from '@/features/plan-change/ui/PlanCompare';
-
-// 컴포넌트 내부에 추가
-const isLoggedIn = useIsLoggedIn();
-const { data: currentPlan = null } = useCurrentPlan(isLoggedIn);
-const [compareOpen, setCompareOpen] = useState(false);
-
-// 비교 데이터 생성
-const compareData: PlanCompareData | null = useMemo(() => {
-  if (!selectedPlan || !currentPlan) return null;
-  return {
-    currentPlanName: currentPlan.planName,
-    currentFee: `${currentPlan.monthlyFee?.toLocaleString() ?? '-'}원`,
-    currentDiscount: '-',
-    currentData: currentPlan.data ?? '-',
-    currentTethering: currentPlan.tethering ?? '-',
-    currentShareData: currentPlan.shareData ?? '-',
-    currentVoice: currentPlan.voice ?? '-',
-    currentMessage: currentPlan.message ?? '-',
-    selectedPlanName: selectedPlan.name,
-    selectedFee: `${selectedPlan.monthlyFee.toLocaleString()}원`,
-    selectedDiscount: '-',
-    selectedData: selectedPlan.data ?? '-',
-    selectedTethering: selectedPlan.tethering ?? '-',
-    selectedShareData: selectedPlan.shareData ?? '-',
-    selectedVoice: selectedPlan.voice ?? '-',
-    selectedMessage: selectedPlan.message ?? '-',
-  };
-}, [selectedPlan, currentPlan]);
-```
-
-- [ ] **Step 2: "비교 하기" 버튼에 onClick 추가**
-
-```tsx
-// line 93 수정
-<Button
-  variant="outline"
-  size="lg"
-  className="flex-1"
-  onClick={() => setCompareOpen(true)}
-  disabled={!currentPlan}
->
-  비교 하기
-</Button>
-```
-
-`currentPlan`이 없으면 버튼 비활성화 + 툴팁 안내.
-
-- [ ] **Step 3: 비교 BottomSheet 렌더 추가**
-
-`PlanQuickSheet`의 JSX에 비교 시트 추가:
-
-```tsx
-{
-  /* 기 BottomSheet 내부 또는 별도로 */
-}
-<BottomSheet
-  open={compareOpen}
-  onOpenChange={setCompareOpen}
-  title="요금제 비교"
-  size="large"
-  bodyClassName="px-0"
->
-  {compareData && (
-    <PlanCompare
-      data={compareData}
-      onChangePlan={() => {
-        setCompareOpen(false);
-        setIsSubscribeOpen(true);
-      }}
-      className="w-full"
-    />
-  )}
-</BottomSheet>;
-```
-
-- [ ] **Step 4: lint 및 build 확인**
-
-Run: `npm run lint && npm run build`
-Expected: PASS
-
-- [ ] **Step 5: 수동 검증**
-
-1. 메뉴바 → 요금제 → 요금제 선택 → "비교 하기" 버튼 클릭
-2. 비교 시트가 열리고 현재 요금제 vs 선택 요금제가 표시되는지 확인
-3. "요금제 변경하기" 버튼 클릭 → 가입 플로우로 전환되는지 확인
-4. 현재 요금제가 없을 때 "비교 하기" 버튼이 비활성화되는지 확인
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add -A
-git commit -m "fix: navbar 요금제 비교하기 버튼 작동 및 현재 요금제 자동 적용
-
-PlanQuickSheet의 비교하기 버튼에 onClick 연결, useCurrentPlan으로 현재 요금제 자동 조회
-
-Generated with [Devin](https://devin.ai)
-
-Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-```
-
----
-
-## Task 13: navbar 요금제 sort 드롭다운 (#17)
-
-**Files:**
-
-- Modify: `src/features/plan-detail/ui/PlanSearchBar.tsx`
-- Modify: `src/features/plan-detail/ui/PlanCatalogList.tsx`
-
-**배경:** "navbar 요금제에서 sort 드롭다운으로 선택하도록 변경하기" — 현재 `PlanSearchBar`의 정렬 버튼이 `onCycleSort`로 클릭마다 `recommended → priceAsc → priceDesc`를 순환함. 드롭다운으로 직접 선택할 수 있도록 변경.
-
-- [ ] **Step 1: PlanSearchBar를 드롭다운으로 변경**
-
-`PlanSearchBar.tsx` 전체 수정 — `onCycleSort` 대신 `onSortChange: (sort: SortOption) => void` prop 사용. 드롭다운은 HTML `<select>` 또는 커스텀 드롭다운 컴포넌트.
-
-```tsx
-import { ArrowUpDown, Search, ChevronDown } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
-
-import { SORT_LABELS } from '../types';
-import { useClickOutside } from '@/shared';
-
-import type { SortOption } from '../types';
-
-interface PlanSearchBarProps {
-  sort: SortOption;
-  onOpenFilter: () => void;
-  onSortChange: (sort: SortOption) => void;
-}
-
-export default function PlanSearchBar({
-  sort,
-  onOpenFilter,
-  onSortChange,
-}: PlanSearchBarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, isOpen, () => setIsOpen(false));
-
-  const options: SortOption[] = ['recommended', 'priceAsc', 'priceDesc'];
-
-  return (
-    <div className="flex items-center gap-3 bg-surface-page">
-      <button
-        type="button"
-        onClick={onOpenFilter}
-        className="flex flex-1 items-center gap-1 text-[14px] font-medium text-fg-tertiary"
-      >
-        <Search size={17} />
-        검색필터
-      </button>
-
-      <div className="relative" ref={ref}>
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          className="flex shrink-0 items-center gap-1 text-[14px] font-medium text-fg-tertiary"
-        >
-          <ArrowUpDown size={17} />
-          {SORT_LABELS[sort]}
-          <ChevronDown
-            size={14}
-            className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
-
-        {isOpen && (
-          <ul className="absolute right-0 top-full mt-1 z-10 min-w-[120px] rounded-lg border border-border bg-surface-card py-1 shadow-md">
-            {options.map((option) => (
-              <li key={option}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSortChange(option);
-                    setIsOpen(false);
-                  }}
-                  className={`flex w-full items-center px-3 py-2 text-[13px] transition-colors hover:bg-surface-page ${
-                    option === sort
-                      ? 'font-semibold text-brand-promo-primary'
-                      : 'text-fg-secondary'
-                  }`}
-                >
-                  {SORT_LABELS[option]}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 2: PlanCatalogList에서 onCycleSort를 onSortChange로 변경**
-
-`PlanCatalogList.tsx` line 50 수정:
-
-```tsx
-<PlanSearchBar
-  sort={sort}
-  onOpenFilter={handleOpenFilter}
-  onSortChange={setSort}
-/>
-```
-
-- [ ] **Step 3: lint 및 build 확인**
-
-Run: `npm run lint && npm run build`
-Expected: PASS
-
-- [ ] **Step 4: 수동 검증**
-
-1. 메뉴바 → 요금제 → 정렬 버튼 클릭 → 드롭다운 표시
-2. 각 옵션(추천순, 낮은 가격순, 높은 가격순) 클릭 시 목록이 정렬되는지 확인
-3. 드롭다운 외부 클릭 시 닫히는지 확인
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat: 요금제 정렬을 드롭다운으로 선택하도록 변경
-
-순환식 정렬 버튼을 드롭다운 메뉴로 변경하여 직접 정렬 옵션 선택 가능
-
-Generated with [Devin](https://devin.ai)
-
-Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>"
-```
-
----
-
 ## Task 14: 요금제 비교하기 변경 (#10)
 
 **Files:**
@@ -1910,28 +1304,28 @@ Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.
 
 ### 1. Spec coverage (전체 20개 QA 항목)
 
-| #   | QA 항목                             | Task                 | 상태                                    |
-| --- | ----------------------------------- | -------------------- | --------------------------------------- |
-| 1   | 퀵리플라이/메뉴 동시 토글           | Task 8               | Phase 2                                 |
-| 2   | 연속 출석 n일째 적용 안 됨          | Task 11 (#9와 통합)  | Phase 2                                 |
-| 3   | 반응속도 게임 배지 정산             | Task 1               | Phase 1                                 |
-| 4   | 스크래치 배지 정산                  | —                    | 이미 구현됨 (onScratchWin → recordPlay) |
-| 5   | 스크래치 쿠폰함 이동 버튼           | Task 9               | Phase 2                                 |
-| 6   | 게임 완료 후 재진입                 | Task 1               | Phase 1                                 |
-| 7   | 요금제 가입 완료창 줄어듦           | Task 10              | Phase 2                                 |
-| 8   | 추천폼 진입 후 퀵리플라이 사라짐    | Task 2               | Phase 1                                 |
-| 9   | 출석체크 → 룰렛 말고 출첵 기능      | Task 11              | Phase 2                                 |
-| 10  | 요금제 비교하기 변경                | Task 14              | Phase 2 (명확화 필요)                   |
-| 11  | 헤더 아이콘 변경                    | Task 5               | Phase 1                                 |
-| 12  | 카드 게임 맞추기                    | Task 15              | Phase 2 (명확화 필요)                   |
-| 13  | 출석 룰렛 UI 변경                   | Task 6               | Phase 1                                 |
-| 14  | 레포트 생성 위치 변경               | Task 7               | Phase 1                                 |
-| 15  | 스크래치 이벤트                     | Task 16              | Phase 2 (명확화 필요)                   |
-| 16  | 요금제 비교 버튼 현재 요금제 미적용 | Task 12              | Phase 2                                 |
-| 17  | navbar sort 드롭다운                | Task 13              | Phase 2                                 |
-| 18  | navbar 비교하기 작동안함            | Task 12 (#16과 통합) | Phase 2                                 |
-| 19  | 알림 시 마이메뉴 닫힘               | Task 3               | Phase 1                                 |
-| 20  | 쿠폰함 바코드/배지 표시             | Task 4               | Phase 1                                 |
+| #   | QA 항목                             | Task                | 상태                                    |
+| --- | ----------------------------------- | ------------------- | --------------------------------------- |
+| 1   | 퀵리플라이/메뉴 동시 토글           | Task 8              | 미구현                                  |
+| 2   | 연속 출석 n일째 적용 안 됨          | Task 11 (#9와 통합) | 미구현                                  |
+| 3   | 반응속도 게임 배지 정산             | —                   | 완료 (커밋 4cd743a)                     |
+| 4   | 스크래치 배지 정산                  | —                   | 이미 구현됨 (onScratchWin → recordPlay) |
+| 5   | 스크래치 쿠폰함 이동 버튼           | Task 9              | 미구현                                  |
+| 6   | 게임 완료 후 재진입                 | —                   | 완료 (커밋 4cd743a)                     |
+| 7   | 요금제 가입 완료창 줄어듦           | Task 10             | 미구현                                  |
+| 8   | 추천폼 진입 후 퀵리플라이 사라짐    | —                   | 완료 (커밋 4cd743a)                     |
+| 9   | 출석체크 → 룰렛 말고 출첵 기능      | Task 11             | 미구현                                  |
+| 10  | 요금제 비교하기 변경                | Task 14             | 미구현 (명확화 필요)                    |
+| 11  | 헤더 아이콘 변경                    | —                   | 완료 (커밋 4cd743a)                     |
+| 12  | 카드 게임 맞추기                    | Task 15             | 미구현 (명확화 필요)                    |
+| 13  | 출석 룰렛 UI 변경                   | Task 6              | 미구현                                  |
+| 14  | 레포트 생성 위치 변경               | Task 7              | 미구현                                  |
+| 15  | 스크래치 이벤트                     | Task 16             | 미구현 (명확화 필요)                    |
+| 16  | 요금제 비교 버튼 현재 요금제 미적용 | —                   | 완료 (커밋 4cd743a)                     |
+| 17  | navbar sort 드롭다운                | —                   | 완료 (커밋 4cd743a)                     |
+| 18  | navbar 비교하기 작동안함            | —                   | 완료 (커밋 4cd743a)                     |
+| 19  | 알림 시 마이메뉴 닫힘               | Task 3              | 미구현                                  |
+| 20  | 쿠폰함 바코드/배지 표시             | Task 4              | 미구현                                  |
 
 ### 2. 명확화 필요 항목
 
@@ -1942,14 +1336,15 @@ Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.
 ### 3. Type consistency
 
 - `Coupon` 타입에 `barcode: string` 추가 → `getMyCoupons` 매핑, `CouponBarcodeModal` props, `MyCouponContent`에서 일관되게 사용
-- `GameMeta.missionUuid: string` → `quickReplyRouter`, `gameRouter`, `useChat`에서 일관되게 사용
-- `QuickReplyContext.playedTodayGameIds: Set<string>` → `useChat`에서 `useMissionCompletion`의 반환 타입과 일치
+- `GameMeta.missionUuid: string` → `quickReplyRouter`, `gameRouter`, `useChat`에서 일관되게 사용 (완료)
+- `QuickReplyContext.playedTodayGameIds: Set<string>` → `useChat`에서 `useMissionCompletion`의 반환 타입과 일치 (완료)
 - `useRewardIntentStore` — Task 9에서 생성, Task 11에서 재활용. `openRewardView: (view: 'reward' | 'coupon' | 'store') => void`
 - `RewardSheet.initialView` prop — Task 9에서 추가, `RewardView` 타입은 `RewardSheet` 내부 타입과 일치
-- `PlanSearchBar` props 변경 — `onCycleSort` → `onSortChange: (sort: SortOption) => void`, `PlanCatalogList`에서 일관되게 사용
+- `PlanSearchBar` props 변경 — `onCycleSort` → `onSortChange: (sort: SortOption) => void`, `PlanCatalogList`에서 일관되게 사용 (완료)
 
 ### 4. 의존성 순서
 
 - Task 9(`useRewardIntentStore` 생성)가 Task 11(출석체크에서 재활용)보다 선행되어야 함
-- Task 1(`GAME_LIST.missionUuid` 추가)이 모든 게임 관련 태스크보다 선행
+- `GAME_LIST.missionUuid` 추가는 완료됨 — 모든 게임 관련 태스크가 이제 의존성 충족
+- 완료된 Task: #3+#6 (Task 1), #8 (Task 2), #11 (Task 5), #16+#18 (Task 12), #17 (Task 13)
 - Phase 1(Task 1~~7) 완료 후 Phase 2(Task 8~~16) 진행
