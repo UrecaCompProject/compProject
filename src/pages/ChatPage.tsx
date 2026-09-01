@@ -31,6 +31,7 @@ export default function ChatPage() {
     handlePlanCompare,
     handleSelectCurrentPlan,
     handleSelectTargetPlan,
+    fetchCompare,
     profile,
     subscriptionOpen,
     subscriptionPlan,
@@ -74,9 +75,11 @@ export default function ChatPage() {
   };
 
   const lastMessage = messages[messages.length - 1];
-  // 퀴즈·게임 진행 중에도 메뉴 퀵 리플라이를 항상 유지
+  // 빈 배열일 때도 웰컴 퀵리플라이로 폴백 — 폼 진입 등으로 quickReplies: []가 내려올 때 메뉴 유지
   const quickReplies =
-    lastMessage?.type === 'ai' && lastMessage.quickReplies
+    lastMessage?.type === 'ai' &&
+    lastMessage.quickReplies &&
+    lastMessage.quickReplies.length > 0
       ? lastMessage.quickReplies
       : getWelcomeQuickReplies(isLoggedIn);
 
@@ -94,6 +97,9 @@ export default function ChatPage() {
         onPlanCompare={handlePlanCompare}
         onSelectCurrentPlan={handleSelectCurrentPlan}
         onSelectTargetPlan={handleSelectTargetPlan}
+        onRecompare={(planAName, planBName) =>
+          fetchCompare(planBName, planAName)
+        }
         onGenerateReport={handleGenerateReport}
         subscriptionOpen={subscriptionOpen}
         subscriptionPlan={subscriptionPlan}
