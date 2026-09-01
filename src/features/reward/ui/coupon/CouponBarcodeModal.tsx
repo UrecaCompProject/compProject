@@ -1,3 +1,5 @@
+import Barcode from 'react-barcode';
+
 import { Button, useModalStore } from '@/shared';
 
 import ProductCard from '../shared/ProductCard';
@@ -11,21 +13,6 @@ type CouponBarcodeModalProps = {
 
 const DEFAULT_BARCODE_VALUE = '8801234567890';
 
-function createBarcodeBars(value: string) {
-  return value
-    .replace(/\D/g, '')
-    .padEnd(13, '0')
-    .slice(0, 13)
-    .split('')
-    .flatMap((digit, index) => {
-      const width = (Number(digit) % 4) + 1;
-      return [
-        { key: `${index}-wide`, width },
-        { key: `${index}-thin`, width: index % 3 === 0 ? 1 : 2 },
-      ];
-    });
-}
-
 export default function CouponBarcodeModal({
   coupon,
   barcodeValue = DEFAULT_BARCODE_VALUE,
@@ -35,25 +22,23 @@ export default function CouponBarcodeModal({
     .replace(/\D/g, '')
     .padEnd(13, '0')
     .slice(0, 13);
-  const barcodeBars = createBarcodeBars(normalizedBarcode);
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
       <ProductCard product={coupon} />
 
       <div className="w-full rounded-2xl border border-border bg-surface-card px-4 py-3">
-        <div
-          className="mx-auto flex h-16 w-full max-w-[200px] items-stretch justify-center gap-px"
-          aria-label={`바코드 번호 ${normalizedBarcode}`}
-          role="img"
-        >
-          {barcodeBars.map((bar) => (
-            <span
-              key={bar.key}
-              className="h-full bg-fg-primary"
-              style={{ width: `${bar.width * 3}px` }}
-            />
-          ))}
+        <div className="flex w-full justify-center overflow-hidden">
+          <Barcode
+            value={normalizedBarcode}
+            format="CODE128"
+            width={1.4}
+            height={56}
+            displayValue={false}
+            margin={0}
+            background="transparent"
+            lineColor="#1f2229"
+          />
         </div>
 
         <p className="mt-2 font-mono text-caption font-bold text-fg-primary">
