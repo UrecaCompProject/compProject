@@ -14,6 +14,7 @@ export type GameMeta = {
   type: 'chat' | 'sheet';
   icon: string; // lucide-react 아이콘 이름
   reward?: number;
+  missionUuid: string; // game_results.game_id와 매핑되는 미션 UUID
 };
 
 // 채팅에서 진행하는 게임의 퀴즈 타입 매핑
@@ -30,6 +31,7 @@ export const GAME_LIST: GameMeta[] = [
     type: 'chat',
     icon: 'ShieldCheck',
     reward: 1,
+    missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f105',
   },
   {
     id: 'multiple-choice',
@@ -38,6 +40,7 @@ export const GAME_LIST: GameMeta[] = [
     type: 'chat',
     icon: 'HelpCircle',
     reward: 1,
+    missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f106',
   },
   {
     id: 'scratch',
@@ -46,6 +49,7 @@ export const GAME_LIST: GameMeta[] = [
     type: 'chat',
     icon: 'Sparkles',
     reward: 3,
+    missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f104',
   },
   {
     id: 'card-match',
@@ -54,6 +58,7 @@ export const GAME_LIST: GameMeta[] = [
     type: 'sheet',
     icon: 'LayoutGrid',
     reward: 5,
+    missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f101',
   },
   {
     id: 'reaction',
@@ -62,6 +67,7 @@ export const GAME_LIST: GameMeta[] = [
     type: 'sheet',
     icon: 'Timer',
     reward: 5,
+    missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f102',
   },
   {
     id: 'attendance',
@@ -70,6 +76,7 @@ export const GAME_LIST: GameMeta[] = [
     type: 'sheet',
     icon: 'Gift',
     reward: 5,
+    missionUuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f103',
   },
 ];
 

@@ -21,6 +21,7 @@ import type {
   ConsultResponse,
 } from '@/shared/lib/aiConsult';
 
+import { GAME_LIST } from '../constants/gameList';
 import {
   WELCOME_MESSAGE,
   buildErrorMessage,
@@ -69,7 +70,7 @@ export function useChat() {
       quickReplies: getWelcomeQuickReplies(isLoggedIn),
     },
   ]);
-  const { recordPlay } = useMissionCompletion();
+  const { recordPlay, playedTodayGameIds } = useMissionCompletion();
   const openModal = useModalStore((state) => state.open);
 
   // 웰컴 메시지(id 0)를 제외한 AI 응답 수 — 5회 누적 시 리포트 버튼 노출 및 비로그인 게이팅에 사용
@@ -288,11 +289,30 @@ export function useChat() {
   const activeGameMeta = useActiveGameMeta();
 
   // gameRouter/quickReplyRouter에서 reward만 넘기도록 래핑 — GameOpenParams로 변환
+  // 채팅 경로 게임은 source: 'chat'로 열리고, onWin 시 배지 정산 + 모달을 띄운다
   const openSheetGame = useCallback(
     (gameId: GameId, reward?: number) => {
-      openGameStore(gameId, reward !== undefined ? { reward } : {});
+      const gameMeta = GAME_LIST.find((g) => g.id === gameId);
+      const missionUuid = gameMeta?.missionUuid;
+      openGameStore(gameId, {
+        reward,
+        source: 'chat',
+        onWin: (wonReward) => {
+          if (!missionUuid) return;
+          recordPlay(
+            { gameId: missionUuid, score: wonReward },
+            {
+              onSuccess: () => {
+                openModal({
+                  content: <GetBadgeModal badgeCount={wonReward} />,
+                });
+              },
+            },
+          );
+        },
+      });
     },
-    [openGameStore],
+    [openGameStore, recordPlay, openModal],
   );
 
   const handleSend = useCallback(
@@ -327,6 +347,7 @@ export function useChat() {
         fetchCompare,
         startQuiz,
         openSheetGame,
+        playedTodayGameIds,
         signal,
         // "다시 시도" 시 마지막 사용자 입력을 재전송
         retryLastInput: () => {
@@ -408,6 +429,7 @@ export function useChat() {
       openSubscription,
       openSignupChat,
       openSheetGame,
+      playedTodayGameIds,
       fetchCompare,
       startCompareFlow,
       setPendingComparePlan,
@@ -583,5 +605,6 @@ export function useChat() {
     confirmMultipleChoice,
     closeSheetGame,
     activeGameMeta,
+    playedTodayGameIds,
   };
 }
