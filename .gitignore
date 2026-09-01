@@ -40,3 +40,8 @@ supabase/functions/_shared/data/plan_embeddings.json
 
 *storybook.log
 storybook-static
+
+# Playwright QA 탐색/산출물 (임시 스크립트, 인증 토큰, 스크린샷)
+e2e/_explore*.spec.ts
+e2e/.artifacts/
+e2e/.auth/

@@ -1,5 +1,3 @@
-import { useNavigate } from 'react-router';
-
 import { Button, Input, useModalStore, useSignupIntentStore } from '@/shared';
 
 import { useSignin } from '../../model/useSignin';
@@ -7,14 +5,14 @@ import { useSignin } from '../../model/useSignin';
 interface SigninModalProps {
   // 채팅 페이지 안(이미 회원가입 채팅 플로우에 접근 가능한 곳)에서 이 모달을 열 때는
   // 회원가입 버튼이 그 자리에서 바로 플로우를 시작하도록 직접 주입한다.
-  // 넘기지 않으면(예: 헤더) 채팅 홈으로 이동한 뒤 그곳에서 자동으로 회원가입을 시작한다.
+  // 넘기지 않으면(예: 헤더) 이미 항상 마운트되어 있는 채팅 페이지가 신호를 받아
+  // 그곳에서 자동으로 회원가입을 시작한다.
   onSignupClick?: () => void;
 }
 
 export default function SigninModal({ onSignupClick }: SigninModalProps) {
   const close = useModalStore((state) => state.close);
   const requestSignup = useSignupIntentStore((state) => state.requestSignup);
-  const navigate = useNavigate();
   const {
     email,
     setEmail,
@@ -31,7 +29,6 @@ export default function SigninModal({ onSignupClick }: SigninModalProps) {
       onSignupClick();
     } else {
       requestSignup();
-      navigate('/');
     }
   };
 

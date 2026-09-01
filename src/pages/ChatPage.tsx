@@ -53,7 +53,7 @@ export default function ChatPage() {
     preloadLottiePlayer();
   }, []);
 
-  // 헤더 등 채팅 페이지 밖에서 회원가입을 눌러 이동해온 경우, 여기서 가입 플로우를 이어 시작한다.
+  // 헤더 등 채팅 페이지 밖에서 회원가입을 누른 경우, 여기서 신호를 받아 가입 플로우를 시작한다.
   const signupPending = useSignupIntentStore((state) => state.pending);
   const consumeSignup = useSignupIntentStore((state) => state.consumeSignup);
   useEffect(() => {
