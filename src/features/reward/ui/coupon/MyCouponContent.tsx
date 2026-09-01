@@ -1,10 +1,14 @@
 import { useState } from 'react';
 
-import { Button } from '@/shared';
+import { Button, useModalStore } from '@/shared';
 
 import { useMyCoupons } from '../../model/useMyCoupons';
 import ProductCard from '../shared/ProductCard';
 import SearchBar from '../shared/SearchBar';
+
+import CouponBarcodeModal from './CouponBarcodeModal';
+
+import type { Coupon } from '../../types';
 
 type CouponBoxProps = {
   // 쿠폰이 없을 때 "게임하러 가기" 버튼 → 리워드 홈으로 이동
@@ -13,14 +17,24 @@ type CouponBoxProps = {
 
 export default function CouponBox({ onGoToReward }: CouponBoxProps) {
   const [query, setQuery] = useState('');
+  const openModal = useModalStore((state) => state.open);
   const { data: coupons = [], isLoading, error } = useMyCoupons();
 
   const usableCoupons = coupons.filter(
     (coupon) => coupon.status === 'available',
   );
+  const normalizedQuery = query.trim().toLowerCase();
   const availableCoupons = usableCoupons.filter((coupon) =>
-    coupon.name.toLowerCase().includes(query.toLowerCase()),
+    `${coupon.brand} ${coupon.name}`.toLowerCase().includes(normalizedQuery),
   );
+
+  const handleSelectCoupon = (coupon: Coupon) => {
+    openModal({
+      content: (
+        <CouponBarcodeModal coupon={coupon} barcodeValue={coupon.barcode} />
+      ),
+    });
+  };
 
   if (isLoading) {
     return (
@@ -91,7 +105,11 @@ export default function CouponBox({ onGoToReward }: CouponBoxProps) {
       {availableCoupons.length > 0 ? (
         <section className="mx-auto mt-2 grid w-full min-w-[288px] grid-cols-2 gap-x-4 gap-y-4.5 sm:grid-cols-3">
           {availableCoupons.map((coupon) => (
-            <ProductCard key={coupon.id} product={coupon} />
+            <ProductCard
+              key={coupon.id}
+              product={coupon}
+              onSelect={handleSelectCoupon}
+            />
           ))}
         </section>
       ) : (

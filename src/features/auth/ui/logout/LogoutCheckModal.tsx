@@ -1,10 +1,13 @@
 import { useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 import { postLogout } from '@/features/auth';
 import { Button, useModalStore } from '@/shared';
 
 export default function LogoutCheckModal() {
   const close = useModalStore((state) => state.close);
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handleLogout = async () => {
@@ -12,6 +15,9 @@ export default function LogoutCheckModal() {
     setError(null);
     try {
       await postLogout();
+      // 로그아웃 후 캐시된 사용자 데이터가 남아있으면 새로고침 전까지
+      // 마이페이지 등에서 이전 사용자 정보가 표시되므로 전체 캐시를 초기화한다.
+      queryClient.clear();
       close();
     } catch (err) {
       setError(err instanceof Error ? err.message : '로그아웃에 실패했습니다.');

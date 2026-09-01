@@ -51,6 +51,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
 
       {step === 'basic-info' && !isLoggedIn && (
         <AIChat
+          className="max-w-[calc(80%+4px)]"
           sentence={
             <div className="flex flex-col gap-2 w-full">
               <div className="text-caption text-fg-tertiary">기본 정보</div>
@@ -88,6 +89,8 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   onChange={handleChange('phone')}
                   placeholder="전화번호"
                   type="tel"
+                  inputMode="numeric"
+                  maxLength={11}
                   variant={errors.phone ? 'error' : 'default'}
                 />
                 {errors.phone && (
@@ -133,6 +136,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <>
           <AIChat sentence="인증번호를 보내드렸어요. 3분 이내에 입력해주세요." />
           <AIChat
+            className="max-w-[calc(80%+4px)]"
             sentence={
               <div className="flex flex-col gap-2 w-full">
                 <div className="flex items-center justify-between text-caption text-fg-tertiary">
@@ -146,6 +150,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="인증번호"
                   inputMode="numeric"
+                  maxLength={6}
                   variant={verifyError ? 'error' : 'default'}
                 />
                 {verifyError && (
@@ -174,6 +179,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <>
           <AIChat sentence="로그인에 사용할 이메일과 비밀번호를 입력해주세요." />
           <AIChat
+            className="max-w-[calc(80%+4px)]"
             sentence={
               <div className="flex flex-col gap-2 w-full">
                 <div>

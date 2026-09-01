@@ -15,6 +15,8 @@ interface AIChatProps {
   variant?: AIChatVariant;
   onRegenerate?: () => void;
   showRegenerate?: boolean;
+  /** 버블의 max-width 등 스타일을 외부에서 덮어쓸 때 사용 */
+  className?: string;
 }
 
 export default function AIChat({
@@ -22,6 +24,7 @@ export default function AIChat({
   variant = 'default',
   onRegenerate,
   showRegenerate = false,
+  className,
 }: AIChatProps) {
   return (
     <div className="flex gap-2">
@@ -30,7 +33,7 @@ export default function AIChat({
       </div>
       <div className="flex flex-col gap-1 mt-2">
         <div
-          className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 w-fit max-w-[80%] whitespace-pre-line break-keep ${AIChatBubbleVariants[variant]}`}
+          className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 w-fit max-w-[80%] whitespace-pre-line break-keep ${AIChatBubbleVariants[variant]} ${className ?? ''}`}
           role={variant === 'error' ? 'alert' : undefined}
         >
           {sentence}

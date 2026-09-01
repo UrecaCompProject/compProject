@@ -44,7 +44,9 @@ export async function submitSubscription({
     .single();
 
   if (applicationError) {
-    throw new Error(`가입 신청 저장 실패: ${applicationError.message}`);
+    throw new Error(
+      '요금제 가입 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.',
+    );
   }
 
   const applicationId = applicationData.id;
@@ -58,7 +60,9 @@ export async function submitSubscription({
     });
 
   if (logError) {
-    throw new Error(`상태 로그 저장 실패: ${logError.message}`);
+    throw new Error(
+      '요금제 가입 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.',
+    );
   }
 
   const consentRecords: {
@@ -105,7 +109,9 @@ export async function submitSubscription({
       .insert(consentRecords);
 
     if (consentError) {
-      throw new Error(`약관 동의 저장 실패: ${consentError.message}`);
+      throw new Error(
+        '요금제 가입 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.',
+      );
     }
   }
 

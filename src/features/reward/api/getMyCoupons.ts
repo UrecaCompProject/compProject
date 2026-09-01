@@ -15,6 +15,7 @@ type CouponProductJoin = {
 
 type MyCouponRow = {
   id: string;
+  barcode: string;
   status: 'unused' | 'used';
   expired_at: string | null;
   products: CouponProductJoin | CouponProductJoin[] | null;
@@ -44,6 +45,7 @@ function toCoupon(row: MyCouponRow): Coupon {
     name: product?.name ?? '',
     brand: product?.description ?? '',
     imageUrl: getProductImage(product?.image ?? null),
+    barcode: row.barcode,
     expiresAt: row.expired_at ? dayjs(row.expired_at).format('YYYY.MM.DD') : '',
     status: toCouponStatus(row.status, row.expired_at),
   };
@@ -54,7 +56,9 @@ function toCoupon(row: MyCouponRow): Coupon {
 export async function getMyCoupons(userId: string): Promise<Coupon[]> {
   const { data, error } = await supabase
     .from('coupons')
-    .select('id, status, expired_at, products(id, name, description, image)')
+    .select(
+      'id, barcode, status, expired_at, products(id, name, description, image)',
+    )
     .eq('user_id', userId)
     .order('expired_at', { ascending: true });
 
