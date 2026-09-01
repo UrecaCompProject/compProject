@@ -20,7 +20,9 @@ export async function ensureCurrentMonthUsage(): Promise<void> {
     .maybeSingle();
 
   if (selectError) {
-    throw new Error(`사용량 조회 실패: ${selectError.message}`);
+    throw new Error(
+      '요금제 가입 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.',
+    );
   }
   if (existing) return;
 
@@ -33,6 +35,8 @@ export async function ensureCurrentMonthUsage(): Promise<void> {
   });
 
   if (insertError) {
-    throw new Error(`사용량 초기화 실패: ${insertError.message}`);
+    throw new Error(
+      '요금제 가입 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.',
+    );
   }
 }
