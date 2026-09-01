@@ -6,7 +6,6 @@ import type { MultipleChoiceQuestion } from '../type';
 
 type MultipleChoiceQuizProps = {
   question: MultipleChoiceQuestion;
-  number: number;
   selectedId: string | null;
   disabled?: boolean;
   onSelect: (optionId: string) => void;
@@ -15,7 +14,6 @@ type MultipleChoiceQuizProps = {
 
 export default function MultipleChoiceQuiz({
   question,
-  number,
   selectedId,
   disabled = false,
   onSelect,
@@ -23,7 +21,7 @@ export default function MultipleChoiceQuiz({
 }: MultipleChoiceQuizProps) {
   return (
     <div className="flex w-full flex-col gap-5">
-      <Question number={number} question={question.question} />
+      <Question question={question.question} />
       <MultipleChoices
         options={question.options}
         selectedId={selectedId}
