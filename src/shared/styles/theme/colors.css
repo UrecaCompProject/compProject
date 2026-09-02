@@ -31,7 +31,7 @@
   --color-compare-trend-selected-cta: #5b7fe0;
   /* 요금제 비교의 '선택한 요금제' 컬럼 색. 버튼(brand-promo-primary #3d74f0)과
      혼동되지 않도록 더 진한 남색으로 둔다. */
-  --color-compare-selected-strong: #3c5f96;
+  --color-compare-selected-strong: #345591;
 
   /* Reward */
   --color-reward-active: #3d74f0;

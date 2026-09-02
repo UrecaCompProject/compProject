@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 
-import { ArrowUpDown, ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 
 import { useClickOutside } from '@/shared';
 
@@ -42,7 +42,6 @@ export default function PlanSearchBar({
           onClick={() => setIsOpen((prev) => !prev)}
           className="flex shrink-0 items-center gap-1 text-[14px] font-medium text-fg-tertiary"
         >
-          <ArrowUpDown size={17} />
           {SORT_LABELS[sort]}
           <ChevronDown
             size={14}

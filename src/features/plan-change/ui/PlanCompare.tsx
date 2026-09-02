@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { Check, CircleCheck } from 'lucide-react';
@@ -149,6 +149,21 @@ export default function PlanCompare({
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [openColumn]);
+
+  // 요금제명 행이 스크롤로 상단에 '고정'됐을 때만 border-bottom을 표시
+  const planNameStickyRef = useRef<HTMLDivElement>(null);
+  const [planNameStuck, setPlanNameStuck] = useState(false);
+  useEffect(() => {
+    const el = planNameStickyRef.current;
+    if (!el) return;
+    const root = el.closest('.overflow-y-auto') ?? null;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPlanNameStuck(entry.intersectionRatio < 1),
+      { root, threshold: [1] },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const simpleRows: SimpleRow[] = useMemo(
     () => [
@@ -326,16 +341,18 @@ export default function PlanCompare({
             />
           ))}
 
-          <div className="mt-4">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              onClick={onShowFullCompare}
-            >
-              전체 비교 보기
-            </Button>
-          </div>
+          {onShowFullCompare && (
+            <div className="mt-4">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="w-full"
+                onClick={onShowFullCompare}
+              >
+                전체 비교 보기
+              </Button>
+            </div>
+          )}
         </TicketCard>
       </div>
     );
@@ -388,7 +405,16 @@ export default function PlanCompare({
       {renderHeader()}
       <div className="border-b border-fg-primary" />
 
-      {renderPlanNameRow()}
+      {/* 요금제명(비교 중인 두 요금제) 행은 스크롤해도 상단에 고정.
+          border-bottom은 실제로 고정됐을 때만 표시 */}
+      <div
+        ref={planNameStickyRef}
+        className={`sticky -top-px z-10 border-b bg-surface-card transition-colors duration-200 ${
+          planNameStuck ? 'border-border' : 'border-transparent'
+        }`}
+      >
+        {renderPlanNameRow()}
+      </div>
 
       {simpleRows.slice(1).map((row) => (
         <CollapsibleRow key={row.key} open={isSimpleRowVisible(row)}>
@@ -434,20 +460,28 @@ export default function PlanCompare({
       <div className="sticky bottom-0 mt-auto flex flex-col gap-4 border-t border-border bg-surface-card pt-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
         {(onDetailCurrent || onDetailSelected) && (
           <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={onDetailCurrent}
-              className="text-left text-[13px] font-medium text-fg-tertiary"
-            >
-              요금제 상세보기 &gt;
-            </button>
-            <button
-              type="button"
-              onClick={onDetailSelected}
-              className="text-left text-[13px] font-medium text-compare-selected-strong"
-            >
-              요금제 상세보기 &gt;
-            </button>
+            {onDetailCurrent ? (
+              <button
+                type="button"
+                onClick={onDetailCurrent}
+                className="text-left text-[13px] font-medium text-fg-tertiary"
+              >
+                요금제 상세보기 &gt;
+              </button>
+            ) : (
+              <span />
+            )}
+            {onDetailSelected ? (
+              <button
+                type="button"
+                onClick={onDetailSelected}
+                className="text-left text-[13px] font-medium text-compare-selected-strong"
+              >
+                요금제 상세보기 &gt;
+              </button>
+            ) : (
+              <span />
+            )}
           </div>
         )}
 

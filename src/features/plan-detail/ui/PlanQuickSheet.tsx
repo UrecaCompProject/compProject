@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useCurrentPlan } from '@/entities/plan';
 import { useIsLoggedIn } from '@/entities/user';
@@ -75,11 +75,24 @@ export default function PlanQuickSheet({
     };
   }, [selectedPlan, currentPlan]);
 
+  // 바텀시트 본문 스크롤 컨테이너 — 뷰 전환 시 스크롤 위치를 제어한다.
+  const scrollAnchorRef = useRef<HTMLDivElement>(null);
+  const listScrollTopRef = useRef(0);
+  const getScroller = () =>
+    scrollAnchorRef.current?.closest('.overflow-y-auto') ?? null;
+
+  const handleSelectPlan = (plan: PlanDetailItem) => {
+    const scroller = getScroller();
+    if (scroller) listScrollTopRef.current = scroller.scrollTop;
+    setSelectedPlan(plan);
+  };
+
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       setSelectedPlan(null);
       setIsSubscribeOpen(false);
       setCompareOpen(false);
+      listScrollTopRef.current = 0;
     }
     onOpenChange(nextOpen);
   };
@@ -88,6 +101,16 @@ export default function PlanQuickSheet({
   const subscribing = isSubscribeOpen && !!selectedPlan;
   // 비교 화면 — 별도 바텀시트를 띄우지 않고 이 시트의 내용만 갈아끼운다.
   const comparing = compareOpen && !!selectedPlan && !subscribing;
+
+  // 뷰 전환 시 스크롤 위치 조정(paint 전):
+  // 상세/비교 화면은 항상 최상단, 목록 화면은 이전에 보던 위치로 복원.
+  // 신청 플로우 스크롤은 PlanSubscriptionSheet가 직접 관리하므로 건드리지 않는다.
+  useLayoutEffect(() => {
+    if (!open || subscribing) return;
+    const scroller = getScroller();
+    if (!scroller) return;
+    scroller.scrollTop = selectedPlan ? 0 : listScrollTopRef.current;
+  }, [selectedPlan, subscribing, comparing, open]);
 
   // 신청 시트 초기화 이펙트가 매 렌더 재실행되지 않도록 참조를 안정화한다.
   const recommendedPlan = useMemo(
@@ -163,6 +186,7 @@ export default function PlanQuickSheet({
             ) : null
           }
         >
+          <div ref={scrollAnchorRef} className="contents" />
           {subscribing ? (
             shell.children
           ) : comparing && compareData ? (
@@ -189,7 +213,7 @@ export default function PlanQuickSheet({
                 <br />
                 요금제를 찾아보세요
               </h2>
-              <PlanCatalogList onSelectPlan={setSelectedPlan} />
+              <PlanCatalogList onSelectPlan={handleSelectPlan} />
             </div>
           )}
         </BottomSheet>

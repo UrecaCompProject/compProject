@@ -137,7 +137,9 @@ export default function CompareResultSheet({
         {...sharedProps}
         variant="compact"
         className="w-full"
-        onShowFullCompare={() => setOpen(true)}
+        onShowFullCompare={
+          currentPlan && selectedPlan ? () => setOpen(true) : undefined
+        }
       />
 
       <BottomSheet
@@ -164,8 +166,12 @@ export default function CompareResultSheet({
             onChangePlan={
               selectedPlan ? () => onSubscribe?.(selectedPlan) : undefined
             }
-            onDetailCurrent={() => setDetailView('current')}
-            onDetailSelected={() => setDetailView('selected')}
+            onDetailCurrent={
+              currentPlan ? () => setDetailView('current') : undefined
+            }
+            onDetailSelected={
+              selectedPlan ? () => setDetailView('selected') : undefined
+            }
           />
         )}
       </BottomSheet>
