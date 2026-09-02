@@ -35,7 +35,6 @@ export default function ChatQuizMessage({
         sentence={
           <OxQuiz
             question={message.question}
-            number={message.questionNumber}
             selectedAnswer={message.selectedAnswer}
             disabled={message.disabled}
             onSelect={(answer) => onOxAnswer(message.id, answer)}
@@ -50,7 +49,6 @@ export default function ChatQuizMessage({
       sentence={
         <MultipleChoiceQuiz
           question={message.question}
-          number={message.questionNumber}
           selectedId={message.selectedAnswer}
           disabled={message.disabled}
           onSelect={(optionId) => onMultipleChoiceSelect(message.id, optionId)}

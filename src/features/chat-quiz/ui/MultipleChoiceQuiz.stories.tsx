@@ -15,7 +15,6 @@ const meta = {
   component: MultipleChoiceQuiz,
   args: {
     question: multipleChoiceQuestions[0],
-    number: 1,
     selectedId: null,
     onSelect: () => undefined,
     onConfirm: () => undefined,
@@ -53,7 +52,6 @@ function MultipleChoiceConversation() {
         sentence={
           <MultipleChoiceQuiz
             question={question}
-            number={1}
             selectedId={selectedId}
             disabled={confirmed}
             onSelect={setSelectedId}
