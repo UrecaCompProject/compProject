@@ -1,5 +1,5 @@
-import { Check } from 'lucide-react';
-
+import type { PlanDetailItem } from '@/features/plan-detail/types';
+import PlanDetailContent from '@/features/plan-detail/ui/PlanDetailContent';
 import { BottomSheet, Button } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -9,6 +9,33 @@ interface RecommendationDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onSubscribe: (plan: RecommendedPlan) => void;
   onCompare: (plan: RecommendedPlan) => void;
+}
+
+// 추천 응답용 RecommendedPlan을 plan-detail의 PlanDetailItem으로 변환한다.
+// AI 추천 데이터에는 dataTier/ottBenefits/addOns/couponText 등이 없으므로 기본값을 채운다.
+function toPlanDetailItem(plan: RecommendedPlan): PlanDetailItem {
+  return {
+    id: plan.planId,
+    name: plan.planName,
+    category: plan.category ?? '',
+    targetAge: plan.targetAge ?? '',
+    dataTier: '',
+    monthlyFee: plan.monthlyFee ?? 0,
+    data: plan.data ?? '-',
+    dataSpeedAfter: plan.dataSpeedAfter ?? '',
+    voice: plan.voice ?? '',
+    callAmountMin: plan.callAmountMin ?? null,
+    message: plan.message ?? '',
+    smsAmount: plan.smsAmount ?? null,
+    shareData: plan.shareData ?? '-',
+    tethering: plan.tethering ?? '-',
+    notes: plan.notes ?? '',
+    benefits: plan.benefits ?? [],
+    ottBenefits: [],
+    addOns: [],
+    contractPeriodMonths: null,
+    couponText: null,
+  };
 }
 
 // 추천 요금제 카드 클릭 시 표시되는 상세 정보 BottomSheet
@@ -25,15 +52,12 @@ export default function RecommendationDetailSheet({
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      title={plan.planName}
-      description={
-        [plan.category, plan.targetAge].filter(Boolean).join(' · ') || undefined
-      }
+      title="요금제 조회"
       footer={
         <div className="flex gap-2 w-full">
           <Button
             variant="outline"
-            size="md"
+            size="lg"
             className="flex-1"
             onClick={() => onCompare(plan)}
           >
@@ -41,7 +65,7 @@ export default function RecommendationDetailSheet({
           </Button>
           <Button
             variant="primary"
-            size="md"
+            size="lg"
             className="flex-1"
             onClick={() => onSubscribe(plan)}
           >
@@ -50,80 +74,11 @@ export default function RecommendationDetailSheet({
         </div>
       }
     >
-      <div className="space-y-5 pb-2">
-        <section>
-          <h5 className="text-body font-semibold text-fg-primary mb-2">
-            기본 제공량
-          </h5>
-          <div className="bg-surface-page rounded-2xl p-4 space-y-2">
-            <InfoRow label="데이터" value={plan.data ?? '-'} />
-            <InfoRow
-              label="데이터 소진 후"
-              value={plan.dataSpeedAfter ?? '-'}
-            />
-            <InfoRow label="음성 통화" value={plan.voice ?? '-'} />
-            <InfoRow label="메세지" value={plan.message ?? '-'} />
-          </div>
-        </section>
-
-        <section>
-          <h5 className="text-body font-semibold text-fg-primary mb-2">
-            콘텐츠 및 부가 혜택
-          </h5>
-          <div className="bg-surface-page rounded-2xl p-4">
-            {(plan.benefits ?? []).length > 0 ? (
-              <ul className="space-y-2">
-                {plan.benefits!.map((benefit, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-2 text-body-sm text-fg-secondary"
-                  >
-                    <span className="mt-0.5 text-fg-tertiary">
-                      <Check size={14} />
-                    </span>
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-body-sm text-fg-disabled">
-                추가 혜택 정보가 없습니다.
-              </p>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <h5 className="text-body font-semibold text-fg-primary mb-2">
-            제한 및 유의사항
-          </h5>
-          <div className="bg-surface-page rounded-2xl p-4 space-y-2">
-            <InfoRow label="데이터 공유" value={plan.shareData ?? '-'} />
-            <InfoRow label="테더링" value={plan.tethering ?? '-'} />
-            <InfoRow label="비고" value={plan.notes ?? '-'} />
-          </div>
-        </section>
-
-        {plan.reason && (
-          <section>
-            <h5 className="text-body font-semibold text-fg-primary mb-2">
-              추천 사유
-            </h5>
-            <p className="bg-surface-page rounded-2xl p-4 text-body-sm text-fg-secondary leading-relaxed">
-              {plan.reason}
-            </p>
-          </section>
-        )}
-      </div>
+      <PlanDetailContent
+        plan={toPlanDetailItem(plan)}
+        isLoading={false}
+        error={null}
+      />
     </BottomSheet>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between items-center">
-      <span className="text-body-sm text-fg-secondary">{label}</span>
-      <span className="text-body-sm font-medium text-fg-primary">{value}</span>
-    </div>
   );
 }
