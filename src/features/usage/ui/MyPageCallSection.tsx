@@ -8,7 +8,7 @@ interface MyPageCallSectionProps {
   callUsedSeconds?: number;
 }
 
-// call_used_min은 실제로는 초 단위로 저장되어 있어 "MM분 SS초" 형태로 변환한다.
+// callUsedSeconds는 초 단위이므로 "MM분 SS초" 형태로 변환한다.
 function toMinSecLabel(totalSeconds: number | undefined) {
   if (totalSeconds == null) return null;
   const minutes = Math.floor(totalSeconds / 60);

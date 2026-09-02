@@ -7,14 +7,24 @@ export type UsageMonthlyRow = {
   user_id: string;
   year_month: string;
   data_used_gb: number;
-  call_used_min: number;
+  callUsedSeconds: number;
   sms_used_count: number;
   created_at: string;
   updated_at: string;
 };
 
-// userId의 이번 달 사용량(usage_monthly)을 조회한다.
-// usage_monthly는 user_id = auth.uid() 소유자 전용 RLS라 인증된 클라이언트로만 조회 가능.
+// Supabase의 call_used_min 컬럼은 실제로 초(second) 단위를 저장한다.
+// 도메인 타입에서는 단위가 명확하도록 callUsedSeconds로 매핑한다.
+export function toUsageMonthlyRow(
+  raw: Record<string, unknown>,
+): UsageMonthlyRow {
+  const { call_used_min, ...rest } = raw;
+  return {
+    ...(rest as Omit<UsageMonthlyRow, 'callUsedSeconds'>),
+    callUsedSeconds: Number(call_used_min),
+  };
+}
+
 export async function getUsage(userId: string): Promise<UsageMonthlyRow[]> {
   const currentYearMonth = dayjs().format('YYYY-MM');
 
@@ -28,7 +38,8 @@ export async function getUsage(userId: string): Promise<UsageMonthlyRow[]> {
   if (error) {
     throw new Error(`사용량 조회 실패: ${error.message}`);
   }
+
   console.log(data);
 
-  return (data ?? []) as UsageMonthlyRow[];
+  return ((data ?? []) as Record<string, unknown>[]).map(toUsageMonthlyRow);
 }
