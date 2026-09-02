@@ -8,11 +8,11 @@ import type {
   ConsultInput,
   ConsultResponse,
 } from '@/shared/lib/aiConsult';
-import { requestConsult } from '@/shared/lib/aiConsult';
 
-import { postQuestion } from '../api/postQuestion';
 import { buildErrorMessage } from '../lib/chatHelpers';
-import { routeQuickReply } from '../lib/quickReplyRouter';
+
+import { useChatConsult } from './useChatConsult';
+import { useChatRouter } from './useChatRouter';
 
 import type { ChatMessage, MessageCategory } from '../types';
 
@@ -119,13 +119,45 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
 
   // 에러 발생 시 재시도를 위해 마지막 사용자 입력을 보관
   const lastUserInputRef = useRef<string | null>(null);
-  const handleSendRef =
-    useRef<
-      (
-        text: string,
-        options?: { skipUserMessage?: boolean },
-      ) => Promise<void> | null
-    >(null);
+  const handleSendRef = useRef<
+    ((text: string, options?: { skipUserMessage?: boolean }) => void) | null
+  >(null);
+
+  const retryLastInput = useCallback(() => {
+    const lastInput = lastUserInputRef.current;
+    if (!lastInput) return;
+
+    lastUserInputRef.current = null;
+    // 에러 메시지를 제거하고 재시도
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.type === 'ai' && last.isError) {
+        return prev.slice(0, -1);
+      }
+      return prev;
+    });
+    handleSendRef.current?.(lastInput, { skipUserMessage: true });
+  }, [setMessages]);
+
+  const router = useChatRouter({
+    messages,
+    profile,
+    isLoggedIn,
+    effectiveCurrentPlan,
+    setMessages,
+    setProfile,
+    setIsLoading,
+    addAIResponse,
+    openSubscription,
+    openSignupChat,
+    fetchCompare,
+    startQuiz,
+    openSheetGame,
+    playedTodayGameIds,
+    retryLastInput,
+  });
+
+  const consult = useChatConsult({ addAIResponse });
 
   const handleSend = useCallback(
     async (text: string, options?: { skipUserMessage?: boolean }) => {
@@ -141,41 +173,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
 
       // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
       const signal = startRequest();
-
-      const result = await routeQuickReply({
-        text: trimmed,
-        messages,
-        profile,
-        isLoggedIn,
-        effectiveCurrentPlan,
-        setMessages,
-        setProfile,
-        setIsLoading,
-        addAIResponse,
-        openSubscription,
-        openSignupChat,
-        fetchCompare,
-        startQuiz,
-        openSheetGame,
-        playedTodayGameIds,
-        signal,
-        // "다시 시도" 시 마지막 사용자 입력을 재전송
-        retryLastInput: () => {
-          const lastInput = lastUserInputRef.current;
-          if (lastInput) {
-            lastUserInputRef.current = null;
-            // 에러 메시지를 제거하고 재시도
-            setMessages((prev) => {
-              const last = prev[prev.length - 1];
-              if (last?.type === 'ai' && last.isError) {
-                return prev.slice(0, -1);
-              }
-              return prev;
-            });
-            handleSendRef.current?.(lastInput, { skipUserMessage: true });
-          }
-        },
-      });
+      const result = await router.handleQuickReply(text, signal);
 
       if (result === 'handled') return;
 
@@ -200,12 +198,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
       setIsLoading(true);
 
       try {
-        const { input: nextProfile, response } = await postQuestion(
-          trimmed,
-          { ...profile, isLoggedIn },
-          signal,
-        );
-        addAIResponse(response, nextProfile, nextProfile.mode);
+        await consult.sendQuestion(trimmed, { ...profile, isLoggedIn }, signal);
       } catch (error) {
         handleConsultError(setMessages, error);
       } finally {
@@ -215,24 +208,16 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     },
     [
       isLoading,
-      messages,
       isLoggedIn,
       aiResponseCount,
       requireLogin,
-      profile,
-      effectiveCurrentPlan,
-      startQuiz,
-      openSubscription,
-      openSignupChat,
-      openSheetGame,
-      playedTodayGameIds,
-      fetchCompare,
-      addAIResponse,
-      setMessages,
-      setProfile,
-      setIsLoading,
-      setInput,
       startRequest,
+      router,
+      setMessages,
+      setInput,
+      profile,
+      consult,
+      setIsLoading,
       clearRequest,
     ],
   );
@@ -276,8 +261,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
           mode: 'recommend',
           isLoggedIn,
         };
-        const response = await requestConsult(merged, signal);
-        addAIResponse(response, merged, 'recommend');
+        await consult.submitForm(merged, signal);
       } catch (error) {
         handleConsultError(setMessages, error);
       } finally {
@@ -289,10 +273,10 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
       isLoading,
       profile,
       isLoggedIn,
-      addAIResponse,
       setMessages,
       setIsLoading,
       startRequest,
+      consult,
       clearRequest,
     ],
   );
