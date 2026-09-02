@@ -1,67 +1,58 @@
-import { useRef, useState } from 'react';
-
 import { ChevronDown } from 'lucide-react';
-
-import { useClickOutside } from '@/shared';
 
 export interface PlanCompareOption {
   id: string;
   name: string;
 }
 
-interface PlanCompareHeaderSelectProps {
-  label: string;
-  options?: PlanCompareOption[];
-  onSelect?: (id: string) => void;
+interface PlanCompareSelectProps {
+  value: string;
+  options: PlanCompareOption[];
   activeId?: string;
   /** 사용자가 실제 이용 중인 요금제 id — 목록에서 '현재' 배지로 표시 */
   myPlanId?: string;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onSelect?: (id: string) => void;
+  /** 값 텍스트 색상 */
   colorClassName: string;
 }
 
 /**
- * "이용중인 요금제 v" / "선택한 요금제 v" 헤더 라벨.
- * options가 있으면 눌렀을 때 요금제 드롭다운 리스트를 띄운다.
- * (텍스트 16px semibold, 텍스트-아이콘 간격 4px, 아이콘 21x21)
+ * 요금제명 행의 값 자리에 놓이는 셀렉트 박스.
+ * 누르면 바로 아래에 요금제 목록 드롭다운이 열린다.
  */
-export default function PlanCompareHeaderSelect({
-  label,
+export default function PlanCompareSelect({
+  value,
   options,
-  onSelect,
   activeId,
   myPlanId,
+  open,
+  onToggle,
+  onClose,
+  onSelect,
   colorClassName,
-}: PlanCompareHeaderSelectProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useClickOutside(ref, open, () => setOpen(false));
-
-  const hasOptions = (options?.length ?? 0) > 0;
-
+}: PlanCompareSelectProps) {
   return (
-    <div ref={ref} className="relative">
+    <div className="relative" data-compare-select>
       <button
         type="button"
-        onClick={() => hasOptions && setOpen((prev) => !prev)}
-        className={`flex items-center gap-1 text-[16px] font-semibold ${colorClassName} ${
-          hasOptions ? 'cursor-pointer' : 'cursor-default'
-        }`}
+        onClick={onToggle}
         aria-expanded={open}
+        className={`flex w-full items-center justify-between gap-1 rounded-[8px] border border-border px-2.5 py-1.5 text-left text-[14px] font-bold ${colorClassName}`}
       >
-        {label}
-        {hasOptions && (
-          <ChevronDown
-            size={21}
-            className={`transition-transform ${open ? 'rotate-180' : ''}`}
-          />
-        )}
+        <span>{value}</span>
+        <ChevronDown
+          size={14}
+          className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
       </button>
 
-      {open && hasOptions && (
-        <div className="absolute left-0 top-[calc(100%+8px)] z-10 w-[150px] max-w-[70vw] overflow-hidden rounded-xl border border-fg-disabled bg-surface-card shadow-shadow">
+      {open && (
+        <div className="absolute left-0 top-[calc(100%+6px)] z-10 w-full min-w-[150px] max-w-[70vw] overflow-hidden rounded-xl border border-fg-disabled bg-surface-card shadow-shadow">
           <ul className="max-h-[240px] overflow-y-auto overscroll-contain py-1">
-            {options!.map((option) => {
+            {options.map((option) => {
               const isMyPlan = !!myPlanId && option.id === myPlanId;
               return (
                 <li key={option.id}>
@@ -69,7 +60,7 @@ export default function PlanCompareHeaderSelect({
                     type="button"
                     onClick={() => {
                       onSelect?.(option.id);
-                      setOpen(false);
+                      onClose();
                     }}
                     className={`flex w-full items-center justify-between gap-1.5 px-3 py-2 text-left text-[13px] ${
                       option.id === activeId

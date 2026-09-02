@@ -33,6 +33,7 @@ export default function AIChatExtras({
   onPlanCompare,
   onSelectCurrentPlan,
   onSelectTargetPlan,
+  onRecompare,
   onFormSubmit,
   formDefaults,
 }: AIChatExtrasProps) {

@@ -137,7 +137,9 @@ export default function CompareResultSheet({
         {...sharedProps}
         variant="compact"
         className="w-full"
-        onShowFullCompare={() => setOpen(true)}
+        onShowFullCompare={
+          currentPlan && selectedPlan ? () => setOpen(true) : undefined
+        }
       />
 
       <BottomSheet
@@ -146,7 +148,7 @@ export default function CompareResultSheet({
         onBack={detailView ? () => setDetailView(null) : undefined}
         title={detailView ? '요금제 상세' : '요금제 비교'}
         description={detailView ? undefined : result?.summary}
-        size="large"
+        size="full"
         bodyClassName={detailView ? 'px-0 bg-surface-page' : 'px-5'}
         scrollResetKey={detailView ?? 'compare'}
       >
@@ -164,8 +166,12 @@ export default function CompareResultSheet({
             onChangePlan={
               selectedPlan ? () => onSubscribe?.(selectedPlan) : undefined
             }
-            onDetailCurrent={() => setDetailView('current')}
-            onDetailSelected={() => setDetailView('selected')}
+            onDetailCurrent={
+              currentPlan ? () => setDetailView('current') : undefined
+            }
+            onDetailSelected={
+              selectedPlan ? () => setDetailView('selected') : undefined
+            }
           />
         )}
       </BottomSheet>

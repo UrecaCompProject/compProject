@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { Check, CircleCheck } from 'lucide-react';
 
@@ -9,10 +10,8 @@ import PlanCompareBenefitListRow from './PlanCompareBenefitListRow';
 import PlanCompareBenefitRow, {
   type BenefitOption,
 } from './PlanCompareBenefitRow';
-import PlanCompareHeaderSelect, {
-  type PlanCompareOption,
-} from './PlanCompareHeaderSelect';
 import PlanCompareRow from './PlanCompareRow';
+import PlanCompareSelect, { type PlanCompareOption } from './PlanCompareSelect';
 
 export interface PlanCompareData {
   currentPlanName: string;
@@ -87,6 +86,28 @@ interface SimpleRow {
 const COMPACT_ROW_KEYS_BEFORE_BENEFIT = ['planName', 'fee', 'data'];
 const COMPACT_ROW_KEYS_AFTER_BENEFIT = ['voice', 'message'];
 
+/**
+ * '차이점만 모아보기' 토글 시 행이 부드럽게 접히고 펼쳐지도록
+ * grid-template-rows(0fr↔1fr) 트랜지션으로 높이를 애니메이션한다.
+ */
+function CollapsibleRow({
+  open,
+  children,
+}: {
+  open: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+        open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+      }`}
+    >
+      <div className="overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
 export default function PlanCompare({
   data,
   variant = 'full',
@@ -108,6 +129,41 @@ export default function PlanCompare({
 }: PlanCompareProps) {
   const isCompact = variant === 'compact';
   const [showDiffOnly, setShowDiffOnly] = useState(false);
+
+  // 요금제 드롭다운 — 헤더 라벨과 요금제명 행이 같은 드롭다운을 연다.
+  const hasOptions = (planOptions?.length ?? 0) > 0;
+  const [openColumn, setOpenColumn] = useState<'current' | 'selected' | null>(
+    null,
+  );
+  const toggleColumn = (column: 'current' | 'selected') =>
+    setOpenColumn((prev) => (prev === column ? null : column));
+  const closeDropdown = () => setOpenColumn(null);
+
+  useEffect(() => {
+    if (!openColumn) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest('[data-compare-select]')) {
+        setOpenColumn(null);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [openColumn]);
+
+  // 요금제명 행이 스크롤로 상단에 '고정'됐을 때만 border-bottom을 표시
+  const planNameStickyRef = useRef<HTMLDivElement>(null);
+  const [planNameStuck, setPlanNameStuck] = useState(false);
+  useEffect(() => {
+    const el = planNameStickyRef.current;
+    if (!el) return;
+    const root = el.closest('.overflow-y-auto') ?? null;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPlanNameStuck(entry.intersectionRatio < 1),
+      { root, threshold: [1] },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const simpleRows: SimpleRow[] = useMemo(
     () => [
@@ -173,31 +229,78 @@ export default function PlanCompare({
     ? 'text-compare-selected-strong'
     : 'text-fg-primary';
 
+  const currentValueColor = currentHighlighted
+    ? 'text-compare-selected-strong'
+    : 'text-fg-tertiary';
+
+  // 헤더는 라벨만 — 드롭다운은 요금제명 행의 셀렉트 박스에서 연다.
   const renderHeader = () => (
     <div className="grid grid-cols-2 gap-4 pb-3">
-      <PlanCompareHeaderSelect
-        label={leftLabel}
-        options={planOptions}
-        activeId={currentPlanId}
-        onSelect={onSelectCurrentPlan}
-        myPlanId={myPlanId}
-        colorClassName={leftColorClass}
-      />
-      <PlanCompareHeaderSelect
-        label={selectedLabel}
-        options={planOptions}
-        activeId={selectedPlanId}
-        onSelect={onSelectSelectedPlan}
-        myPlanId={myPlanId}
-        colorClassName="text-compare-selected-strong"
-      />
+      <span className={`text-[16px] font-semibold ${leftColorClass}`}>
+        {leftLabel}
+      </span>
+      <span className="text-[16px] font-semibold text-compare-selected-strong">
+        {selectedLabel}
+      </span>
+    </div>
+  );
+
+  // 첫 행(요금제명) — hasOptions면 값 자리에 셀렉트 박스를 놓아 바로 아래에 드롭다운을 연다.
+  const renderPlanNameRow = () => (
+    <div className="grid grid-cols-2 gap-4 py-3">
+      <div className="flex flex-col gap-1">
+        <p className={`text-[12px] font-medium ${currentValueColor}`}>
+          요금제명
+        </p>
+        {hasOptions ? (
+          <PlanCompareSelect
+            value={data.currentPlanName}
+            options={planOptions ?? []}
+            activeId={currentPlanId}
+            myPlanId={myPlanId}
+            open={openColumn === 'current'}
+            onToggle={() => toggleColumn('current')}
+            onClose={closeDropdown}
+            onSelect={onSelectCurrentPlan}
+            colorClassName={currentValueColor}
+          />
+        ) : (
+          <p className={`text-[14px] font-bold ${currentValueColor}`}>
+            {data.currentPlanName}
+          </p>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        <p className="text-[12px] font-medium text-compare-selected-strong">
+          요금제명
+        </p>
+        {hasOptions ? (
+          <PlanCompareSelect
+            value={data.selectedPlanName}
+            options={planOptions ?? []}
+            activeId={selectedPlanId}
+            myPlanId={myPlanId}
+            open={openColumn === 'selected'}
+            onToggle={() => toggleColumn('selected')}
+            onClose={closeDropdown}
+            onSelect={onSelectSelectedPlan}
+            colorClassName="text-compare-selected-strong"
+          />
+        ) : (
+          <p className="text-[14px] font-bold text-compare-selected-strong">
+            {data.selectedPlanName}
+          </p>
+        )}
+      </div>
     </div>
   );
 
   // compact: 요금제명 / 월정액 / 데이터 / 대표 혜택 / 음성 통화 / 메세지만 노출
   if (isCompact) {
-    const rowsBefore = simpleRows.filter((row) =>
-      COMPACT_ROW_KEYS_BEFORE_BENEFIT.includes(row.key),
+    const rowsBefore = simpleRows.filter(
+      (row) =>
+        row.key !== 'planName' &&
+        COMPACT_ROW_KEYS_BEFORE_BENEFIT.includes(row.key),
     );
     const rowsAfter = simpleRows.filter((row) =>
       COMPACT_ROW_KEYS_AFTER_BENEFIT.includes(row.key),
@@ -208,6 +311,8 @@ export default function PlanCompare({
         <TicketCard>
           {renderHeader()}
           <div className="border-b border-fg-primary" />
+
+          {renderPlanNameRow()}
 
           {rowsBefore.map((row) => (
             <PlanCompareRow
@@ -236,36 +341,31 @@ export default function PlanCompare({
             />
           ))}
 
-          <div className="mt-4">
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              onClick={onShowFullCompare}
-            >
-              전체 비교 보기
-            </Button>
-          </div>
+          {onShowFullCompare && (
+            <div className="mt-4">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="w-full"
+                onClick={onShowFullCompare}
+              >
+                전체 비교 보기
+              </Button>
+            </div>
+          )}
         </TicketCard>
       </div>
     );
   }
 
-  // 차이점만 보기에서도 요금제명 행은 항상 남긴다(어느 요금제끼리 비교인지 알 수 있도록).
-  const visibleSimpleRows = showDiffOnly
-    ? simpleRows.filter(
-        (row) => row.key === 'planName' || row.current !== row.selected,
-      )
-    : simpleRows;
-
   const benefitRows = data.benefitRows ?? [];
-  const visibleBenefitRows = showDiffOnly
-    ? benefitRows.filter(
-        (row) =>
-          row.current !== row.selectedSummary ||
-          (row.selectedOptions?.length ?? 0) > 0,
-      )
-    : benefitRows;
+
+  const isSimpleRowVisible = (row: SimpleRow) =>
+    !showDiffOnly || row.key === 'planName' || row.current !== row.selected;
+  const isBenefitRowVisible = (row: (typeof benefitRows)[number]) =>
+    !showDiffOnly ||
+    row.current !== row.selectedSummary ||
+    (row.selectedOptions?.length ?? 0) > 0;
 
   const showBenefitListRow =
     !showDiffOnly || currentBenefits.join('|') !== selectedBenefits.join('|');
@@ -273,14 +373,16 @@ export default function PlanCompare({
   // 요금제명 외에 실제로 다른 항목이 하나도 없을 때 안내 문구를 띄운다.
   const noDifferences =
     showDiffOnly &&
-    visibleBenefitRows.length === 0 &&
     !showBenefitListRow &&
-    visibleSimpleRows.every(
+    benefitRows.every((row) => !isBenefitRowVisible(row)) &&
+    simpleRows.every(
       (row) => row.key === 'planName' || row.current === row.selected,
     );
 
   return (
-    <div className={`flex flex-col pt-4 ${className ?? 'w-[358px]'}`}>
+    <div
+      className={`flex min-h-full flex-col pt-4 ${className ?? 'w-[358px]'}`}
+    >
       <button
         type="button"
         onClick={() => setShowDiffOnly((prev) => !prev)}
@@ -303,61 +405,83 @@ export default function PlanCompare({
       {renderHeader()}
       <div className="border-b border-fg-primary" />
 
-      {visibleSimpleRows.map((row) => (
-        <PlanCompareRow
-          key={row.key}
-          label={row.label}
-          current={row.current}
-          selected={row.selected}
-          currentHighlighted={currentHighlighted}
-        />
+      {/* 요금제명(비교 중인 두 요금제) 행은 스크롤해도 상단에 고정.
+          border-bottom은 실제로 고정됐을 때만 표시 */}
+      <div
+        ref={planNameStickyRef}
+        className={`sticky -top-px z-10 border-b bg-surface-card transition-colors duration-200 ${
+          planNameStuck ? 'border-border' : 'border-transparent'
+        }`}
+      >
+        {renderPlanNameRow()}
+      </div>
+
+      {simpleRows.slice(1).map((row) => (
+        <CollapsibleRow key={row.key} open={isSimpleRowVisible(row)}>
+          <PlanCompareRow
+            label={row.label}
+            current={row.current}
+            selected={row.selected}
+            currentHighlighted={currentHighlighted}
+          />
+        </CollapsibleRow>
       ))}
 
-      {showBenefitListRow && (
+      <CollapsibleRow open={showBenefitListRow}>
         <PlanCompareBenefitListRow
           label="대표 혜택"
           current={currentBenefits}
           selected={selectedBenefits}
           currentHighlighted={currentHighlighted}
         />
-      )}
+      </CollapsibleRow>
 
-      {visibleBenefitRows.map((row) => (
-        <PlanCompareBenefitRow
-          key={row.key}
-          label={row.label}
-          current={row.current}
-          selectedSummary={row.selectedSummary}
-          selectedSubtext={row.selectedSubtext}
-          selectedOptions={row.selectedOptions}
-          currentHighlighted={currentHighlighted}
-        />
+      {benefitRows.map((row) => (
+        <CollapsibleRow key={row.key} open={isBenefitRowVisible(row)}>
+          <PlanCompareBenefitRow
+            label={row.label}
+            current={row.current}
+            selectedSummary={row.selectedSummary}
+            selectedSubtext={row.selectedSubtext}
+            selectedOptions={row.selectedOptions}
+            currentHighlighted={currentHighlighted}
+          />
+        </CollapsibleRow>
       ))}
 
-      {noDifferences && (
+      <CollapsibleRow open={noDifferences}>
         <p className="py-6 text-center text-[13px] text-fg-tertiary">
           차이가 있는 항목이 없어요.
         </p>
-      )}
+      </CollapsibleRow>
 
-      {/* 상세보기 링크 / 안내 문구 / 변경 버튼 — 16px 간격 고정 */}
-      <div className="flex flex-col gap-4 pt-3">
+      {/* 상세보기 링크 / 안내 문구 / 변경 버튼 —
+          행이 길어져 스크롤이 생겨도 시트 하단에 고정(sticky) */}
+      <div className="sticky bottom-0 mt-auto flex flex-col gap-4 border-t border-border bg-surface-card pt-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
         {(onDetailCurrent || onDetailSelected) && (
           <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={onDetailCurrent}
-              className="text-left text-[13px] font-medium text-fg-tertiary"
-            >
-              요금제 상세보기 &gt;
-            </button>
-            <button
-              type="button"
-              onClick={onDetailSelected}
-              className="text-left text-[13px] font-medium text-compare-selected-strong"
-            >
-              요금제 상세보기 &gt;
-            </button>
+            {onDetailCurrent ? (
+              <button
+                type="button"
+                onClick={onDetailCurrent}
+                className="text-left text-[13px] font-medium text-fg-tertiary"
+              >
+                요금제 상세보기 &gt;
+              </button>
+            ) : (
+              <span />
+            )}
+            {onDetailSelected ? (
+              <button
+                type="button"
+                onClick={onDetailSelected}
+                className="text-left text-[13px] font-medium text-compare-selected-strong"
+              >
+                요금제 상세보기 &gt;
+              </button>
+            ) : (
+              <span />
+            )}
           </div>
         )}
 
