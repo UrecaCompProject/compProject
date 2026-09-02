@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 
-import { SignupChat } from '@/features/auth';
-import { ChatQuizMessage } from '@/features/chat-quiz';
-import type { QuizQuestionMessage } from '@/features/chat-quiz';
-import { PlanSubscriptionSheet } from '@/features/plan-subscription';
+import SignupChat from '@/features/auth/ui/signup/SignupChat';
+import type { QuizQuestionMessage } from '@/features/chat-quiz/type';
+import ChatQuizMessage from '@/features/chat-quiz/ui/ChatQuizMessage';
+import PlanSubscriptionSheet from '@/features/plan-subscription/ui/PlanSubscriptionSheet';
 import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import AIChat from './AIChat';

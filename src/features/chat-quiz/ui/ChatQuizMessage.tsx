@@ -1,5 +1,8 @@
-import { AIChat } from '@/features/ai-consult';
-import { MultipleChoiceQuiz, OxQuiz, QuizResult } from '@/features/chat-quiz';
+import AIChat from '@/features/ai-consult/ui/AIChat';
+
+import MultipleChoiceQuiz from './MultipleChoiceQuiz';
+import OxQuiz from './OxQuiz';
+import QuizResult from './QuizResult';
 
 import type { QuizQuestionMessage, QuizResultMessage } from '../type';
 

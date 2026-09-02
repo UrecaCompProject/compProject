@@ -2,15 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import type { ChatMessage } from '@/features/ai-consult/types';
+
+import { pickRandomQuizQuestion } from '../lib/pickRandomQuizQuestion';
 import {
   type MultipleChoiceQuestion,
   type OxQuestion,
   type QuizKind,
   type QuizQuestionMessage,
   type QuizResultMessage,
-} from '@/features/chat-quiz';
-
-import { pickRandomQuizQuestion } from '../lib/pickRandomQuizQuestion';
+} from '../type';
 
 type QuizSession =
   | {
