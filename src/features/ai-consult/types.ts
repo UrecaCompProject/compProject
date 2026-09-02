@@ -25,12 +25,9 @@ export type ChatMessage =
       recommendations?: RecommendedPlan[];
       report?: ReportOutput;
       compareResult?: CompareResult;
-      // '요금제 비교하기' 진입 시 AI 호출 없이 카탈로그 기반 비교 컴포넌트를 렌더링
+      // '요금제 비교하기' 진입 시(또는 현재 요금제 미설정 상태로 비교 요청 시)
+      // AI 호출 없이 카탈로그 기반 비교 컴포넌트를 렌더링
       planCompare?: boolean;
-      // 현재 요금제가 미설정 상태에서 비교를 요청하면 드랍다운 셀렉터를 렌더링
-      planSelector?: boolean;
-      // planSelector 렌더링 모드: 'current' = 현재 요금제 선택, 'target' = 비교 대상 선택
-      planSelectorMode?: 'current' | 'target';
       // 에러 메시지 여부 — AIChat에 error variant 적용 + 재시도 퀵리플라이 표시
       isError?: boolean;
       category?: MessageCategory;
