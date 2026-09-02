@@ -1,33 +1,36 @@
+import type { ComponentType, Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
 
-import type { QuizKind } from '@/features/chat-quiz';
-import { useActiveGameMeta, useGameStore, type GameId } from '@/features/games';
-import { missions, GetBadgeModal } from '@/features/reward';
 import { useModalStore } from '@/shared';
+import type { GameId } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import { GAME_LIST } from '../constants/gameList';
 
 import type { ChatMessage } from '../types';
 
-// 스크래치 이벤트 미션의 game_results.game_id
-const SCRATCH_MISSION_UUID = missions.find(
-  (mission) => mission.id === 'scratch',
-)?.uuid;
-
-// 퀴즈 종류별 미션의 game_results.game_id
-const QUIZ_MISSION_UUID: Record<QuizKind, string | undefined> = {
-  ox: missions.find((mission) => mission.id === 'security-quiz')?.uuid,
-  'multiple-choice': missions.find((mission) => mission.id === 'telecom-quiz')
-    ?.uuid,
-};
+type RecordPlay = (
+  params: { gameId: string; score?: number },
+  options?: { onSuccess?: () => void },
+) => void;
 
 export interface UseChatGamesDeps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-  recordPlay: (
-    params: { gameId: string; score?: number },
-    options?: { onSuccess?: () => void },
+  recordPlay: RecordPlay;
+  openGame: (
+    gameId: GameId,
+    params?: {
+      reward?: number;
+      source?: 'chat' | 'reward';
+      onWin?: (reward: number) => void;
+    },
   ) => void;
+  closeGame: () => void;
+  reward: {
+    GetBadgeModal: ComponentType<{ badgeCount: number }>;
+    scratchMissionUuid?: string;
+    quizMissionUuids: Partial<Record<QuizKind, string>>;
+  };
 }
 
 export interface ChatGames {
@@ -35,18 +38,17 @@ export interface ChatGames {
   onScratchWin: (reward: number) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
   closeSheetGame: () => void;
-  activeGameMeta: ReturnType<typeof useActiveGameMeta>;
   handleQuizFinish: (quizType: QuizKind, rewardCount: number) => void;
 }
 
 export function useChatGames({
   setMessages,
   recordPlay,
+  openGame,
+  closeGame,
+  reward: { GetBadgeModal, scratchMissionUuid, quizMissionUuids },
 }: UseChatGamesDeps): ChatGames {
   const openModal = useModalStore((state) => state.open);
-  const openGameStore = useGameStore((state) => state.openGame);
-  const closeSheetGame = useGameStore((state) => state.closeGame);
-  const activeGameMeta = useActiveGameMeta();
 
   const startScratch = useCallback(
     (reward?: number) => {
@@ -65,18 +67,18 @@ export function useChatGames({
   );
 
   const onScratchWin = useCallback(
-    (reward: number) => {
-      if (!SCRATCH_MISSION_UUID) return;
-      recordPlay({ gameId: SCRATCH_MISSION_UUID, score: reward });
+    (score: number) => {
+      if (!scratchMissionUuid) return;
+      recordPlay({ gameId: scratchMissionUuid, score });
     },
-    [recordPlay],
+    [recordPlay, scratchMissionUuid],
   );
 
   const openSheetGame = useCallback(
     (gameId: GameId, reward?: number) => {
       const gameMeta = GAME_LIST.find((g) => g.id === gameId);
       const missionUuid = gameMeta?.missionUuid;
-      openGameStore(gameId, {
+      openGame(gameId, {
         reward,
         source: 'chat',
         onWin: (wonReward) => {
@@ -94,26 +96,25 @@ export function useChatGames({
         },
       });
     },
-    [openGameStore, recordPlay, openModal],
+    [openGame, recordPlay, openModal, GetBadgeModal],
   );
 
   const handleQuizFinish = useCallback(
     (quizType: QuizKind, rewardCount: number) => {
-      const gameId = QUIZ_MISSION_UUID[quizType];
+      const gameId = quizMissionUuids[quizType];
       if (gameId) {
         recordPlay({ gameId, score: rewardCount });
       }
       openModal({ content: <GetBadgeModal badgeCount={rewardCount} /> });
     },
-    [recordPlay, openModal],
+    [recordPlay, openModal, GetBadgeModal, quizMissionUuids],
   );
 
   return {
     startScratch,
     onScratchWin,
     openSheetGame,
-    closeSheetGame,
-    activeGameMeta,
+    closeSheetGame: closeGame,
     handleQuizFinish,
   };
 }

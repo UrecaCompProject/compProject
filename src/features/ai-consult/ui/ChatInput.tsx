@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 import { ArrowUp, Menu, Square } from 'lucide-react';
 
-import type { QuizKind } from '@/features/chat-quiz';
 import { Button, Input } from '@/shared';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import ChatMenuBar, { type ChatMenuBarSlots } from './ChatMenuBar';
 

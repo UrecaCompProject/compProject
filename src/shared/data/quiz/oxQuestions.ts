@@ -1,4 +1,4 @@
-import type { OxQuestion } from '../type';
+import type { OxQuestion } from '@/shared/types/quiz';
 
 export const oxQuestions: OxQuestion[] = [
   {

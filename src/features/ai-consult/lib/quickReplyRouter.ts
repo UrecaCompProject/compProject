@@ -1,11 +1,11 @@
-import type { QuizKind } from '@/features/chat-quiz';
-import type { GameId } from '@/features/games';
 import type {
   ConsultInput,
   ConsultResponse,
   RecommendedPlan,
 } from '@/shared/lib/aiConsult';
 import { requestConsult } from '@/shared/lib/aiConsult';
+import type { GameId } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import { GAME_LIST } from '../constants/gameList';
 

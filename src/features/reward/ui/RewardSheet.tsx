@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import type { QuizKind } from '@/features/chat-quiz';
 import {
   GameLayer,
   isGameId,
@@ -8,6 +7,7 @@ import {
   useGameStore,
 } from '@/features/games';
 import { BottomSheet, useModalStore } from '@/shared';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import { useMissionCompletion } from '../model/useMissionCompletion';
 

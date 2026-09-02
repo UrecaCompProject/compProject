@@ -3,8 +3,8 @@ import { useRef, useState } from 'react';
 
 import { UserRound, CreditCard, Gift, FileSpreadsheet } from 'lucide-react';
 
-import type { QuizKind } from '@/features/chat-quiz';
 import { IconBadge, useClickOutside } from '@/shared';
+import type { QuizKind } from '@/shared/types/quiz';
 
 export interface ChatMenuBarSlots {
   MyPageSheet: ComponentType<{

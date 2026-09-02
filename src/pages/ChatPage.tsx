@@ -19,18 +19,41 @@ import {
   ReportGenerateConfirmModal,
   ReportSheet,
 } from '@/features/consult-report';
-import { GameLayer, ScratchGame } from '@/features/games';
+import {
+  GameLayer,
+  ScratchGame,
+  useActiveGameMeta,
+  useGameStore,
+} from '@/features/games';
 import { CompareResultSheet } from '@/features/plan-compare';
 import { PlanQuickSheet } from '@/features/plan-detail';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
-import { RewardSheet } from '@/features/reward';
+import {
+  GetBadgeModal,
+  missions,
+  RewardSheet,
+  useMissionCompletion,
+} from '@/features/reward';
 import { MyPageSheet } from '@/features/usage';
 import { BottomSheet, useModalStore, useSignupIntentStore } from '@/shared';
+import type { QuizKind } from '@/shared/types/quiz';
 
 export default function ChatPage() {
   const [isQuickRepliesCollapsed, setIsQuickRepliesCollapsed] = useState(false);
   const [isReportButtonScrollVisible, setIsReportButtonScrollVisible] =
     useState(true);
+
+  const { recordPlay, playedTodayGameIds } = useMissionCompletion();
+  const openGame = useGameStore((state) => state.openGame);
+  const closeGame = useGameStore((state) => state.closeGame);
+  const activeGameMeta = useActiveGameMeta();
+
+  const scratchMissionUuid = missions.find((m) => m.id === 'scratch')?.uuid;
+  const quizMissionUuids: Partial<Record<QuizKind, string>> = {
+    ox: missions.find((m) => m.id === 'security-quiz')?.uuid,
+    'multiple-choice': missions.find((m) => m.id === 'telecom-quiz')?.uuid,
+  };
+
   const {
     messages,
     input,
@@ -62,8 +85,12 @@ export default function ChatPage() {
     selectMultipleChoice,
     confirmMultipleChoice,
     closeSheetGame,
-    activeGameMeta,
-  } = useChat({ signinModal: SigninModal });
+  } = useChat({
+    signinModal: SigninModal,
+    mission: { recordPlay, playedTodayGameIds },
+    game: { openGame, closeGame },
+    reward: { GetBadgeModal, scratchMissionUuid, quizMissionUuids },
+  });
 
   const openModal = useModalStore((state) => state.open);
 
