@@ -23,6 +23,11 @@ export type ChatMessage =
       quickReplies?: string[];
       form?: ConsultForm;
       recommendations?: RecommendedPlan[];
+      // recommendations가 있을 때만 의미 있음 — 그 시점 확정 조건 요약과,
+      // 이 라운드를 요청하게 만든 문구(첫 추천이면 ''). 레포트의
+      // recommendedPlans[].target/detail을 채우는 데 쓰인다.
+      recommendTarget?: string;
+      recommendDetail?: string;
       report?: ReportOutput;
       compareResult?: CompareResult;
       // '요금제 비교하기' 진입 시(또는 현재 요금제 미설정 상태로 비교 요청 시)

@@ -6,7 +6,6 @@
  *
  * 목적
  * - 게임/출석 내용이 제외된 대화 로그를 바탕으로 상담 내용 요약
- * - 요금제 추천이 없으므로 요금제 관련 필드는 빈값/미등록으로 출력
  */
 export const generalReportPromptText = `
 [ROLE]
@@ -24,6 +23,11 @@ export const generalReportPromptText = `
 {userProfile}
 
 
+[바뀐 요금제 정보]
+
+{changedPlanInfo}
+
+
 [RULES]
 
 1. 실제 상담에서 확인된 정보만 사용하세요.
@@ -32,7 +36,10 @@ export const generalReportPromptText = `
 
 3. 상담 내용을 그대로 반복하지 말고 핵심 질문과 답변을 요약하세요.
 
-4. 요금제 추천이 없는 대화이므로 요금제 관련 필드는 아래 지시에 따라 빈값으로 출력하세요.
+4. [바뀐 요금제 정보]가 "없음"이면 changedPlanAdvantage는 빈 문자열("")로 출력하세요.
+   정보가 있으면 [바뀐 요금제 정보]에 제공된 가격/데이터/혜택만 사용해 변경된 요금제가
+   기존 요금제보다 좋은 점을 200자 이내 자연스러운 문장으로 작성하세요. 존재하지 않는
+   가격, 데이터, 혜택을 임의로 지어내지 마세요.
 
 
 [OUTPUT 설명]
@@ -41,25 +48,19 @@ export const generalReportPromptText = `
 
 - summary: 1-3문장으로 상담 핵심 질문과 답변을 요약하세요.
 - usageType: 빈 문자열("")을 출력하세요.
-- currentPlan: "미등록"을 출력하세요.
-- recommendedPlans: 빈 배열([])을 출력하세요.
-- recommendationReason: 상담에서 안내된 주요 내용을 1-2문장으로 요약하세요. 추천 사유가 아니라 안내 내용 요약입니다.
-- monthlySavingAmount: 0을 출력하세요.
 - importantConditions: 상담에서 언급된 핵심 조건/키워드 0-3개를 문자열 배열로 작성하세요. 없으면 빈 배열.
 - qaPairs: [확정된 사용자 조건]과 대화에서 실제 질문/답변 3-5개를 { question, answer } 객체 배열로 작성하세요. 없으면 빈 배열.
   메뉴나 안내 문구는 포함하지 마세요.
+- changedPlanAdvantage: RULES 4를 따라 작성하세요.
 
 {
   "summary": "string",
   "usageType": "",
-  "currentPlan": "미등록",
-  "recommendedPlans": [],
-  "recommendationReason": "string",
-  "monthlySavingAmount": 0,
   "importantConditions": ["string"],
   "qaPairs": [
     { "question": "string", "answer": "string" }
-  ]
+  ],
+  "changedPlanAdvantage": "string"
 }
 
 JSON 이외의 추가 설명 문장은 포함하지 마세요.

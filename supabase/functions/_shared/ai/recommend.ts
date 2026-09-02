@@ -810,6 +810,28 @@ function formatPlanForPrompt(p: Plan): string {
   return `id: ${p.id}, name: ${p.name}, data: ${p.data}, fee: ${p.monthly_fee}, benefits: [${benefits}]`;
 }
 
+function formatRecommendedPlanForPrompt(p: RecommendedPlan): string {
+  const benefits = (p.benefits ?? []).join(', ');
+  return `name: ${p.planName}, data: ${p.data ?? '-'}, fee: ${p.monthlyFee ?? 0}, benefits: [${benefits}]`;
+}
+
+// changedPlan이 있을 때, 리포트 프롬프트에 넣을 "기존 요금제 vs 변경된 요금제" 텍스트를 만든다.
+// changedPlan이 없으면 changedPlanAdvantage를 생성하지 않도록 "없음"을 반환한다.
+async function buildChangedPlanInfo(
+  currentPlanName: string | undefined,
+  changedPlan: RecommendedPlan | null | undefined,
+): Promise<string> {
+  if (!changedPlan) return '없음';
+
+  const plans = await loadPlans();
+  const currentPlan = plans.find((p) => p.name === currentPlanName);
+  const currentText = currentPlan
+    ? formatPlanForPrompt(currentPlan)
+    : `name: ${currentPlanName ?? '미등록'}`;
+
+  return `기존 요금제 - ${currentText}\n변경된 요금제 - ${formatRecommendedPlanForPrompt(changedPlan)}`;
+}
+
 // 상위 3개 요금제 추천 및 사유, 절감액 산출.
 export async function recommendPlan(
   input: ConsultInput,
@@ -1018,8 +1040,8 @@ export async function generateQuickReplies(
 }
 
 const reportSystemPrompt = `
-당신은 AI 통신 요금제 상담 내용을 요약하는 역할을 담당합니다.
-제공된 조건과 추천 결과만 사용해 JSON 형식으로 레포트를 작성하세요.
+당신은 AI 통신 요금제 상담 대화 내용을 요약하는 역할을 담당합니다.
+제공된 상담 대화 기록만 사용해 JSON 형식으로 요약을 작성하세요.
 존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
 `;
 
@@ -1029,27 +1051,28 @@ const generalReportSystemPrompt = `
 존재하지 않는 정보를 임의로 만들지 마세요.
 `;
 
-// 상담 대화와 추천 결과를 바탕으로 요약 레포트를 생성합니다.
-// reportKind가 'general'이면 요금제 추천 없이 일반 대화만 요약합니다.
+// 상담 대화를 바탕으로 자유 서술 요약(ReportOutput)을 생성합니다.
+// 추천/비교/가입 요금제 등 구조화 데이터는 클라이언트가 이미 갖고 있으므로
+// 여기서는 요약/사용자유형/핵심조건/QA만 생성합니다.
+// reportKind가 'general'이면 요금제 관련 언급 없이 일반 대화만 요약합니다.
 export async function generateReport(
   input: ReportInput,
 ): Promise<ReportOutput> {
-  const {
-    conversation,
-    currentPlan,
-    recommendationResult,
-    reportKind,
-    userProfile,
-  } = input;
+  const { conversation, reportKind, userProfile, currentPlan, changedPlan } =
+    input;
   const isGeneral = reportKind === 'general';
+  const changedPlanInfo = await buildChangedPlanInfo(currentPlan, changedPlan);
 
   const filledPrompt = isGeneral
-    ? fillTemplate(generalReportPromptText, { conversation, userProfile })
+    ? fillTemplate(generalReportPromptText, {
+        conversation,
+        userProfile,
+        changedPlanInfo,
+      })
     : fillTemplate(reportPromptText, {
         conversation,
-        currentPlan: currentPlan || '미등록',
-        recommendationResult,
         userProfile,
+        changedPlanInfo,
       });
 
   const systemPrompt = isGeneral
@@ -1058,47 +1081,11 @@ export async function generateReport(
 
   const raw = await chatOpenAI(systemPrompt, filledPrompt, 1200, true);
   const parsed = safeJsonParse<ReportOutput>(raw);
-  if (parsed && parsed.summary) return parsed;
+  if (parsed && parsed.summary)
+    return {
+      ...parsed,
+      changedPlanAdvantage: parsed.changedPlanAdvantage ?? '',
+    };
   // 파싱은 됐으나 summary가 비어 있거나, JSON 파싱 실패 시 원문을 함께 던짐
   throw new Error(`report parse fail. raw=${raw}`);
-
-  // 일반 대화 요약 fallback — 요금제 필드는 빈값/미등록
-  if (isGeneral) {
-    return {
-      summary: '상담 내용을 요약한 레포트입니다.',
-      usageType: '',
-      currentPlan: '미등록',
-      recommendedPlans: [],
-      recommendationReason: '상담에서 안내된 내용을 확인해주세요.',
-      monthlySavingAmount: 0,
-      importantConditions: [],
-      qaPairs: [],
-    };
-  }
-
-  // 요금제 추천 fallback — 추천 결과 텍스트에서 최소한의 요금제 이름과 절감액을 추출
-  const fallbackPlans = recommendationResult
-    .split('\n')
-    .map((line) => {
-      const match = line.match(/^(.+?)\s*\(/);
-      return match ? match[1].trim() : line.trim();
-    })
-    .filter((line) => line.length > 0);
-
-  const savingMatch = recommendationResult.match(/절감액\s+([\d,]+)원/);
-  const fallbackSaving = savingMatch
-    ? parseInt(savingMatch[1].replace(/,/g, ''), 10)
-    : 0;
-
-  return {
-    summary: '요금제 추천 상담 내용을 요약한 레포트입니다.',
-    usageType: '',
-    currentPlan: currentPlan || '미등록',
-    recommendedPlans: fallbackPlans,
-    recommendationReason:
-      recommendationResult || '추천된 요금제를 확인해주세요.',
-    monthlySavingAmount: Number.isNaN(fallbackSaving) ? 0 : fallbackSaving,
-    importantConditions: [],
-    qaPairs: [],
-  };
 }

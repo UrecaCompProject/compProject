@@ -25,6 +25,7 @@ import { GAME_LIST } from '../constants/gameList';
 import {
   WELCOME_MESSAGE,
   buildErrorMessage,
+  buildRecommendTarget,
   getWelcomeQuickReplies,
 } from '../lib/chatHelpers';
 import { formatResponse } from '../lib/formatResponse';
@@ -132,19 +133,43 @@ export function useChat() {
         isLoggedIn,
       };
       setProfile(mergedProfile);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          type: 'ai' as const,
-          sentence: formatResponse(response),
-          quickReplies: response.quickReplies,
-          form: response.form,
-          recommendations: response.recommendations,
-          compareResult: response.compareResult,
-          category: modeToCategory(response.mode ?? defaultMode),
-        },
-      ]);
+      const hasRecommendations = !!response.recommendations?.length;
+      setMessages((prev) => {
+        // 이 대화에서 이미 한 번이라도 추천을 받은 적이 있으면, 이번 라운드를
+        // 요청하게 만든 직전 사용자 발화(퀵리플라이 문구 등)를 detail로 남긴다.
+        // 처음 받는 추천이면 detail은 빈 문자열.
+        const hasEarlierRound =
+          hasRecommendations &&
+          prev.some(
+            (m) =>
+              m.type === 'ai' &&
+              m.recommendations &&
+              m.recommendations.length > 0,
+          );
+        const lastMessage = prev[prev.length - 1];
+        const recommendDetail = hasEarlierRound
+          ? lastMessage?.type === 'user'
+            ? lastMessage.sentence
+            : ''
+          : '';
+        return [
+          ...prev,
+          {
+            id: Date.now(),
+            type: 'ai' as const,
+            sentence: formatResponse(response),
+            quickReplies: response.quickReplies,
+            form: response.form,
+            recommendations: response.recommendations,
+            recommendTarget: hasRecommendations
+              ? buildRecommendTarget(mergedProfile)
+              : undefined,
+            recommendDetail: hasRecommendations ? recommendDetail : undefined,
+            compareResult: response.compareResult,
+            category: modeToCategory(response.mode ?? defaultMode),
+          },
+        ];
+      });
     },
     [isLoggedIn],
   );
@@ -209,6 +234,7 @@ export function useChat() {
   const {
     subscriptionOpen,
     subscriptionPlan,
+    changedPlan,
     openSubscription,
     closeSubscription,
     handleSignupFinished,
@@ -229,6 +255,7 @@ export function useChat() {
   const { isGeneratingReport, handleGenerateReport } = useChatReport({
     messages,
     effectiveCurrentPlan,
+    changedPlan,
     userProfile: profile,
     isLoading,
     setIsLoading,

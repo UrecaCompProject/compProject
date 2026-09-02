@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { PlanCard, toPlanBenefits } from '@/entities/plan';
+import CompareResultSheet from '@/features/plan-compare/ui/CompareResultSheet';
 import { Card } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -134,7 +135,44 @@ export default function ReportDetail({
         </div>
       </div>
 
-      {report.recommendedPlanDetails &&
+      {analysis.recommendedPlanGroups &&
+      analysis.recommendedPlanGroups.length > 0 ? (
+        // 라운드(target/detail)가 보존된 레포트 — "요금제 추천받기"를 여러 번
+        // 요청했으면 그 횟수만큼 그룹이 나뉘어 나온다.
+        <div className="flex flex-col gap-6">
+          {analysis.recommendedPlanGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="flex flex-col gap-3">
+              <div className="ml-1">
+                <div className="text-semibold-16-130 text-fg-tertiary">
+                  추천 요금제
+                  {analysis.recommendedPlanGroups!.length > 1
+                    ? ` ${groupIdx + 1}`
+                    : ''}
+                </div>
+                {group.target && (
+                  <div className="text-regular-12-130 text-fg-tertiary mt-0.5">
+                    {group.detail ? `${group.detail} · ` : ''}
+                    {group.target}
+                  </div>
+                )}
+              </div>
+              {group.plans.map((plan) => (
+                <PlanCard
+                  key={plan.planId}
+                  className="w-full"
+                  title={plan.planName}
+                  price={plan.monthlyFee ?? 0}
+                  benefits={toPlanBenefits(plan)}
+                  reason={plan.reason}
+                  onSelect={() => onSelectPlan?.(plan)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        // recommendedPlanGroups가 없는 옛 레포트 — 관계형 조인 결과를 그대로 표시
+        report.recommendedPlanDetails &&
         report.recommendedPlanDetails.length > 0 && (
           <div className="flex flex-col gap-3">
             <div className="text-semibold-16-130 text-fg-tertiary ml-1">
@@ -147,24 +185,37 @@ export default function ReportDetail({
                 title={plan.planName}
                 price={plan.monthlyFee ?? 0}
                 benefits={toPlanBenefits(plan)}
-                reason={analysis.recommendationReason}
-                onSelect={() =>
-                  onSelectPlan?.({
-                    ...plan,
-                    reason: analysis.recommendationReason,
-                    savingAmount: analysis.monthlySavingAmount,
-                  })
-                }
+                reason={plan.reason}
+                onSelect={() => onSelectPlan?.(plan)}
               />
             ))}
           </div>
-        )}
-      {/* <div className="w-full flex gap-2">
-        <Button className="w-full" variant="outline">
-          비교 하기
-        </Button>
-        <Button className="w-full">비교 하기</Button>
-      </div> */}
+        )
+      )}
+
+      {analysis.comparedPlan && (
+        <div className="flex flex-col gap-3">
+          <div className="text-semibold-16-130 text-fg-tertiary ml-1">
+            비교했던 요금제
+          </div>
+          <CompareResultSheet result={analysis.comparedPlan} />
+        </div>
+      )}
+
+      {analysis.changedPlan && (
+        <div className="flex flex-col gap-3">
+          <div className="text-semibold-16-130 text-fg-tertiary ml-1">
+            바뀐 요금제
+          </div>
+          <PlanCard
+            className="w-full"
+            title={analysis.changedPlan.planName}
+            price={analysis.changedPlan.monthlyFee ?? 0}
+            benefits={toPlanBenefits(analysis.changedPlan)}
+            reason={analysis.changedPlan.reason}
+          />
+        </div>
+      )}
     </div>
   );
 }

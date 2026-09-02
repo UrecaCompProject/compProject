@@ -21,10 +21,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (body.mode === 'report') {
       const report = await generateReport({
         conversation: body.conversation ?? '',
-        currentPlan: body.currentPlan ?? '미등록',
-        recommendationResult: body.recommendationResult ?? '',
         reportKind: body.reportKind ?? 'plan',
         userProfile: body.userProfile ?? '',
+        currentPlan: body.currentPlan,
+        changedPlan: body.changedPlan,
       });
       return new Response(JSON.stringify({ report, mode: 'report' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
