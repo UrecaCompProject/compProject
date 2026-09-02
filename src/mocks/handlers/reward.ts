@@ -9,6 +9,7 @@ import {
   products,
   exchanges,
   GAME_REWARD_BADGE_ID,
+  mockSession,
 } from '../db';
 import {
   parseFilters,
@@ -19,6 +20,18 @@ import {
 } from '../utils';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+// PostgREST 미인증 에러 응답
+function unauthorizedResponse() {
+  return HttpResponse.json(
+    {
+      code: 'PGRST301',
+      message: '로그인이 필요해요. 다시 로그인해 주세요.',
+      details: 'JWT is missing or invalid',
+    },
+    { status: 401 },
+  );
+}
 
 // 배지 잔액 증가 (addBadgeBalance 로직 재현)
 function addBadgeBalance(userId: string, badgeId: string, amount: number) {
@@ -57,6 +70,7 @@ export const rewardHandlers = [
 
   // attendances POST (postCheckIn에서 insert + select)
   http.post(`${SUPABASE_URL}/rest/v1/attendances`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const body = (await request.json()) as Record<string, unknown>;
     const userId = body.user_id as string;
     const today = body.date as string;
@@ -69,7 +83,7 @@ export const rewardHandlers = [
       return HttpResponse.json(
         {
           code: '23505',
-          message: 'duplicate key value violates unique constraint',
+          message: '오늘은 이미 출석 체크를 완료했어요.',
         },
         { status: 409 },
       );
@@ -99,6 +113,7 @@ export const rewardHandlers = [
   http.post(
     `${SUPABASE_URL}/rest/v1/attendance_streaks`,
     async ({ request }) => {
+      if (!mockSession) return unauthorizedResponse();
       const body = (await request.json()) as Record<string, unknown>;
       const prefer = request.headers.get('Prefer') ?? '';
       const userId = body.user_id as string;
@@ -134,6 +149,7 @@ export const rewardHandlers = [
 
   // user_badges POST (addBadgeBalance에서 upsert)
   http.post(`${SUPABASE_URL}/rest/v1/user_badges`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const body = (await request.json()) as Record<string, unknown>;
     const prefer = request.headers.get('Prefer') ?? '';
     const userId = body.user_id as string;
@@ -158,6 +174,7 @@ export const rewardHandlers = [
 
   // user_badges PATCH (postExchange에서 balance 차감)
   http.patch(`${SUPABASE_URL}/rest/v1/user_badges`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const url = new URL(request.url);
     const body = (await request.json()) as Record<string, unknown>;
     const filters = parseFilters(url);
@@ -188,6 +205,7 @@ export const rewardHandlers = [
 
   // game_results POST (recordGamePlay에서 insert)
   http.post(`${SUPABASE_URL}/rest/v1/game_results`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const body = (await request.json()) as Record<string, unknown>;
     const newRow = {
       id: crypto.randomUUID(),
@@ -242,6 +260,7 @@ export const rewardHandlers = [
 
   // coupons POST (postExchange에서 insert)
   http.post(`${SUPABASE_URL}/rest/v1/coupons`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const body = (await request.json()) as Record<string, unknown>;
     const newRow = {
       id: crypto.randomUUID(),
@@ -255,6 +274,7 @@ export const rewardHandlers = [
 
   // === exchanges ===
   http.post(`${SUPABASE_URL}/rest/v1/exchanges`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const body = (await request.json()) as Record<string, unknown>;
     const newRow = { id: crypto.randomUUID(), ...body };
     exchanges.push(newRow as (typeof exchanges)[0]);

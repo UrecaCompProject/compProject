@@ -75,7 +75,8 @@ export const authHandlers = [
       return HttpResponse.json(
         {
           error: 'invalid_credentials',
-          error_description: 'Invalid login credentials',
+          error_description:
+            '이메일 또는 비밀번호가 올바르지 않아요. 다시 확인해 주세요.',
         },
         { status: 400 },
       );
@@ -92,13 +93,19 @@ export const authHandlers = [
         return HttpResponse.json(session);
       }
       return HttpResponse.json(
-        { error: 'invalid_grant', error_description: 'Invalid refresh token' },
+        {
+          error: 'invalid_grant',
+          error_description: '로그인이 만료되었어요. 다시 로그인해 주세요.',
+        },
         { status: 400 },
       );
     }
 
     return HttpResponse.json(
-      { error: 'unsupported_grant_type' },
+      {
+        error: 'unsupported_grant_type',
+        error_description: '지원하지 않는 로그인 방식이에요.',
+      },
       { status: 400 },
     );
   }),
@@ -115,7 +122,7 @@ export const authHandlers = [
       return HttpResponse.json(
         {
           error: 'user_already_exists',
-          error_description: 'User already registered',
+          error_description: '이미 가입된 이메일이에요. 로그인해 주세요.',
         },
         { status: 400 },
       );
@@ -143,7 +150,10 @@ export const authHandlers = [
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !mockSession) {
       return HttpResponse.json(
-        { error: 'auth_session_missing' },
+        {
+          error: 'auth_session_missing',
+          error_description: '로그인이 필요해요. 다시 로그인해 주세요.',
+        },
         { status: 401 },
       );
     }

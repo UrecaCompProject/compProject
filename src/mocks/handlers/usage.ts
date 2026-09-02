@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-import { usageMonthly } from '../db';
+import { usageMonthly, mockSession } from '../db';
 import {
   parseFilters,
   applyFilters,
@@ -9,6 +9,18 @@ import {
 } from '../utils';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+// PostgREST 미인증 에러 응답
+function unauthorizedResponse() {
+  return HttpResponse.json(
+    {
+      code: 'PGRST301',
+      message: '로그인이 필요해요. 다시 로그인해 주세요.',
+      details: 'JWT is missing or invalid',
+    },
+    { status: 401 },
+  );
+}
 
 export const usageHandlers = [
   // usage_monthly — GET (getUsage, getUsageTrend에서 사용)
@@ -28,6 +40,7 @@ export const usageHandlers = [
 
   // usage_monthly — POST (insert, ensureCurrentMonthUsage에서 사용)
   http.post(`${SUPABASE_URL}/rest/v1/usage_monthly`, async ({ request }) => {
+    if (!mockSession) return unauthorizedResponse();
     const body = (await request.json()) as Record<string, unknown>;
     const newRow = {
       id: crypto.randomUUID(),

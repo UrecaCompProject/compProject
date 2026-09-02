@@ -7,7 +7,7 @@ import type {
   ReportOutput,
 } from '@/shared/lib/aiConsult';
 
-import { plans } from '../db';
+import { plans, mockSession } from '../db';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -125,6 +125,16 @@ function buildReportResponse(input: ReportInput): {
 
 export const aiConsultHandlers = [
   http.post(`${SUPABASE_URL}/functions/v1/ai-consult`, async ({ request }) => {
+    // Edge Function은 인증된 사용자만 호출 가능
+    if (!mockSession) {
+      return HttpResponse.json(
+        {
+          error: '로그인이 필요해요. 다시 로그인해 주세요.',
+        },
+        { status: 401 },
+      );
+    }
+
     const body = (await request.json()) as ConsultInput &
       ReportInput & { mode?: string };
 
