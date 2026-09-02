@@ -1,9 +1,14 @@
-import { ScratchGame } from '@/features/games';
+import type { ComponentType } from 'react';
 
 interface ScratchGameMessageProps {
   reward?: number;
   onWin?: (reward: number) => void;
   onClose?: () => void;
+  scratchGame: ComponentType<{
+    reward?: number;
+    onWin?: (reward: number) => void;
+    onClose?: () => void;
+  }>;
 }
 
 // ScratchGame을 채팅 메시지로 렌더링하기 위한 래퍼
@@ -12,6 +17,7 @@ export default function ScratchGameMessage({
   reward,
   onWin,
   onClose,
+  scratchGame: ScratchGame,
 }: ScratchGameMessageProps) {
   return (
     <div className="flex justify-center py-2 px-4">

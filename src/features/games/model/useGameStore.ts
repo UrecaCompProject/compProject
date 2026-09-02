@@ -13,8 +13,6 @@ export type GameOpenParams = {
   source?: GameSource;
 };
 
-const REVEAL_DELAY = 500;
-
 interface GameState {
   activeGameId: GameId | null;
   revealed: boolean;
@@ -23,10 +21,9 @@ interface GameState {
   backOverride: (() => void) | null;
   openGame: (gameId: GameId, params?: GameOpenParams) => void;
   closeGame: () => void;
+  setRevealed: (revealed: boolean) => void;
   setBackOverride: (override: (() => void) | null) => void;
 }
-
-let revealTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useGameStore = create<GameState>((set) => ({
   activeGameId: null,
@@ -35,7 +32,6 @@ export const useGameStore = create<GameState>((set) => ({
   source: 'chat',
   backOverride: null,
   openGame: (gameId, params = {}) => {
-    if (revealTimer) clearTimeout(revealTimer);
     set({
       activeGameId: gameId,
       params,
@@ -43,10 +39,8 @@ export const useGameStore = create<GameState>((set) => ({
       revealed: false,
       backOverride: null,
     });
-    revealTimer = setTimeout(() => set({ revealed: true }), REVEAL_DELAY);
   },
   closeGame: () => {
-    if (revealTimer) clearTimeout(revealTimer);
     set({
       activeGameId: null,
       params: {},
@@ -55,5 +49,6 @@ export const useGameStore = create<GameState>((set) => ({
       backOverride: null,
     });
   },
+  setRevealed: (revealed) => set({ revealed }),
   setBackOverride: (override) => set({ backOverride: override }),
 }));

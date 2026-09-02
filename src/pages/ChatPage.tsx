@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   ChatInput,
@@ -12,8 +12,19 @@ import {
 } from '@/features/ai-consult/lib/chatHelpers';
 import { useChat } from '@/features/ai-consult/model/useChat';
 import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
-import { ReportGenerateConfirmModal } from '@/features/consult-report';
-import { GameLayer } from '@/features/games';
+import { SigninModal, SignupChat } from '@/features/auth';
+import { ChatQuizMessage } from '@/features/chat-quiz';
+import {
+  ReportCard,
+  ReportGenerateConfirmModal,
+  ReportSheet,
+} from '@/features/consult-report';
+import { GameLayer, ScratchGame } from '@/features/games';
+import { CompareResultSheet } from '@/features/plan-compare';
+import { PlanQuickSheet } from '@/features/plan-detail';
+import { PlanSubscriptionSheet } from '@/features/plan-subscription';
+import { RewardSheet } from '@/features/reward';
+import { MyPageSheet } from '@/features/usage';
 import { BottomSheet, useModalStore, useSignupIntentStore } from '@/shared';
 
 export default function ChatPage() {
@@ -54,6 +65,34 @@ export default function ChatPage() {
   } = useChat();
 
   const openModal = useModalStore((state) => state.open);
+  const handleRequireLogin = useCallback(() => {
+    openModal({
+      title: '회원관리',
+      content: <SigninModal onSignupClick={openSignupChat} />,
+    });
+  }, [openModal, openSignupChat]);
+
+  const messageSlots = useMemo(
+    () => ({
+      ReportCard,
+      CompareResultSheet,
+      SignupChat,
+      ChatQuizMessage,
+      PlanSubscriptionSheet,
+      ScratchGame,
+    }),
+    [],
+  );
+  const menuSlots = useMemo(
+    () => ({
+      MyPageSheet,
+      PlanQuickSheet,
+      RewardSheet,
+      ReportSheet,
+    }),
+    [],
+  );
+
   // 웰컴 메시지 외에 대화가 쌓인 뒤에만 새로고침 시 대화가 사라진다는 경고가 의미 있다.
   const hasChatProgress = messages.length > 1;
 
@@ -162,6 +201,7 @@ export default function ChatPage() {
         onRegenerate={handleRegenerate}
         onEditMessage={handleEditMessage}
         onReportButtonVisibleChange={setIsReportButtonScrollVisible}
+        slots={messageSlots}
       />
 
       <div className="relative">
@@ -193,8 +233,10 @@ export default function ChatPage() {
         onStop={handleStop}
         onStartQuiz={startQuiz}
         onStartScratch={startScratch}
-        onSignupClick={openSignupChat}
+        isLoggedIn={isLoggedIn}
+        onRequireLogin={handleRequireLogin}
         disabled={isLoading}
+        menuSlots={menuSlots}
       />
 
       <BottomSheet
