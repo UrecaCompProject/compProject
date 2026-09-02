@@ -14,7 +14,7 @@ export default function ScratchGameMessage({
   onClose,
 }: ScratchGameMessageProps) {
   return (
-    <div className="flex justify-center py-2">
+    <div className="flex justify-center py-2 px-4">
       <ScratchGame reward={reward} onWin={onWin} onClose={onClose} />
     </div>
   );

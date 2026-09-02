@@ -12,6 +12,7 @@ import {
   buildConversationLog,
   buildErrorMessage,
   buildRecommendationResult,
+  getWelcomeQuickReplies,
 } from '../lib/chatHelpers';
 
 import type { ChatMessage } from '../types';
@@ -23,7 +24,7 @@ interface UseChatReportParams {
   isLoading: boolean;
   setIsLoading: (v: boolean) => void;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
-  resetChat: () => void;
+  resetChat: (options?: { showGreeting?: boolean }) => void;
   startRequest: () => AbortSignal;
   clearRequest: (signal?: AbortSignal) => void;
 }
@@ -88,15 +89,18 @@ export function useChatReport({
           signal,
         );
         await saveReport(report, recommendations);
-        // 리포트 결과만 남기고 채팅방을 웰컱+리포트 상태로 초기화
-        resetChat();
+        // 리포트 결과만 남기고 채팅방을 초기화 — 결과 바로 위에 해리 인삿말이
+        // 끼어들지 않도록 웰컴 메시지는 생략한다.
+        resetChat({ showGreeting: false });
         setMessages((prev) => [
           ...prev,
           {
             id: Date.now(),
             type: 'ai',
             sentence: `레포트가 생성되어 저장되었어요.\n\n${report.summary}`,
-            quickReplies: ['메뉴로 돌아가기'],
+            quickReplies: getWelcomeQuickReplies(
+              userProfile.isLoggedIn ?? false,
+            ),
             report,
           },
         ]);

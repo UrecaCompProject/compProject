@@ -158,18 +158,28 @@ export function useChat() {
 
   const wasLoggedInRef = useRef(isLoggedIn);
 
-  const resetChat = useCallback(() => {
-    setMessages([
-      {
-        id: 0,
-        type: 'ai',
-        sentence: WELCOME_MESSAGE,
-        quickReplies: getWelcomeQuickReplies(isLoggedIn),
-      },
-    ]);
-    setInput('');
-    setProfile({ mode: 'menu', isLoggedIn });
-  }, [isLoggedIn]);
+  // showGreeting: false — 레포트 생성 직후처럼 결과 메시지 바로 위에
+  // 해리의 웰컴 인삿말이 끼어들면 안 되는 경우 생략한다.
+  const resetChat = useCallback(
+    (options?: { showGreeting?: boolean }) => {
+      const showGreeting = options?.showGreeting ?? true;
+      setMessages(
+        showGreeting
+          ? [
+              {
+                id: 0,
+                type: 'ai',
+                sentence: WELCOME_MESSAGE,
+                quickReplies: getWelcomeQuickReplies(isLoggedIn),
+              },
+            ]
+          : [],
+      );
+      setInput('');
+      setProfile({ mode: 'menu', isLoggedIn });
+    },
+    [isLoggedIn],
+  );
 
   useEffect(() => {
     if (wasLoggedInRef.current && !isLoggedIn) {
@@ -558,7 +568,13 @@ export function useChat() {
     [isLoading, setMessages, setInput],
   );
 
-  const canShowReportButton = aiResponseCount >= 5;
+  // 챗봇이 요금제 추천 폼·현재/대상 요금제 선택처럼 상세 정보를 다시 물어보는
+  // 중(한 사이클이 끝나지 않은 상태)에는 레포트 생성 버튼을 숨긴다.
+  const lastMessage = messages[messages.length - 1];
+  const isAwaitingDetailInput =
+    lastMessage?.type === 'ai' &&
+    (!!lastMessage.form || !!lastMessage.planSelector);
+  const canShowReportButton = aiResponseCount >= 5 && !isAwaitingDetailInput;
 
   // 비로그인 상태로 5회 이상 대화하면 로그인 모달을 한 번 자동으로 띄워 가입을 유도한다.
   const hasPromptedLoginRef = useRef(false);

@@ -56,8 +56,11 @@ export default function ChatInput({
             variant="secondary"
             size="icon"
             round
-            active={isMenuOpen}
-            onClick={() => setIsMenuOpen((prev) => !prev)}
+            // active={isMenuOpen}
+            // ChatMenuBar의 useClickOutside가 pointerdown에서 먼저 닫아버린 뒤
+            // 같은 클릭의 click 이벤트가 다시 열어버리는 것을 막기 위해 전파를 막는다.
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             <Menu size={20} />
           </Button>

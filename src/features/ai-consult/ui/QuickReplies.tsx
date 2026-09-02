@@ -18,7 +18,7 @@ const LOGIN_ONLY_REPLIES = [
   '온라인 가입',
   '요금제 가입하기',
   '게임 하기',
-  '출석체크',
+  '출석 체크',
 ];
 const GUEST_ONLY_REPLIES = ['회원 가입하기'];
 
@@ -45,22 +45,21 @@ export default function QuickReplies({
   if (processed.length === 0) return null;
 
   return (
-    <div>
-      <div className="mx-4 border-t border-border pt-4">
-        <div className="flex items-center justify-between gap-3 px-1 pb-2">
-          <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary">
-            자주 물어보는 질문
-          </div>
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label={collapsed ? '퀵 리플라이 펼치기' : '퀵 리플라이 접기'}
-            className="flex h-6 w-6 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
-          >
-            {collapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
+    <div className=" border-t border-border flex flex-col">
+      <div className="flex items-center justify-between py-3 px-4">
+        <div className="font-semibold leading-[1.7] text-[14px] text-fg-secondary">
+          자주 물어보는 질문
         </div>
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? '퀵 리플라이 펼치기' : '퀵 리플라이 접기'}
+          className="flex h-6 w-6 items-center bg-white justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
+        >
+          {collapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
       </div>
+
       <div
         className={`grid transition-all duration-300 ease-out ${
           collapsed
@@ -69,7 +68,7 @@ export default function QuickReplies({
         }`}
       >
         <div className="overflow-hidden">
-          <div className="flex flex-wrap gap-2 px-4 pb-4">
+          <div className="flex flex-wrap gap-2 px-4 mb-3">
             {processed.map((reply) => (
               <Button
                 key={reply}

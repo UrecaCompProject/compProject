@@ -55,7 +55,7 @@ export default function ReportCard({ report }: ReportCardProps) {
     .filter((p): p is PlanRow => !!p);
 
   return (
-    <Card border="primary" radius="16" gap="16" className="mt-3">
+    <Card border="primary" radius="16" gap="16" className="mt-3 mx-4">
       <div className="flex items-center gap-2">
         <IconBadge icon={FileText} color="brand" size={32} radius={8} />
         <h4 className="text-body font-semibold text-fg-primary">상담 레포트</h4>

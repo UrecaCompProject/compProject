@@ -1,40 +1,14 @@
-import { lazy, Suspense } from 'react';
-
-import loadingAnimation from '@/shared/assets/images/loading.json';
-
-import { getLottiePlayerPromise } from '../lib/preloadLottie';
-
-// Lottie Player는 ~450KB 라이브러리이므로 dynamic import로 별도 청크 분리
-// preloadLottiePlayer()가 먼저 호출되었다면 이미 캐시된 promise를 재사용
-const Player = lazy(() =>
-  getLottiePlayerPromise().then((mod) => ({ default: mod.Player })),
-);
-
-// 로딩 중 표시할 Lottie 애니메이션 — 3개 원이 위아래로 bounce하는 pingpong
+// 로딩 중 표시할 타이핑 인디케이터 — 점 3개가 순서대로 bounce
 export default function ChatLoadingIndicator() {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 px-4">
       <div className="rounded-full w-7 h-7 bg-gray-300 shrink-0">
         <img src="/bot_profile.png" alt="AI 도우미 해리" />
       </div>
-      <div className="shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 mt-2 bg-surface-card overflow-hidden">
-        <Suspense
-          fallback={
-            <div className="w-[120px] h-[80px] flex items-center justify-center">
-              <span className="w-2.5 h-2.5 rounded-full bg-fg-disabled animate-pulse" />
-            </div>
-          }
-        >
-          <Player
-            autoplay
-            loop
-            src={loadingAnimation}
-            style={{
-              width: '120px',
-              height: '80px',
-            }}
-          />
-        </Suspense>
+      <div className="shadow-shadow mt-2 flex w-fit items-center gap-1 rounded-2xl rounded-tl-sm bg-surface-card px-4 py-3">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-fg-disabled [animation-delay:-0.3s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-fg-disabled [animation-delay:-0.15s]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-fg-disabled" />
       </div>
     </div>
   );

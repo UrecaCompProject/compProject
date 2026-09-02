@@ -15,8 +15,9 @@ interface AIChatProps {
   variant?: AIChatVariant;
   onRegenerate?: () => void;
   showRegenerate?: boolean;
-  /** 버블의 max-width 등 스타일을 외부에서 덮어쓸 때 사용 */
-  className?: string;
+  /** 폼처럼 내부 요소가 w-full로 채워지는 콘텐츠는 true로 — 말풍선이
+   * 내용 크기로 눌리지 않고 max-w까지 항상 꽉 차게 늘어난다. */
+  fullWidth?: boolean;
 }
 
 export default function AIChat({
@@ -24,16 +25,16 @@ export default function AIChat({
   variant = 'default',
   onRegenerate,
   showRegenerate = false,
-  className,
+  fullWidth = false,
 }: AIChatProps) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 px-4">
       <div className="rounded-full w-7 h-7 bg-gray-300 shrink-0">
         <img src="/bot_profile.png" alt="AI 도우미 해리" />
       </div>
-      <div className="flex flex-col gap-1 mt-2">
+      <div className="flex items-end gap-2 mt-2 w-full">
         <div
-          className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 w-fit max-w-[80%] whitespace-pre-line break-keep ${AIChatBubbleVariants[variant]} ${className ?? ''}`}
+          className={`text-[15px] leading-[150%] shadow-shadow rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[82%] whitespace-pre-line break-keep ${fullWidth ? 'w-full' : 'w-fit'} ${AIChatBubbleVariants[variant]}`}
           role={variant === 'error' ? 'alert' : undefined}
         >
           {sentence}
@@ -45,8 +46,8 @@ export default function AIChat({
             className="flex items-center gap-1 text-caption text-fg-tertiary hover:text-brand-primary transition-colors w-fit"
             aria-label="응답 재생성"
           >
-            <RefreshCw size={12} />
-            재생성
+            <RefreshCw size={16} strokeWidth={2.5} className="text-[#c3cfeb]" />
+            {/* 재생성 */}
           </button>
         )}
       </div>

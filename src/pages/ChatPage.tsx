@@ -4,15 +4,19 @@ import {
   ChatInput,
   ChatMessageList,
   QuickReplies,
+  RefreshCheckModal,
 } from '@/features/ai-consult';
 import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
-import { preloadLottiePlayer } from '@/features/ai-consult/lib/preloadLottie';
 import { useChat } from '@/features/ai-consult/model/useChat';
+import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
+import { ReportGenerateConfirmModal } from '@/features/consult-report';
 import { GameLayer } from '@/features/games';
-import { BottomSheet, useSignupIntentStore } from '@/shared';
+import { BottomSheet, useModalStore, useSignupIntentStore } from '@/shared';
 
 export default function ChatPage() {
   const [isQuickRepliesCollapsed, setIsQuickRepliesCollapsed] = useState(false);
+  const [isReportButtonScrollVisible, setIsReportButtonScrollVisible] =
+    useState(true);
   const {
     messages,
     input,
@@ -48,11 +52,38 @@ export default function ChatPage() {
     activeGameMeta,
   } = useChat();
 
-  // 채팅 페이지 진입 즉시 Lottie 청크를 백그라운드에서 미리 로드
-  // 사용자가 첫 메시지를 보내 로딩 인디케이터가 표시될 때 청크가 이미 캐시되어 있도록
+  const openModal = useModalStore((state) => state.open);
+  // 웰컴 메시지 외에 대화가 쌓인 뒤에만 새로고침 시 대화가 사라진다는 경고가 의미 있다.
+  const hasChatProgress = messages.length > 1;
+
+  // F5, Ctrl/Cmd+R로 새로고침을 시도하면 가로채서 확인 모달을 띄운다.
+  // 브라우저 새로고침 버튼 클릭이나 탭 닫기는 JS로 가로챌 수 없어 beforeunload의
+  // 기본 브라우저 대화상자로만 안내할 수 있다.
   useEffect(() => {
-    preloadLottiePlayer();
-  }, []);
+    if (!hasChatProgress) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isRefreshShortcut =
+        e.key === 'F5' ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r');
+      if (isRefreshShortcut) {
+        e.preventDefault();
+        openModal({ title: '안내', content: <RefreshCheckModal /> });
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasChatProgress, openModal]);
 
   // 헤더 등 채팅 페이지 밖에서 회원가입을 누른 경우, 여기서 신호를 받아 가입 플로우를 시작한다.
   const signupPending = useSignupIntentStore((state) => state.pending);
@@ -74,14 +105,32 @@ export default function ChatPage() {
     }
   };
 
+  // 레포트 생성이 끝나면 퀵 리플라이가 접혀 있던 상태라도 강제로 펼친다.
+  const handleGenerateReportAndExpand = async () => {
+    await handleGenerateReport([]);
+    setIsQuickRepliesCollapsed(false);
+  };
+
+  // 레포트 생성 버튼을 누르면 곧바로 생성하지 않고, 대화가 초기화된다는
+  // 안내 모달을 먼저 띄운 뒤 사용자가 확인해야 실제 생성이 시작된다.
+  const requestGenerateReport = () => {
+    openModal({
+      title: '알림',
+      content: (
+        <ReportGenerateConfirmModal onConfirm={handleGenerateReportAndExpand} />
+      ),
+    });
+  };
+
   const lastMessage = messages[messages.length - 1];
-  // 빈 배열일 때도 웰컴 퀵리플라이로 폴백 — 폼 진입 등으로 quickReplies: []가 내려올 때 메뉴 유지
+  // 퀴즈·게임 진행 중에도, 그리고 요금제 추천 시 정보 입력 폼처럼 서버가
+  // quickReplies를 빈 배열로 내려주는 경우에도 메뉴 퀵 리플라이를 항상 유지
   const quickReplies =
-    lastMessage?.type === 'ai' &&
-    lastMessage.quickReplies &&
-    lastMessage.quickReplies.length > 0
+    lastMessage?.type === 'ai' && lastMessage.quickReplies?.length
       ? lastMessage.quickReplies
       : getWelcomeQuickReplies(isLoggedIn);
+
+  const showReportButton = canShowReportButton && isLoggedIn;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -89,7 +138,7 @@ export default function ChatPage() {
         messages={messages}
         isLoading={isLoading}
         isGeneratingReport={isGeneratingReport}
-        canShowReportButton={canShowReportButton}
+        canShowReportButton={showReportButton}
         onSignupFinished={handleSignupFinished}
         onFormSubmit={handleFormSubmit}
         formDefaults={profile}
@@ -111,17 +160,31 @@ export default function ChatPage() {
         onScratchClose={closeSheetGame}
         onRegenerate={handleRegenerate}
         onEditMessage={handleEditMessage}
+        onReportButtonVisibleChange={setIsReportButtonScrollVisible}
       />
-      <QuickReplies
-        replies={quickReplies}
-        onReply={handleSendAndCollapse}
-        disabled={isLoading}
-        isLoggedIn={isLoggedIn}
-        collapsed={isQuickRepliesCollapsed}
-        onToggleCollapse={() =>
-          setIsQuickRepliesCollapsed((previous) => !previous)
-        }
-      />
+
+      <div className="relative">
+        {showReportButton && (
+          <ReportGenerateButton
+            onGenerate={requestGenerateReport}
+            isLoading={isLoading}
+            isGeneratingReport={isGeneratingReport}
+            visible={isReportButtonScrollVisible}
+          />
+        )}
+
+        <QuickReplies
+          replies={quickReplies}
+          onReply={handleSendAndCollapse}
+          disabled={isLoading}
+          isLoggedIn={isLoggedIn}
+          collapsed={isQuickRepliesCollapsed}
+          onToggleCollapse={() =>
+            setIsQuickRepliesCollapsed((previous) => !previous)
+          }
+        />
+      </div>
+
       <ChatInput
         value={input}
         onChange={setInput}
