@@ -76,12 +76,14 @@ export function findLastRecommendations(
   return [];
 }
 
-// 리포트 대화 로그에 포함할 메시지인지 확인 — 게임/출석 맥락은 제외
+// 리포트 대화 로그에 포함할 메시지인지 확인 — 요금제(추천/비교/가입)와
+// 일반 상담(에피라 관련 문의)만 포함하고, 게임/출석/메뉴 이동 등 나머지는
+// (명시적으로 태그되지 않은 메시지 포함) 전부 제외하는 허용목록 방식.
 function isLoggableMessage(
   m: ChatMessage,
 ): m is Extract<ChatMessage, { type: 'ai' | 'user' }> {
   if (m.type !== 'ai' && m.type !== 'user') return false;
-  return m.category !== 'game' && m.category !== 'attendance';
+  return m.category === 'plan' || m.category === 'general';
 }
 
 export function buildConversationLog(messages: ChatMessage[]): string {
@@ -124,8 +126,6 @@ export function buildAIMessage(
   quickReplies?: string[],
   extra?: Partial<{
     planCompare: boolean;
-    planSelector: boolean;
-    planSelectorMode: 'current' | 'target';
     category: MessageCategory;
   }>,
 ) {

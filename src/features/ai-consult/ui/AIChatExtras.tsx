@@ -1,6 +1,5 @@
 import { ReportCard } from '@/features/consult-report';
 import { CompareResultSheet } from '@/features/plan-compare';
-import { PlanSelector } from '@/features/plan-subscription';
 import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import RecommendationCards from './RecommendationCards';
@@ -17,8 +16,6 @@ interface AIChatExtrasProps {
   canShowReportButton: boolean;
   onPlanSubscribe?: (plan: RecommendedPlan) => void;
   onPlanCompare?: (plan: RecommendedPlan) => void;
-  onSelectCurrentPlan?: (planName: string) => void;
-  onSelectTargetPlan?: (planName: string) => void;
   onRecompare?: (planAName: string, planBName: string) => void;
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   onFormSubmit?: (values: Partial<ConsultInput>, summary: string) => void;
@@ -31,8 +28,6 @@ export default function AIChatExtras({
   isLoading,
   onPlanSubscribe,
   onPlanCompare,
-  onSelectCurrentPlan,
-  onSelectTargetPlan,
   onRecompare,
   onFormSubmit,
   formDefaults,
@@ -63,18 +58,6 @@ export default function AIChatExtras({
 
       {message.planCompare && (
         <CompareResultSheet onSubscribe={(plan) => onPlanSubscribe?.(plan)} />
-      )}
-
-      {message.planSelector && (
-        <PlanSelector
-          mode={message.planSelectorMode ?? 'current'}
-          onSelect={(planName) =>
-            message.planSelectorMode === 'target'
-              ? onSelectTargetPlan?.(planName)
-              : onSelectCurrentPlan?.(planName)
-          }
-          disabled={isLoading}
-        />
       )}
 
       {message.form && isLast && onFormSubmit && (

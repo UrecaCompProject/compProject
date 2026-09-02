@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback } from 'react';
 
 import type {
   ConsultInput,
@@ -29,7 +29,9 @@ interface UseChatCompareParams {
   clearRequest: (signal?: AbortSignal) => void;
 }
 
-// 요금제 비교 2단계 플로우와 fetchCompare 로직을 관리
+// 요금제 비교 로직 — 현재 요금제가 있으면 바로 AI 비교를 요청하고, 없으면
+// 카탈로그 기반 비교 컴포넌트(PlanCompare, planCompare 메시지)를 띄워
+// 사용자가 직접 두 요금제를 골라 비교하게 한다.
 export function useChatCompare({
   profile,
   isLoggedIn,
@@ -41,16 +43,6 @@ export function useChatCompare({
   startRequest,
   clearRequest,
 }: UseChatCompareParams) {
-  // 비교 요청 시 현재 요금제가 없으면 드랍다운 선택 후 비교를 이어가기 위해
-  // 대기 중인 비교 대상 요금제명을 보관
-  const pendingComparePlanRef = useRef<string | null>(null);
-  // "요금제 비교하기" 메뉴에서 현재 요금제 선택 후 비교 대상 선택으로 넘어가는 2단계 플로우
-  const [compareFlow, setCompareFlow] = useState<
-    'idle' | 'selectingCurrent' | 'selectingTarget'
-  >('idle');
-  // 2단계 플로우에서 선택된 현재 요금제명 (fetchCompare에 명시적으로 전달)
-  const selectedCurrentPlanRef = useRef<string | null>(null);
-
   const fetchCompare = useCallback(
     async (planBName: string, planAName?: string) => {
       setIsLoading(true);
@@ -100,18 +92,21 @@ export function useChatCompare({
     ],
   );
 
+  // 추천 카드의 '비교하기' — 현재 요금제가 있으면 바로 AI 비교를 요청하고,
+  // 없으면 카탈로그 기반 비교 컴포넌트를 띄워 직접 고르게 한다.
   const handlePlanCompare = useCallback(
     (plan: RecommendedPlan) => {
       // 로딩 중이면 중복 요청 차단 — 중지 후 isLoading이 false가 되면 다시 클릭 가능
       if (isLoading) return;
       if (!effectiveCurrentPlan) {
-        pendingComparePlanRef.current = plan.planName;
         setMessages((prev) => [
           ...prev,
           buildAIMessage(
-            '현재 이용 중인 요금제를 아래에서 선택해주세요.',
+            '비교할 요금제를 선택해 주세요.',
             ['메뉴로 돌아가기'],
-            { planSelector: true },
+            {
+              planCompare: true,
+            },
           ),
         ]);
         return;
@@ -121,83 +116,8 @@ export function useChatCompare({
     [isLoading, effectiveCurrentPlan, fetchCompare, setMessages],
   );
 
-  // PlanSelector 드랍다운에서 요금제를 선택했을 때 호출
-  const handleSelectCurrentPlan = useCallback(
-    (planName: string) => {
-      // "요금제 비교하기" 메뉴의 2단계 플로우: 현재 요금제 선택 → 비교 대상 선택
-      if (compareFlow === 'selectingCurrent') {
-        selectedCurrentPlanRef.current = planName;
-        setCompareFlow('selectingTarget');
-        setMessages((prev) => [
-          ...prev,
-          buildAIMessage(
-            '비교할 대상 요금제를 아래에서 선택해주세요.',
-            ['메뉴로 돌아가기'],
-            { planSelector: true, planSelectorMode: 'target' },
-          ),
-        ]);
-        return;
-      }
-
-      // "현재 요금제와 비교" 또는 추천 카드의 비교 버튼에서 온 경우:
-      // 대기 중인 비교 대상이 있으면 선택 즉시 비교를 이어감
-      const pendingPlan = pendingComparePlanRef.current;
-      pendingComparePlanRef.current = null;
-      if (pendingPlan) {
-        fetchCompare(pendingPlan, planName);
-      }
-    },
-    [compareFlow, fetchCompare, setMessages],
-  );
-
-  // 비교 대상 요금제 선택 시 호출 (2단계 플로우의 두 번째 단계)
-  const handleSelectTargetPlan = useCallback(
-    (planName: string) => {
-      const currentPlan = selectedCurrentPlanRef.current;
-      selectedCurrentPlanRef.current = null;
-      setCompareFlow('idle');
-      if (currentPlan) {
-        fetchCompare(planName, currentPlan);
-      }
-    },
-    [fetchCompare],
-  );
-
-  const startCompareFlow = useCallback(() => {
-    if (!effectiveCurrentPlan) {
-      setCompareFlow('selectingCurrent');
-      setMessages((prev) => [
-        ...prev,
-        buildAIMessage(
-          '현재 이용 중인 요금제를 아래에서 선택해주세요.',
-          ['메뉴로 돌아가기'],
-          { planSelector: true, planSelectorMode: 'current' },
-        ),
-      ]);
-      return;
-    }
-    setCompareFlow('selectingTarget');
-    setMessages((prev) => [
-      ...prev,
-      buildAIMessage(
-        '비교할 대상 요금제를 아래에서 선택해주세요.',
-        ['메뉴로 돌아가기'],
-        { planSelector: true, planSelectorMode: 'target' },
-      ),
-    ]);
-  }, [effectiveCurrentPlan, setMessages]);
-
-  const setPendingComparePlan = useCallback((planName: string) => {
-    pendingComparePlanRef.current = planName;
-  }, []);
-
   return {
-    compareFlow,
     fetchCompare,
     handlePlanCompare,
-    handleSelectCurrentPlan,
-    handleSelectTargetPlan,
-    startCompareFlow,
-    setPendingComparePlan,
   };
 }

@@ -214,14 +214,7 @@ export function useChat() {
     handleSignupFinished,
   } = useChatSubscription({ isLoggedIn, setMessages });
 
-  const {
-    fetchCompare,
-    handlePlanCompare,
-    handleSelectCurrentPlan,
-    handleSelectTargetPlan,
-    startCompareFlow,
-    setPendingComparePlan,
-  } = useChatCompare({
+  const { fetchCompare, handlePlanCompare } = useChatCompare({
     profile,
     isLoggedIn,
     effectiveCurrentPlan,
@@ -352,8 +345,6 @@ export function useChat() {
         addAIResponse,
         openSubscription,
         openSignupChat,
-        startCompareFlow,
-        setPendingComparePlan,
         fetchCompare,
         startQuiz,
         openSheetGame,
@@ -441,8 +432,6 @@ export function useChat() {
       openSheetGame,
       playedTodayGameIds,
       fetchCompare,
-      startCompareFlow,
-      setPendingComparePlan,
       addAIResponse,
       setMessages,
       setProfile,
@@ -568,12 +557,12 @@ export function useChat() {
     [isLoading, setMessages, setInput],
   );
 
-  // 챗봇이 요금제 추천 폼·현재/대상 요금제 선택처럼 상세 정보를 다시 물어보는
+  // 챗봇이 요금제 추천 폼·요금제 비교 카드처럼 상세 정보를 다시 물어보는
   // 중(한 사이클이 끝나지 않은 상태)에는 레포트 생성 버튼을 숨긴다.
   const lastMessage = messages[messages.length - 1];
   const isAwaitingDetailInput =
     lastMessage?.type === 'ai' &&
-    (!!lastMessage.form || !!lastMessage.planSelector);
+    (!!lastMessage.form || !!lastMessage.planCompare);
   const canShowReportButton = aiResponseCount >= 5 && !isAwaitingDetailInput;
 
   // 비로그인 상태로 5회 이상 대화하면 로그인 모달을 한 번 자동으로 띄워 가입을 유도한다.
@@ -605,8 +594,6 @@ export function useChat() {
     handleFormSubmit,
     handleGenerateReport,
     handlePlanCompare,
-    handleSelectCurrentPlan,
-    handleSelectTargetPlan,
     fetchCompare,
     profile,
     subscriptionOpen,

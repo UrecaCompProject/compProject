@@ -40,8 +40,6 @@ export interface QuickReplyContext {
   addAIResponse: AddAIResponse;
   openSubscription: (plan: RecommendedPlan | null) => void;
   openSignupChat: () => void;
-  startCompareFlow: () => void;
-  setPendingComparePlan: (planName: string) => void;
   fetchCompare: (planBName: string, planAName?: string) => Promise<void>;
   startQuiz: (
     kind: QuizKind,
@@ -74,7 +72,6 @@ export async function routeQuickReply(
     addAIResponse,
     openSubscription,
     openSignupChat,
-    setPendingComparePlan,
     fetchCompare,
     startQuiz,
     openSheetGame,
@@ -191,14 +188,11 @@ export async function routeQuickReply(
       return 'handled';
     }
     if (!effectiveCurrentPlan) {
-      setPendingComparePlan(lastPlan.planName);
       setMessages((prev) => [
         ...prev,
-        buildAIMessage(
-          '현재 이용 중인 요금제를 아래에서 선택해주세요.',
-          ['메뉴로 돌아가기'],
-          { planSelector: true },
-        ),
+        buildAIMessage('비교할 요금제를 선택해 주세요.', ['메뉴로 돌아가기'], {
+          planCompare: true,
+        }),
       ]);
       return 'handled';
     }

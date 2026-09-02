@@ -6,7 +6,10 @@ import {
   QuickReplies,
   RefreshCheckModal,
 } from '@/features/ai-consult';
-import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
+import {
+  findLastRecommendations,
+  getWelcomeQuickReplies,
+} from '@/features/ai-consult/lib/chatHelpers';
 import { useChat } from '@/features/ai-consult/model/useChat';
 import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
 import { ReportGenerateConfirmModal } from '@/features/consult-report';
@@ -33,8 +36,6 @@ export default function ChatPage() {
     handleFormSubmit,
     handleGenerateReport,
     handlePlanCompare,
-    handleSelectCurrentPlan,
-    handleSelectTargetPlan,
     fetchCompare,
     profile,
     subscriptionOpen,
@@ -106,8 +107,10 @@ export default function ChatPage() {
   };
 
   // 레포트 생성이 끝나면 퀵 리플라이가 접혀 있던 상태라도 강제로 펼친다.
+  // 이전에 추천받은 요금제가 있으면 함께 넘겨서, 무조건 일반 상담 리포트로
+  // 처리돼 요금제 정보가 빠지는 일이 없게 한다.
   const handleGenerateReportAndExpand = async () => {
-    await handleGenerateReport([]);
+    await handleGenerateReport(findLastRecommendations(messages));
     setIsQuickRepliesCollapsed(false);
   };
 
@@ -144,8 +147,6 @@ export default function ChatPage() {
         formDefaults={profile}
         onPlanSubscribe={openSubscription}
         onPlanCompare={handlePlanCompare}
-        onSelectCurrentPlan={handleSelectCurrentPlan}
-        onSelectTargetPlan={handleSelectTargetPlan}
         onRecompare={(planAName, planBName) =>
           fetchCompare(planBName, planAName)
         }
