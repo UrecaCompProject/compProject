@@ -14,6 +14,7 @@ interface ChatMenuBarProps {
   onMenuClose: () => void;
   onStartQuiz?: (quizType: QuizKind) => void;
   onStartScratch?: (reward?: number) => void;
+  onSend?: (text: string) => void;
 }
 
 // 채팅 입력창 위 메뉴 아이콘 바(마이페이지, 요금제, 혜택/이벤트, 상담 리포트)와
@@ -23,6 +24,7 @@ export default function ChatMenuBar({
   onMenuClose,
   onStartQuiz,
   onStartScratch,
+  onSend,
 }: ChatMenuBarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [myPageOpen, setMyPageOpen] = useState(false);
@@ -90,7 +92,14 @@ export default function ChatMenuBar({
         </div>
       </div>
 
-      <MyPageSheet open={myPageOpen} onOpenChange={setMyPageOpen} />
+      <MyPageSheet
+        open={myPageOpen}
+        onOpenChange={setMyPageOpen}
+        onRequestPlanRecommend={() => {
+          setMyPageOpen(false);
+          onSend?.('요금제 추천받기');
+        }}
+      />
 
       <PlanQuickSheet open={planOpen} onOpenChange={setPlanOpen} />
 

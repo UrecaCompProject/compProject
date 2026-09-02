@@ -13,9 +13,14 @@ import UsageTrendSection from './UsageTrendSection';
 type MyPageSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRequestPlanRecommend?: () => void;
 };
 
-export default function MyPageSheet({ open, onOpenChange }: MyPageSheetProps) {
+export default function MyPageSheet({
+  open,
+  onOpenChange,
+  onRequestPlanRecommend,
+}: MyPageSheetProps) {
   const { user } = useAuth();
   const {
     currentPlan,
@@ -31,6 +36,9 @@ export default function MyPageSheet({ open, onOpenChange }: MyPageSheetProps) {
     smsPercent,
     gbBenefit,
   } = useUsage();
+
+  // 요금제가 없는 사용자는 사용량·납부·추이 섹션을 숨기고 추천받기 UI만 노출
+  const hasPlan = !!currentPlan;
 
   return (
     <BottomSheet
@@ -57,36 +65,42 @@ export default function MyPageSheet({ open, onOpenChange }: MyPageSheetProps) {
             planName={currentPlan?.planName ?? '-'}
             updatedAt={user?.updated_at}
             createdAt={user?.created_at}
+            hasPlan={hasPlan}
+            onRequestPlanRecommend={onRequestPlanRecommend}
           />
-          {/* 요금 납부 section */}
-          <MyPageBillingSection
-            gbBenefit={gbBenefit}
-            monthlyFee={currentPlan?.monthlyFee}
-          />
-          {/* 데이터 상세 section */}
-          <MyPageDataSection
-            billingPeriodStart={billingPeriodStart}
-            billingPeriodEnd={billingPeriodEnd}
-            daysUntilPeriodEnd={daysUntilPeriodEnd}
-            dataRemaining={dataRemaining}
-            dataTotal={currentPlan?.dataAmountGb}
-            dataPercent={dataPercent}
-            dataSpeedAfter={currentPlan?.dataSpeedAfter}
-          />
-          {/* 통화 section */}
-          <MyPageCallSection
-            callTotal={currentPlan?.callAmountMin}
-            callPercent={callPercent}
-            callUsedSeconds={callUsedSeconds}
-          />
-          {/* 문자 section */}
-          <MyPageSmsSection
-            smsRemaining={smsRemaining}
-            smsTotal={currentPlan?.smsAmount}
-            smsPercent={smsPercent}
-          />
-          {/* 평균 데이터 사용량 section */}
-          <UsageTrendSection data={trendData} />
+          {hasPlan && (
+            <>
+              {/* 요금 납부 section */}
+              <MyPageBillingSection
+                gbBenefit={gbBenefit}
+                monthlyFee={currentPlan?.monthlyFee}
+              />
+              {/* 데이터 상세 section */}
+              <MyPageDataSection
+                billingPeriodStart={billingPeriodStart}
+                billingPeriodEnd={billingPeriodEnd}
+                daysUntilPeriodEnd={daysUntilPeriodEnd}
+                dataRemaining={dataRemaining}
+                dataTotal={currentPlan?.dataAmountGb}
+                dataPercent={dataPercent}
+                dataSpeedAfter={currentPlan?.dataSpeedAfter}
+              />
+              {/* 통화 section */}
+              <MyPageCallSection
+                callTotal={currentPlan?.callAmountMin}
+                callPercent={callPercent}
+                callUsedSeconds={callUsedSeconds}
+              />
+              {/* 문자 section */}
+              <MyPageSmsSection
+                smsRemaining={smsRemaining}
+                smsTotal={currentPlan?.smsAmount}
+                smsPercent={smsPercent}
+              />
+              {/* 평균 데이터 사용량 section */}
+              <UsageTrendSection data={trendData} />
+            </>
+          )}
         </div>
       </div>
     </BottomSheet>

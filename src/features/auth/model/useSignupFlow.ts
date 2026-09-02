@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import { postSignup, sendSignupOtp, verifySignupOtp } from '../api/postSignup';
-import { isValidBirth, isValidEmail, isValidPassword } from '../lib/signup';
+import {
+  isValidBirth,
+  isValidEmail,
+  isValidName,
+  isValidPassword,
+  isValidPhone,
+} from '../lib/signup';
 
 import { useCountdown } from './useCountdown';
 
@@ -80,21 +86,33 @@ export function useSignupFlow(onFinish?: () => void) {
     }
   }, [isFinished, onFinish]);
 
+  // 필드별 입력 필터링 — 생년월일/전화번호는 숫자만 허용.
+  // 이름은 IME 조합 중인 자모(ㄱ-ㅎ, ㅏ-ㅣ)가 [가-힣] 범위 밖이라
+  // 입력 중 잘리는 현상을 막기 위해 입력 시 필터링하지 않고 검증 단계에서만 체크한다.
   const handleChange =
     (field: keyof BasicInfo) => (e: ChangeEvent<HTMLInputElement>) => {
-      setInfo((prev) => ({ ...prev, [field]: e.target.value }));
+      const raw = e.target.value;
+      if (field === 'birth') {
+        const filtered = raw.replace(/\D/g, '').slice(0, 6);
+        setInfo((prev) => ({ ...prev, birth: filtered }));
+      } else if (field === 'phone') {
+        const filtered = raw.replace(/\D/g, '').slice(0, 11);
+        setInfo((prev) => ({ ...prev, phone: filtered }));
+      } else {
+        setInfo((prev) => ({ ...prev, [field]: raw }));
+      }
     };
 
   const handleSubmitBasicInfo = async () => {
     const nextErrors: BasicInfoErrors = {};
-    if (info.name.trim().length < 2) {
-      nextErrors.name = '이름을 정확히 입력해주세요.';
+    if (!isValidName(info.name)) {
+      nextErrors.name = '이름은 한글 2자 이상으로 입력해주세요.';
     }
     if (!isValidBirth(info.birth)) {
       nextErrors.birth = '생년월일 6자리를 정확히 입력해주세요.';
     }
-    if (info.phone.trim().length === 0) {
-      nextErrors.phone = '전화번호를 입력해주세요.';
+    if (!isValidPhone(info.phone)) {
+      nextErrors.phone = '전화번호 10~11자리를 입력해주세요.';
     }
 
     setErrors(nextErrors);
@@ -119,6 +137,12 @@ export function useSignupFlow(onFinish?: () => void) {
 
   const handleVerifyCode = async () => {
     if (code.trim().length === 0) return;
+
+    // 인증번호는 숫자 6자리여야 함
+    if (!/^\d{6}$/.test(code.trim())) {
+      setVerifyError('인증번호 6자리 숫자를 입력해주세요.');
+      return;
+    }
 
     setIsVerifyingCode(true);
     setVerifyError(null);

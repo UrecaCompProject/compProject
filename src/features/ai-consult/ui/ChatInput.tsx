@@ -112,6 +112,7 @@ export default function ChatInput({
         onMenuClose={() => setIsMenuOpen(false)}
         onStartQuiz={onStartQuiz}
         onStartScratch={onStartScratch}
+        onSend={onSend}
       />
     </div>
   );

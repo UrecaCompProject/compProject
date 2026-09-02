@@ -1,5 +1,10 @@
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
+// 이름은 한글 2자 이상만 허용
+export function isValidName(name: string) {
+  return /^[가-힣]{2,}$/.test(name.trim());
+}
+
 export function isValidBirth(birth: string) {
   if (!/^\d{6}$/.test(birth)) return false;
   const month = Number(birth.slice(2, 4));
