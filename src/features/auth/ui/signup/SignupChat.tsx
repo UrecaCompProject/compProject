@@ -1,8 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 
 import { useIsLoggedIn } from '@/entities/user';
-import AIChat from '@/features/ai-consult/ui/AIChat';
-import { Button, Input } from '@/shared';
+import { AIChat, Button, Input } from '@/shared';
 
 import { formatTime, maskBirth, maskName, maskPhone } from '../../lib/signup';
 import { useSignupFlow } from '../../model/useSignupFlow';

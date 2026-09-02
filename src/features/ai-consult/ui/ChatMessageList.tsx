@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
+import { AIChat, MyChat } from '@/shared';
 import type {
   ConsultInput,
   RecommendedPlan,
@@ -9,10 +10,8 @@ import type {
 } from '@/shared/lib/aiConsult';
 import type { PlanDetailItem } from '@/shared/types/plan';
 
-import AIChat from './AIChat';
 import AIChatExtras from './AIChatExtras';
 import ChatLoadingIndicator from './ChatLoadingIndicator';
-import MyChat from './MyChat';
 import ScratchGameMessage from './ScratchGameMessage';
 
 import type { ChatMessage } from '../types';

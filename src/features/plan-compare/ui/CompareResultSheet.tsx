@@ -1,21 +1,42 @@
+import type { ComponentType } from 'react';
 import { useMemo, useState } from 'react';
 
-import { usePlanCatalog, useCurrentPlan } from '@/entities/plan';
+import { usePlanCatalog, useCurrentPlan, usePlans } from '@/entities/plan';
 import { useIsLoggedIn } from '@/entities/user';
-import PlanCompare, {
-  type PlanCompareData,
-} from '@/features/plan-change/ui/PlanCompare';
-import { PlanDetailContent, usePlans } from '@/features/plan-detail';
 import { BottomSheet } from '@/shared';
 import type { CompareResult, RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { PlanCompareData, PlanDetailItem } from '@/shared/types/plan';
+
+interface CompareResultSheetSlots {
+  PlanCompare: ComponentType<{
+    data: PlanCompareData;
+    variant?: 'compact' | 'full';
+    className?: string;
+    onShowFullCompare?: () => void;
+    onChangePlan?: () => void;
+    onDetailCurrent?: () => void;
+    onDetailSelected?: () => void;
+    planOptions?: { id: string; name: string }[];
+    currentPlanId?: string;
+    selectedPlanId?: string;
+    onSelectCurrentPlan?: (id: string) => void;
+    onSelectSelectedPlan?: (id: string) => void;
+    myPlanId?: string;
+    currentHighlighted?: boolean;
+    selectedIsMine?: boolean;
+  }>;
+  PlanDetailContent: ComponentType<{
+    plan: PlanDetailItem | null;
+    isLoading: boolean;
+    error: string | null;
+  }>;
+}
 
 interface CompareResultSheetProps {
-  /** AI 비교 결과. '요금제 비교하기'로 바로 진입한 경우엔 없다(카탈로그로만 비교). */
   result?: CompareResult;
   onSubscribe?: (plan: RecommendedPlan) => void;
-  /** dev에서 추가된 콜백. 이 버전은 헤더 드롭다운 선택 시 카탈로그에서
-   *  로컬로 요금제를 교체하므로 새 비교 요청을 보내지 않는다(미사용). */
   onRecompare?: (planAName: string, planBName: string) => void;
+  slots: CompareResultSheetSlots;
 }
 
 function toFeeText(monthlyFee: number | undefined): string {
@@ -56,9 +77,9 @@ function toColumnData(
 export default function CompareResultSheet({
   result,
   onSubscribe,
+  slots: { PlanCompare, PlanDetailContent },
 }: CompareResultSheetProps) {
   const [open, setOpen] = useState(false);
-  // 바텀시트 내부에서 '요금제 상세보기'로 전환된 컬럼 (null이면 비교 화면)
   const [detailView, setDetailView] = useState<null | 'current' | 'selected'>(
     null,
   );
@@ -71,11 +92,9 @@ export default function CompareResultSheet({
     error: detailError,
   } = usePlans();
 
-  // 드롭다운 선택값 — null이면 기본값(내 요금제 / AI가 비교한 요금제 / 카탈로그 첫 요금제)을 따른다.
   const [pickedCurrentId, setPickedCurrentId] = useState<string | null>(null);
   const [pickedSelectedId, setPickedSelectedId] = useState<string | null>(null);
 
-  // id로 요금제를 찾을 때 카탈로그를 우선하고, 없으면 AI 결과/내 요금제로 보완한다.
   const planById = useMemo(() => {
     const map = new Map<string, RecommendedPlan>();
     for (const plan of [result?.planA, result?.planB, myPlan ?? undefined]) {
@@ -96,9 +115,7 @@ export default function CompareResultSheet({
   const currentPlan = planById.get(currentId) ?? result?.planA;
   const selectedPlan = planById.get(selectedId) ?? result?.planB;
 
-  // 왼쪽 컬럼이 실제 내 요금제가 아니면 색으로 강조한다.
   const currentHighlighted = myPlan ? currentId !== myPlan.planId : true;
-  // 오른쪽 컬럼이 이미 내가 이용 중인 요금제면 '요금제 변경하기'를 막는다.
   const selectedIsMine = !!myPlan && selectedId === myPlan.planId;
 
   const planOptions = useMemo(

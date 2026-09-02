@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { UserRound, CreditCard, Gift, FileSpreadsheet } from 'lucide-react';
 
 import { IconBadge, useClickOutside } from '@/shared';
+import type { GameInfrastructure } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
 export interface ChatMenuBarSlots {
@@ -17,6 +18,7 @@ export interface ChatMenuBarSlots {
     onOpenChange: (open: boolean) => void;
   }>;
   RewardSheet: ComponentType<{
+    game: GameInfrastructure;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onStartQuiz?: (quizType: QuizKind) => void;
@@ -31,6 +33,7 @@ export interface ChatMenuBarSlots {
 interface ChatMenuBarProps {
   isMenuOpen: boolean;
   onMenuClose: () => void;
+  game: GameInfrastructure;
   onStartQuiz?: (quizType: QuizKind) => void;
   onStartScratch?: (reward?: number) => void;
   onSend?: (text: string) => void;
@@ -42,6 +45,7 @@ interface ChatMenuBarProps {
 export default function ChatMenuBar({
   isMenuOpen,
   onMenuClose,
+  game,
   onStartQuiz,
   onStartScratch,
   onSend,
@@ -125,6 +129,7 @@ export default function ChatMenuBar({
       <slots.PlanQuickSheet open={planOpen} onOpenChange={setPlanOpen} />
 
       <slots.RewardSheet
+        game={game}
         open={rewardOpen}
         onOpenChange={setRewardOpen}
         onStartQuiz={onStartQuiz}

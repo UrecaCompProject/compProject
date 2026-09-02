@@ -20,3 +20,39 @@ export interface PlanDetailItem {
   contractPeriodMonths: number | null;
   couponText?: string | null;
 }
+
+export interface BenefitOption {
+  imageUrl: string;
+  label: string;
+}
+
+export interface PlanCompareData {
+  currentPlanName: string;
+  currentFee: string;
+  currentDiscount: string;
+  currentData: string;
+  currentTethering: string;
+  currentShareData: string;
+  currentVoice: string;
+  currentMessage: string;
+  currentBenefits?: string[];
+
+  selectedPlanName: string;
+  selectedFee: string;
+  selectedDiscount: string;
+  selectedData: string;
+  selectedTethering: string;
+  selectedShareData: string;
+  selectedVoice: string;
+  selectedMessage: string;
+  selectedBenefits?: string[];
+
+  benefitRows?: {
+    key: string;
+    label: string;
+    current: string;
+    selectedSummary: string;
+    selectedSubtext?: string;
+    selectedOptions?: BenefitOption[];
+  }[];
+}

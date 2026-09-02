@@ -1,5 +1,5 @@
-export { getPlans } from './api/getPlans';
-export { usePlans } from './model/usePlans';
+export { getPlans } from '@/entities/plan';
+export { usePlans } from '@/entities/plan';
 export { usePlanFilters } from './model/usePlanFilters';
 export { default as PlanListCard } from './ui/PlanListCard';
 export { default as PlanSearchBar } from './ui/PlanSearchBar';

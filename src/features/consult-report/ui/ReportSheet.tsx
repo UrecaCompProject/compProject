@@ -1,6 +1,6 @@
+import type { ComponentType } from 'react';
 import { useState } from 'react';
 
-import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -9,14 +9,29 @@ import { useReports } from '../model/useReports';
 import PreviewReport from './PreviewReport';
 import ReportDetail from './ReportDetail';
 
+interface ReportSheetSlots {
+  PlanSubscriptionSheet: ComponentType<{
+    active?: boolean;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    plan: RecommendedPlan | null;
+    onComplete?: () => void;
+  }>;
+}
+
 type ReportSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  slots: ReportSheetSlots;
 };
 
 type ReportView = 'list' | 'detail';
 
-export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
+export default function ReportSheet({
+  open,
+  onOpenChange,
+  slots: { PlanSubscriptionSheet },
+}: ReportSheetProps) {
   const { data: reports = [], isLoading } = useReports(open);
   const [activeView, setActiveView] = useState<ReportView>('list');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);

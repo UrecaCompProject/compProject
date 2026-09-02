@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { RefreshCw } from 'lucide-react';
 
-import { Tooltip } from '@/shared';
+import Tooltip from './Tooltip';
 
 type AIChatVariant = 'default' | 'success' | 'error';
 
