@@ -9,6 +9,7 @@ type ChatQuizMessageProps = {
   onMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
 };
+const MULTIPLE_CHOICE_BUBBLE_CLASSNAME = '!max-w-[92%]';
 
 export default function ChatQuizMessage({
   message,
@@ -46,6 +47,7 @@ export default function ChatQuizMessage({
 
   return (
     <AIChat
+      className={MULTIPLE_CHOICE_BUBBLE_CLASSNAME}
       sentence={
         <MultipleChoiceQuiz
           question={message.question}
