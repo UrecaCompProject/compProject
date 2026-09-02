@@ -634,8 +634,7 @@ export default function PlanSubscriptionSheet({
               <InfoRow label="이메일" value={userInfo.email || '-'} />
             </div>
             <p className="text-caption text-fg-tertiary">
-              로그인된 계정 정보가 자동 적용되었습니다. 정보가 다르다면
-              마이페이지에서 수정 후 신청해 주세요.
+              로그인된 계정 정보가 자동 적용되었습니다.
             </p>
           </div>
 
