@@ -290,43 +290,42 @@ export default function CardMatchGame({
           </div>
 
           <div className="flex flex-1 flex-col justify-center w-full gap-5 mt-8">
-            <div className="w-full p-4 rounded-lg bg-surface-card">
-              <div
-                className="grid gap-2.5"
-                style={{
-                  gridTemplateColumns: `repeat(${COLUMN_COUNT}, minmax(0, 1fr))`,
-                }}
-              >
-                {deck.map((card) => {
-                  const isFlipped =
-                    preview || flipped.includes(card.id) || card.matched;
+            <div
+              className="grid w-full gap-2.5"
+              style={{
+                gridTemplateColumns: `repeat(${COLUMN_COUNT}, minmax(0, 1fr))`,
+              }}
+            >
+              {deck.map((card) => {
+                const isFlipped =
+                  preview || flipped.includes(card.id) || card.matched;
 
-                  return (
-                    <div key={card.id} className="[perspective:1000px]">
-                      <button
-                        type="button"
-                        onClick={() => handleFlip(card.id)}
-                        disabled={isFlipped}
-                        style={{
-                          transform: `${
-                            isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
-                          }${card.matched ? ' scale(0.82)' : ''}`,
-                        }}
-                        className="
+                return (
+                  <div key={card.id} className="[perspective:1000px]">
+                    <button
+                      type="button"
+                      onClick={() => handleFlip(card.id)}
+                      disabled={isFlipped}
+                      style={{
+                        transform: `${
+                          isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                        }${card.matched ? ' scale(0.82)' : ''}`,
+                      }}
+                      className="
                         relative aspect-[3/4] w-full
                         transition-transform duration-500 ease-out [transform-style:preserve-3d]
                       "
-                      >
-                        <div className="absolute inset-0 flex items-center justify-center rounded-xl [backface-visibility:hidden]">
-                          <img
-                            src={backImage}
-                            alt=""
-                            className="h-full w-full object-contain drop-shadow-sm"
-                          />
-                        </div>
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl [backface-visibility:hidden]">
+                        <img
+                          src={backImage}
+                          alt=""
+                          className="h-full w-full object-contain drop-shadow-sm"
+                        />
+                      </div>
 
-                        <div
-                          className={`
+                      <div
+                        className={`
                           absolute inset-0 flex items-center justify-center
                           overflow-hidden rounded-xl border-[3px] drop-shadow-sm
                           transition-colors duration-500
@@ -337,29 +336,28 @@ export default function CardMatchGame({
                               : 'bg-surface-card'
                           }
                         `}
-                          style={
-                            card.matched
-                              ? undefined
-                              : {
-                                  backgroundColor: FACE_TINTS[card.faceIndex],
-                                  borderColor: FACE_COLORS[card.faceIndex],
-                                }
-                          }
-                        >
-                          {/* 매칭 완료: 카드가 작아지고(버튼 scale) 앞면 그림은 회색으로 → '해결됨'이 명확 */}
-                          <img
-                            src={FACE_IMAGES[card.faceIndex]}
-                            alt=""
-                            className={`w-[68%] object-contain transition duration-500 ${
-                              card.matched ? 'opacity-50 grayscale' : ''
-                            }`}
-                          />
-                        </div>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        style={
+                          card.matched
+                            ? undefined
+                            : {
+                                backgroundColor: FACE_TINTS[card.faceIndex],
+                                borderColor: FACE_COLORS[card.faceIndex],
+                              }
+                        }
+                      >
+                        {/* 매칭 완료: 카드가 작아지고(버튼 scale) 앞면 그림은 회색으로 → '해결됨'이 명확 */}
+                        <img
+                          src={FACE_IMAGES[card.faceIndex]}
+                          alt=""
+                          className={`w-[68%] object-contain transition duration-500 ${
+                            card.matched ? 'opacity-50 grayscale' : ''
+                          }`}
+                        />
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="flex items-center justify-center gap-1.5 text-caption font-medium text-fg-tertiary">
