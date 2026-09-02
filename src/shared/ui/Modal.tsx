@@ -80,9 +80,9 @@ export default function Modal() {
           type="button"
           aria-label="모달 닫기"
           onClick={close}
-          className="absolute right-4 top-4 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
+          className="absolute right-4 top-4 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-primary transition-colors hover:bg-surface-page"
         >
-          <X size={18} />
+          <X size={22} />
         </button>
 
         <header className="shrink-0">
@@ -103,7 +103,7 @@ export default function Modal() {
 
         <div
           data-vaul-no-drag
-          className="min-h-0 flex-1 touch-pan-y overscroll-contain overflow-y-auto pt-3"
+          className={`min-h-0 flex-1 touch-pan-y overscroll-contain overflow-y-auto ${title ? 'pt-3' : 'pt-10'}`}
           onWheel={(event) => event.stopPropagation()}
           onTouchMove={(event) => event.stopPropagation()}
         >

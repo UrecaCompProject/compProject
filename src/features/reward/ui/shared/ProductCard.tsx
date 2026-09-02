@@ -13,7 +13,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
 }: ProductCardProps<T>) {
   const className = `
     flex w-full
-    flex-col items-center gap-2 rounded-2xl bg-white p-2
+    flex-col items-center gap-2 rounded-2xl bg-white
     font-inherit
     ${onSelect ? 'transition-transform active:scale-[0.98]' : ''}
   `;

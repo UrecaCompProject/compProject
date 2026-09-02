@@ -105,7 +105,7 @@ export default function BottomSheet({
                     aria-hidden={!onBack}
                     tabIndex={onBack ? 0 : -1}
                     onClick={onBack}
-                    className={`inline-flex h-8 w-8 items-center justify-center transition-[transform,opacity] duration-300 ${
+                    className={`inline-flex h-8 w-8 items-center justify-center text-fg-primary transition-[transform,opacity] duration-300 ${
                       onBack
                         ? 'translate-x-0 opacity-100'
                         : 'pointer-events-none translate-x-3 opacity-0'
@@ -123,9 +123,9 @@ export default function BottomSheet({
                   type="button"
                   aria-label="바텀시트 닫기"
                   onClick={() => onOpenChange(false)}
-                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-tertiary transition-colors hover:bg-surface-page hover:text-fg-secondary"
+                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-primary transition-colors hover:bg-surface-page"
                 >
-                  <X size={18} />
+                  <X size={22} />
                 </button>
               </div>
 
