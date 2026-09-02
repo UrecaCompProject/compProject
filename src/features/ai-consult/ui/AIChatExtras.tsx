@@ -6,6 +6,7 @@ import type {
   ReportOutput,
   CompareResult,
 } from '@/shared/lib/aiConsult';
+import type { PlanDetailItem } from '@/shared/types/plan';
 
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
@@ -19,6 +20,11 @@ interface AIChatExtrasSlots {
     result?: CompareResult;
     onSubscribe?: (plan: RecommendedPlan) => void;
     onRecompare?: (planAName: string, planBName: string) => void;
+  }>;
+  PlanDetailContent: ComponentType<{
+    plan: PlanDetailItem | null;
+    isLoading: boolean;
+    error: string | null;
   }>;
 }
 
@@ -58,6 +64,7 @@ export default function AIChatExtras({
           plans={message.recommendations}
           onPlanSubscribe={onPlanSubscribe}
           onPlanCompare={onPlanCompare}
+          PlanDetailContent={slots.PlanDetailContent}
         />
       )}
 

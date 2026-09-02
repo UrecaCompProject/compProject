@@ -27,6 +27,7 @@ import {
 } from '@/features/games';
 import { CompareResultSheet } from '@/features/plan-compare';
 import { PlanQuickSheet } from '@/features/plan-detail';
+import PlanDetailContent from '@/features/plan-detail/ui/PlanDetailContent';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import {
   GetBadgeModal,
@@ -102,6 +103,7 @@ export default function ChatPage() {
       ChatQuizMessage,
       PlanSubscriptionSheet,
       ScratchGame,
+      PlanDetailContent,
     }),
     [],
   );

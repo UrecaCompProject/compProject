@@ -1,7 +1,14 @@
-import type { PlanDetailItem } from '@/features/plan-detail/types';
-import PlanDetailContent from '@/features/plan-detail/ui/PlanDetailContent';
+import type { ComponentType } from 'react';
+
 import { BottomSheet, Button } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { PlanDetailItem } from '@/shared/types/plan';
+
+interface PlanDetailContentProps {
+  plan: PlanDetailItem | null;
+  isLoading: boolean;
+  error: string | null;
+}
 
 interface RecommendationDetailSheetProps {
   plan: RecommendedPlan | null;
@@ -9,6 +16,7 @@ interface RecommendationDetailSheetProps {
   onOpenChange: (open: boolean) => void;
   onSubscribe: (plan: RecommendedPlan) => void;
   onCompare: (plan: RecommendedPlan) => void;
+  PlanDetailContent: ComponentType<PlanDetailContentProps>;
 }
 
 // 추천 응답용 RecommendedPlan을 plan-detail의 PlanDetailItem으로 변환한다.
@@ -45,6 +53,7 @@ export default function RecommendationDetailSheet({
   onOpenChange,
   onSubscribe,
   onCompare,
+  PlanDetailContent,
 }: RecommendationDetailSheetProps) {
   if (!plan) return null;
 

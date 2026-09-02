@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import type { ComponentType } from 'react';
 
 import useEmblaCarousel from 'embla-carousel-react';
 
 import { PlanCard, toPlanBenefits } from '@/entities/plan';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { PlanDetailItem } from '@/shared/types/plan';
 
 import RecommendationDetailSheet from './RecommendationDetailSheet';
 
@@ -15,12 +17,18 @@ interface RecommendationCardsProps {
   isLoading?: boolean;
   isGeneratingReport?: boolean;
   canShowReportButton?: boolean;
+  PlanDetailContent: ComponentType<{
+    plan: PlanDetailItem | null;
+    isLoading: boolean;
+    error: string | null;
+  }>;
 }
 
 export default function RecommendationCards({
   plans,
   onPlanSubscribe,
   onPlanCompare,
+  PlanDetailContent,
 }: RecommendationCardsProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
@@ -81,6 +89,7 @@ export default function RecommendationCards({
         onOpenChange={setOpen}
         onSubscribe={handleSubscribe}
         onCompare={handleCompare}
+        PlanDetailContent={PlanDetailContent}
       />
     </div>
   );
