@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 
 import { RefreshCw } from 'lucide-react';
 
+import { Tooltip } from '@/shared';
+
 type AIChatVariant = 'default' | 'success' | 'error';
 
 const AIChatBubbleVariants: Record<AIChatVariant, string> = {
@@ -43,11 +45,11 @@ export default function AIChat({
           <button
             type="button"
             onClick={onRegenerate}
-            className="flex items-center gap-1 text-caption text-fg-tertiary hover:text-brand-primary transition-colors w-fit"
+            className="group relative -m-1 flex w-fit shrink-0 cursor-pointer items-center gap-1 rounded-md p-1 text-caption text-fg-tertiary/70 transition-colors hover:bg-surface-pressed hover:text-brand-primary"
             aria-label="응답 재생성"
           >
-            <RefreshCw size={16} strokeWidth={2.5} className="text-[#c3cfeb]" />
-            {/* 재생성 */}
+            <RefreshCw size={16} strokeWidth={2.5} />
+            <Tooltip>재생성</Tooltip>
           </button>
         )}
       </div>
