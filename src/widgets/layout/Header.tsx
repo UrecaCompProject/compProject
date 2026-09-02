@@ -1,4 +1,4 @@
-import { Bell, UserRound, DoorOpen } from 'lucide-react';
+import { Bell, UserRound, LogOut } from 'lucide-react';
 
 import { useExpiringCoupons } from '@/entities/reward';
 import { useIsLoggedIn, SigninModal, LogoutCheckModal } from '@/features/auth';
@@ -12,12 +12,12 @@ export default function Header() {
   const hasExpiringCoupons = !!expiringCoupons && expiringCoupons.length > 0;
 
   return (
-    <div className="sticky top-0 w-full bg-surface-card flex gap-3 px-4 py-3 items-center border-b border-border">
+    <div className="sticky top-0 flex items-center w-full gap-3 px-4 py-3 border-b bg-surface-card border-border">
       <div className="w-full text-title">Ephyra</div>
       <button
         type="button"
         aria-label="알림"
-        className="relative flex shrink-0 cursor-pointer items-center justify-center"
+        className="relative flex items-center justify-center cursor-pointer shrink-0"
         onClick={() =>
           open({
             title: '알림',
@@ -31,8 +31,8 @@ export default function Header() {
         )}
       </button>
       {isLogin ? (
-        <DoorOpen
-          size={22}
+        <LogOut
+          size={20}
           className="shrink-0"
           onClick={() =>
             open({
