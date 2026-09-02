@@ -4,8 +4,8 @@
   --color-brand-secondary: #3572c2;
   --color-brand-light: #a9c9f0;
   --color-brand-soft: #eef3f9;
-  /* brand-primary를 흰색에 가깝게 섞은 아주 옅은 틴트 (거의 흰색) */
-  --color-brand-pale: #f2f7fd;
+  /* brand-promo를 흰색에 가깝게 섞은 아주 옅은 맑은 틴트 (거의 흰색) */
+  --color-brand-pale: #f3f7fe;
 
   /* BrandPromo */
   --color-brand-promo-primary: #3d74f0;

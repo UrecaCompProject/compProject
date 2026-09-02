@@ -27,11 +27,11 @@ export default function ReportGenerateButton({
         disabled={isLoading}
         className="
           inline-flex h-10 cursor-pointer items-center justify-center
-          rounded-full border border-border-brand bg-brand-pale px-5
-          text-body font-semibold text-brand-primary shadow-shadow
+          rounded-full border border-border bg-brand-pale px-5
+          text-body font-semibold text-brand-secondary shadow-shadow
           transition-colors duration-100
-          hover:border-brand-primary hover:bg-brand-soft
-          disabled:cursor-not-allowed disabled:border-border disabled:text-fg-disabled
+          hover:border-border-strong
+          disabled:cursor-not-allowed disabled:text-fg-disabled
         "
       >
         {isGeneratingReport ? '리포트 생성 중...' : '리포트 생성'}
