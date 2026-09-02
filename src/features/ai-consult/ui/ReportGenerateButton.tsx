@@ -1,5 +1,3 @@
-import { Button } from '@/shared';
-
 interface ReportGenerateButtonProps {
   onGenerate: () => void;
   isLoading?: boolean;
@@ -17,21 +15,27 @@ export default function ReportGenerateButton({
 }: ReportGenerateButtonProps) {
   return (
     <div
-      className={`w-fit absolute bottom-full left-1/2 -top-14 -translate-x-1/2 border-border transition-all duration-300 ease-out ${
+      className={`absolute bottom-full left-0 flex w-full justify-center px-4 pb-3 pt-2 transition-all duration-300 ease-out ${
         isLoading || !visible
-          ? 'opacity-0 translate-y-2 pointer-events-none'
-          : 'opacity-100 translate-y-0'
+          ? 'pointer-events-none translate-y-2 opacity-0'
+          : 'translate-y-0 opacity-100'
       }`}
     >
-      <Button
-        variant="outline"
-        size="md"
-        round
+      <button
+        type="button"
         onClick={onGenerate}
         disabled={isLoading}
+        className="
+          inline-flex h-10 cursor-pointer items-center justify-center
+          rounded-full border border-border-brand bg-brand-pale px-5
+          text-body font-semibold text-brand-primary shadow-shadow
+          transition-colors duration-100
+          hover:border-brand-primary hover:bg-brand-soft
+          disabled:cursor-not-allowed disabled:border-border disabled:text-fg-disabled
+        "
       >
         {isGeneratingReport ? '리포트 생성 중...' : '리포트 생성'}
-      </Button>
+      </button>
     </div>
   );
 }
