@@ -208,6 +208,14 @@ export function useSignupFlow(onFinish?: () => void) {
     }
   };
 
+  // review 단계에서 credentials 단계로 되돌아간다 — 이메일 중복 등 가입 실패 시
+  // 이메일·비밀번호를 수정할 수 있도록 한다. completeError도 함께 초기화.
+  const handleBackToCredentials = () => {
+    setCompleteError(null);
+    setAgreedToPrivacy(false);
+    setStep('credentials');
+  };
+
   return {
     step,
     info,
@@ -231,5 +239,6 @@ export function useSignupFlow(onFinish?: () => void) {
     handleCredentialsChange,
     handleSubmitCredentials,
     handleCompleteSignup,
+    handleBackToCredentials,
   };
 }
