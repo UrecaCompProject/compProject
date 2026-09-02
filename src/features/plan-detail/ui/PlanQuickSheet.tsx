@@ -1,22 +1,45 @@
+import type { ComponentType } from 'react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useCurrentPlan } from '@/entities/plan';
 import { useIsLoggedIn } from '@/entities/user';
-import PlanCompare, {
-  type PlanCompareData,
-} from '@/features/plan-change/ui/PlanCompare';
-import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import { BottomSheet, Button } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { PlanCompareData, PlanDetailItem } from '@/shared/types/plan';
 
 import PlanCatalogList from './PlanCatalogList';
 import PlanDetailContent from './PlanDetailContent';
 
-import type { PlanDetailItem } from '../types';
+interface PlanQuickSheetSlots {
+  PlanCompare: ComponentType<{
+    data: PlanCompareData;
+    variant?: 'compact' | 'full';
+    className?: string;
+    onChangePlan?: () => void;
+  }>;
+  PlanSubscriptionSheet: ComponentType<{
+    plan: RecommendedPlan | null;
+    active?: boolean;
+    onExit?: () => void;
+    onComplete?: () => void;
+    renderShell?: (
+      shell: {
+        title: string;
+        description?: string;
+        size: 'content' | 'large';
+        footer: React.ReactNode;
+        onBack?: () => void;
+        children: React.ReactNode;
+      },
+      bodyRef: React.RefObject<HTMLDivElement | null>,
+    ) => React.ReactNode;
+  }>;
+}
 
 type PlanQuickSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  slots: PlanQuickSheetSlots;
 };
 
 function toRecommendedPlan(plan: PlanDetailItem): RecommendedPlan {
@@ -42,6 +65,7 @@ function toRecommendedPlan(plan: PlanDetailItem): RecommendedPlan {
 export default function PlanQuickSheet({
   open,
   onOpenChange,
+  slots: { PlanCompare, PlanSubscriptionSheet },
 }: PlanQuickSheetProps) {
   const [selectedPlan, setSelectedPlan] = useState<PlanDetailItem | null>(null);
   const [isSubscribeOpen, setIsSubscribeOpen] = useState(false);

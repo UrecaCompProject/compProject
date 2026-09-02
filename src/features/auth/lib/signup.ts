@@ -1,3 +1,5 @@
+export { maskPhone } from '@/shared/lib/maskPhone';
+
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 // 이름은 한글 2자 이상만 허용
@@ -32,12 +34,6 @@ export function maskName(name: string) {
 
 export function maskBirth(birth: string) {
   return `${birth.slice(0, 2)}****`;
-}
-
-export function maskPhone(phone: string) {
-  const digits = phone.replace(/-/g, '');
-  if (digits.length < 7) return digits;
-  return `${digits.slice(0, 3)}-${'*'.repeat(digits.length - 7)}-${digits.slice(-4)}`;
 }
 
 export function formatTime(seconds: number) {

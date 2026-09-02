@@ -2,8 +2,8 @@ import type { ComponentType } from 'react';
 import { useEffect, useRef } from 'react';
 
 import { useIsLoggedIn } from '@/entities/user';
-import { useChatQuiz } from '@/features/chat-quiz';
-import { useMissionCompletion } from '@/features/reward';
+import type { GameId } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import { useChatAbort } from './useChatAbort';
 import { useChatActions } from './useChatActions';
@@ -11,15 +11,45 @@ import { useChatAuthGate } from './useChatAuthGate';
 import { useChatCompare } from './useChatCompare';
 import { useChatGames } from './useChatGames';
 import { useChatProfile } from './useChatProfile';
+import { useChatQuiz } from './useChatQuiz';
 import { useChatReport } from './useChatReport';
 import { useChatState } from './useChatState';
 import { useChatSubscription } from './useChatSubscription';
 
-interface UseChatParams {
-  signinModal: ComponentType<{ onSignupClick?: () => void }>;
+interface MissionDeps {
+  recordPlay: (
+    params: { gameId: string; score?: number },
+    options?: { onSuccess?: () => void },
+  ) => void;
+  playedTodayGameIds: Set<string>;
 }
 
-export function useChat({ signinModal }: UseChatParams) {
+interface GameDeps {
+  openGame: (
+    gameId: GameId,
+    params?: {
+      reward?: number;
+      source?: 'chat' | 'reward';
+      onWin?: (reward: number) => void;
+    },
+  ) => void;
+  closeGame: () => void;
+}
+
+interface RewardDeps {
+  GetBadgeModal: ComponentType<{ badgeCount: number }>;
+  scratchMissionUuid?: string;
+  quizMissionUuids: Partial<Record<QuizKind, string>>;
+}
+
+export interface UseChatParams {
+  signinModal: ComponentType<{ onSignupClick?: () => void }>;
+  mission: MissionDeps;
+  game: GameDeps;
+  reward: RewardDeps;
+}
+
+export function useChat({ signinModal, mission, game, reward }: UseChatParams) {
   const isLoggedIn = useIsLoggedIn();
   const state = useChatState({ isLoggedIn });
 
@@ -39,11 +69,12 @@ export function useChat({ signinModal }: UseChatParams) {
     signinModal,
   });
 
-  const { recordPlay, playedTodayGameIds } = useMissionCompletion();
-
   const games = useChatGames({
     setMessages: state.setMessages,
-    recordPlay,
+    recordPlay: mission.recordPlay,
+    openGame: game.openGame,
+    closeGame: game.closeGame,
+    reward,
   });
 
   const quiz = useChatQuiz({
@@ -99,7 +130,7 @@ export function useChat({ signinModal }: UseChatParams) {
     fetchCompare: compare.fetchCompare,
     startQuiz: quiz.startQuiz,
     openSheetGame: games.openSheetGame,
-    playedTodayGameIds,
+    playedTodayGameIds: mission.playedTodayGameIds,
     aiResponseCount: state.aiResponseCount,
   });
 
@@ -147,6 +178,5 @@ export function useChat({ signinModal }: UseChatParams) {
     selectMultipleChoice: quiz.selectMultipleChoice,
     confirmMultipleChoice: quiz.confirmMultipleChoice,
     closeSheetGame: games.closeSheetGame,
-    activeGameMeta: games.activeGameMeta,
   };
 }

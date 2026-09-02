@@ -1,9 +1,7 @@
 import { useState } from 'react';
 
-import AIChat from '@/features/ai-consult/ui/AIChat';
-import MyChat from '@/features/ai-consult/ui/MyChat';
-
-import { multipleChoiceQuestions } from '../data/multipleChoiceQuestions';
+import { AIChat, MyChat } from '@/shared';
+import { multipleChoiceQuestions } from '@/shared/data/quiz/multipleChoiceQuestions';
 
 import MultipleChoiceQuiz from './MultipleChoiceQuiz';
 import QuizResult from './QuizResult';

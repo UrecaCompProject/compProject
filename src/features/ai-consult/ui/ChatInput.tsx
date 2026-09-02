@@ -2,8 +2,9 @@ import { useState } from 'react';
 
 import { ArrowUp, Menu, Square } from 'lucide-react';
 
-import type { QuizKind } from '@/features/chat-quiz';
 import { Button, Input } from '@/shared';
+import type { GameInfrastructure } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import ChatMenuBar, { type ChatMenuBarSlots } from './ChatMenuBar';
 
@@ -17,6 +18,7 @@ interface ChatInputProps {
   isLoggedIn: boolean;
   onRequireLogin: () => void;
   disabled?: boolean;
+  game: GameInfrastructure;
   menuSlots: ChatMenuBarSlots;
 }
 
@@ -30,6 +32,7 @@ export default function ChatInput({
   isLoggedIn,
   onRequireLogin,
   disabled = false,
+  game,
   menuSlots,
 }: ChatInputProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -107,6 +110,7 @@ export default function ChatInput({
       <ChatMenuBar
         isMenuOpen={isMenuOpen}
         onMenuClose={() => setIsMenuOpen(false)}
+        game={game}
         onStartQuiz={onStartQuiz}
         onStartScratch={onStartScratch}
         onSend={onSend}

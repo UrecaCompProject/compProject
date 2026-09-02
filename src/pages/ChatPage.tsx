@@ -19,18 +19,44 @@ import {
   ReportGenerateConfirmModal,
   ReportSheet,
 } from '@/features/consult-report';
-import { GameLayer, ScratchGame } from '@/features/games';
+import {
+  GameLayer,
+  ScratchGame,
+  isGameId,
+  useActiveGameMeta,
+  useGameStore,
+} from '@/features/games';
+import PlanCompare from '@/features/plan-change/ui/PlanCompare';
 import { CompareResultSheet } from '@/features/plan-compare';
 import { PlanQuickSheet } from '@/features/plan-detail';
+import PlanDetailContent from '@/features/plan-detail/ui/PlanDetailContent';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
-import { RewardSheet } from '@/features/reward';
+import {
+  GetBadgeModal,
+  missions,
+  RewardSheet,
+  useMissionCompletion,
+} from '@/features/reward';
 import { MyPageSheet } from '@/features/usage';
 import { BottomSheet, useModalStore, useSignupIntentStore } from '@/shared';
+import type { QuizKind } from '@/shared/types/quiz';
 
 export default function ChatPage() {
   const [isQuickRepliesCollapsed, setIsQuickRepliesCollapsed] = useState(false);
   const [isReportButtonScrollVisible, setIsReportButtonScrollVisible] =
     useState(true);
+
+  const { recordPlay, playedTodayGameIds } = useMissionCompletion();
+  const openGame = useGameStore((state) => state.openGame);
+  const closeGame = useGameStore((state) => state.closeGame);
+  const activeGameMeta = useActiveGameMeta();
+
+  const scratchMissionUuid = missions.find((m) => m.id === 'scratch')?.uuid;
+  const quizMissionUuids: Partial<Record<QuizKind, string>> = {
+    ox: missions.find((m) => m.id === 'security-quiz')?.uuid,
+    'multiple-choice': missions.find((m) => m.id === 'telecom-quiz')?.uuid,
+  };
+
   const {
     messages,
     input,
@@ -62,30 +88,95 @@ export default function ChatPage() {
     selectMultipleChoice,
     confirmMultipleChoice,
     closeSheetGame,
-    activeGameMeta,
-  } = useChat({ signinModal: SigninModal });
+  } = useChat({
+    signinModal: SigninModal,
+    mission: { recordPlay, playedTodayGameIds },
+    game: { openGame, closeGame },
+    reward: { GetBadgeModal, scratchMissionUuid, quizMissionUuids },
+  });
 
   const openModal = useModalStore((state) => state.open);
+
+  const gameInfrastructure = useMemo(
+    () => ({
+      GameLayer,
+      isGameId,
+      activeGameMeta,
+      openGame,
+      closeGame,
+    }),
+    [activeGameMeta, openGame, closeGame],
+  );
+
+  // CompareResultSheet, PlanQuickSheet, ReportSheet는 내부적으로 다른 feature의
+  // 컴포넌트를 slot으로 주입받아야 한다. ChatPage에서 slot을 채운 wrapper를 만들어
+  // ChatMessageList와 ChatMenuBar에는 의존이 없는 단순 컴포넌트로 전달한다.
+  const WrappedCompareResultSheet = useMemo(
+    () =>
+      function WrappedCompareResultSheet(props: {
+        result?: import('@/shared/lib/aiConsult').CompareResult;
+        onSubscribe?: (
+          plan: import('@/shared/lib/aiConsult').RecommendedPlan,
+        ) => void;
+        onRecompare?: (a: string, b: string) => void;
+      }) {
+        return (
+          <CompareResultSheet
+            {...props}
+            slots={{ PlanCompare, PlanDetailContent }}
+          />
+        );
+      },
+    [],
+  );
+
+  const WrappedPlanQuickSheet = useMemo(
+    () =>
+      function WrappedPlanQuickSheet(props: {
+        open: boolean;
+        onOpenChange: (open: boolean) => void;
+      }) {
+        return (
+          <PlanQuickSheet
+            {...props}
+            slots={{ PlanCompare, PlanSubscriptionSheet }}
+          />
+        );
+      },
+    [],
+  );
+
+  const WrappedReportSheet = useMemo(
+    () =>
+      function WrappedReportSheet(props: {
+        open: boolean;
+        onOpenChange: (open: boolean) => void;
+      }) {
+        return <ReportSheet {...props} slots={{ PlanSubscriptionSheet }} />;
+      },
+    [],
+  );
 
   const messageSlots = useMemo(
     () => ({
       ReportCard,
-      CompareResultSheet,
+      CompareResultSheet: WrappedCompareResultSheet,
       SignupChat,
       ChatQuizMessage,
       PlanSubscriptionSheet,
       ScratchGame,
+      PlanDetailContent,
     }),
-    [],
+    [WrappedCompareResultSheet],
   );
   const menuSlots = useMemo(
     () => ({
       MyPageSheet,
-      PlanQuickSheet,
+      PlanQuickSheet: WrappedPlanQuickSheet,
       RewardSheet,
-      ReportSheet,
+      ReportSheet: WrappedReportSheet,
     }),
-    [],
+    [WrappedPlanQuickSheet, WrappedReportSheet],
   );
 
   // 웰컴 메시지 외에 대화가 쌓인 뒤에만 새로고침 시 대화가 사라진다는 경고가 의미 있다.
@@ -231,6 +322,7 @@ export default function ChatPage() {
         isLoggedIn={isLoggedIn}
         onRequireLogin={requireLogin}
         disabled={isLoading}
+        game={gameInfrastructure}
         menuSlots={menuSlots}
       />
 

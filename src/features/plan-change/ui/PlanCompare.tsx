@@ -4,46 +4,15 @@ import type { ReactNode } from 'react';
 import { Check, CircleCheck } from 'lucide-react';
 
 import { Button } from '@/shared';
+import type { PlanCompareData } from '@/shared/types/plan';
 import TicketCard from '@/shared/ui/TicketCard';
 
 import PlanCompareBenefitListRow from './PlanCompareBenefitListRow';
-import PlanCompareBenefitRow, {
-  type BenefitOption,
-} from './PlanCompareBenefitRow';
+import PlanCompareBenefitRow from './PlanCompareBenefitRow';
 import PlanCompareRow from './PlanCompareRow';
 import PlanCompareSelect, { type PlanCompareOption } from './PlanCompareSelect';
 
-export interface PlanCompareData {
-  currentPlanName: string;
-  currentFee: string;
-  currentDiscount: string;
-  currentData: string;
-  currentTethering: string;
-  currentShareData: string;
-  currentVoice: string;
-  currentMessage: string;
-  /** 대표 혜택 불릿 목록 */
-  currentBenefits?: string[];
-
-  selectedPlanName: string;
-  selectedFee: string;
-  selectedDiscount: string;
-  selectedData: string;
-  selectedTethering: string;
-  selectedShareData: string;
-  selectedVoice: string;
-  selectedMessage: string;
-  selectedBenefits?: string[];
-
-  benefitRows?: {
-    key: string;
-    label: string;
-    current: string;
-    selectedSummary: string;
-    selectedSubtext?: string;
-    selectedOptions?: BenefitOption[];
-  }[];
-}
+export type { PlanCompareData };
 
 export interface PlanCompareProps {
   data: PlanCompareData;

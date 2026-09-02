@@ -1,9 +1,9 @@
 import { useState } from 'react';
 
+import { usePlans } from '@/entities/plan';
 import { useModalStore } from '@/shared';
 
 import { usePlanFilters } from '../model/usePlanFilters';
-import { usePlans } from '../model/usePlans';
 import { sortPlans } from '../types';
 
 import PlanFilterModal from './PlanFilterModal';

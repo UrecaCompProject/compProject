@@ -1,17 +1,17 @@
 import type { ComponentType, ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
+import { AIChat, MyChat } from '@/shared';
 import type {
   ConsultInput,
   RecommendedPlan,
   ReportOutput,
   CompareResult,
 } from '@/shared/lib/aiConsult';
+import type { PlanDetailItem } from '@/shared/types/plan';
 
-import AIChat from './AIChat';
 import AIChatExtras from './AIChatExtras';
 import ChatLoadingIndicator from './ChatLoadingIndicator';
-import MyChat from './MyChat';
 import ScratchGameMessage from './ScratchGameMessage';
 
 import type { ChatMessage } from '../types';
@@ -48,6 +48,11 @@ interface ChatMessageListSlots {
     reward?: number;
     onWin?: (reward: number) => void;
     onClose?: () => void;
+  }>;
+  PlanDetailContent: ComponentType<{
+    plan: PlanDetailItem | null;
+    isLoading: boolean;
+    error: string | null;
   }>;
 }
 
@@ -246,6 +251,7 @@ export default function ChatMessageList({
                   slots={{
                     ReportCard: slots.ReportCard,
                     CompareResultSheet: slots.CompareResultSheet,
+                    PlanDetailContent: slots.PlanDetailContent,
                   }}
                 />
               </>

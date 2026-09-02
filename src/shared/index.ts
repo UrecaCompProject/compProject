@@ -12,6 +12,8 @@ export { default as BottomSheet } from './ui/BottomSheet';
 export { default as Tab } from './ui/Tab';
 export { default as Modal } from './ui/Modal';
 export { default as Tooltip } from './ui/Tooltip';
+export { default as AIChat } from './ui/AIChat';
+export { default as MyChat } from './ui/MyChat';
 export { useModalStore } from './store/useModalStore';
 export { useSignupIntentStore } from './store/useSignupIntentStore';
 export { useClickOutside } from './hooks/useClickOutside';

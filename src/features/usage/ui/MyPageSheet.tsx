@@ -1,7 +1,7 @@
 import { useUsage } from '@/entities/usage';
 import { useAuth } from '@/entities/user';
-import { maskPhone } from '@/features/auth/lib/signup';
 import { BottomSheet } from '@/shared';
+import { maskPhone } from '@/shared/lib/maskPhone';
 
 import MyPageBillingSection from './MyPageBillingSection';
 import MyPageCallSection from './MyPageCallSection';

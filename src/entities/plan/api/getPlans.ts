@@ -1,6 +1,5 @@
 import { supabaseAnon } from '@/shared/lib/supabaseClient';
-
-import type { PlanDetailItem } from '../types';
+import type { PlanDetailItem } from '@/shared/types/plan';
 
 type PlanRow = {
   id: number;

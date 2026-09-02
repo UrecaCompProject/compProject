@@ -1,5 +1,5 @@
-import type { QuizKind } from '@/features/chat-quiz';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import { classifyError } from './classifyError';
 

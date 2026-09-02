@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
-import type { ChatMessage } from '@/features/ai-consult/types';
+import { pickRandomQuizQuestion } from '@/shared/lib/quiz/pickRandomQuizQuestion';
+import type {
+  MultipleChoiceQuestion,
+  OxQuestion,
+  QuizKind,
+  QuizQuestionMessage,
+  QuizResultMessage,
+} from '@/shared/types/quiz';
 
-import { pickRandomQuizQuestion } from '../lib/pickRandomQuizQuestion';
-import {
-  type MultipleChoiceQuestion,
-  type OxQuestion,
-  type QuizKind,
-  type QuizQuestionMessage,
-  type QuizResultMessage,
-} from '../type';
+import type { ChatMessage } from '../types';
 
 type QuizSession =
   | {

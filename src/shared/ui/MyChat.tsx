@@ -1,6 +1,6 @@
 import { Pencil } from 'lucide-react';
 
-import { Tooltip } from '@/shared';
+import Tooltip from './Tooltip';
 
 interface MyChatProps {
   sentence: string;
