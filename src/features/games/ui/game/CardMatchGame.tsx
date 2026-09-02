@@ -234,7 +234,7 @@ export default function CardMatchGame({
         />
       }
       playing={
-        <div className="flex flex-col items-center h-full px-4 pt-6 pb-6">
+        <div className="mx-auto flex h-full w-full max-w-105 flex-col items-center px-4 pt-6 pb-6">
           <div className="w-full p-4 rounded-lg bg-surface-page">
             {/* 남은 시간: 라벨 + 초 + 줄어드는 게이지바 */}
             <div className="flex items-baseline justify-between">
