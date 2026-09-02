@@ -204,8 +204,14 @@ export default function CardMatchGame({
           setLockBoard(false);
 
           if (nextMatchedCount === PAIR_COUNT) {
-            setPhase('result');
-            onWin?.(reward);
+            // 마지막 짝은 '맞춘 짝' 칸이 색으로 채워지는 모습을 보여준 뒤
+            // 결과 화면으로 넘어간다. (같은 콜백에서 바로 setPhase하면
+            // 색이 칠해지기 전에 화면이 전환됨)
+            setTimeout(() => {
+              if (phaseRef.current !== 'playing') return;
+              setPhase('result');
+              onWin?.(reward);
+            }, 450);
           }
         }, 400);
       } else {

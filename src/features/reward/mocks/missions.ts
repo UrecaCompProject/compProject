@@ -29,7 +29,8 @@ export const missions: Mission[] = [
     id: 'scratch',
     uuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f104',
     title: '스크래치 이벤트',
-    reward: 3,
+    // 보상은 긁을 때 배지 1~5개 중 랜덤으로 정해진다.
+    randomReward: true,
     actionLabel: '시작',
     icon: 'scratch',
   },
