@@ -15,6 +15,9 @@ interface AIChatProps {
   variant?: AIChatVariant;
   onRegenerate?: () => void;
   showRegenerate?: boolean;
+  /** 폼처럼 내부 요소가 w-full로 채워지는 콘텐츠는 true로 — 말풍선이
+   * 내용 크기로 눌리지 않고 max-w까지 항상 꽉 차게 늘어난다. */
+  fullWidth?: boolean;
 }
 
 export default function AIChat({
@@ -22,6 +25,7 @@ export default function AIChat({
   variant = 'default',
   onRegenerate,
   showRegenerate = false,
+  fullWidth = false,
 }: AIChatProps) {
   return (
     <div className="flex gap-2 px-4">
@@ -30,7 +34,7 @@ export default function AIChat({
       </div>
       <div className="flex items-end gap-2 mt-2 w-full">
         <div
-          className={`shadow-shadow rounded-2xl rounded-tl-sm px-4 py-3 w-fit max-w-[80%] whitespace-pre-line break-keep ${AIChatBubbleVariants[variant]}`}
+          className={`text-[15px] leading-[150%] shadow-shadow rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[82%] whitespace-pre-line break-keep ${fullWidth ? 'w-full' : 'w-fit'} ${AIChatBubbleVariants[variant]}`}
           role={variant === 'error' ? 'alert' : undefined}
         >
           {sentence}

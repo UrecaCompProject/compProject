@@ -13,7 +13,7 @@ export default function MyChat({
 }: MyChatProps) {
   return (
     <div className="flex justify-end px-4 w-full">
-      <div className="flex items-end gap-1 max-w-[80%]">
+      <div className="flex items-end gap-1 max-w-[82%]">
         {showEdit && onEdit && (
           <button
             type="button"
@@ -24,7 +24,7 @@ export default function MyChat({
             <Pencil size={14} strokeWidth={2.5} className="text-[#c3cfeb]" />
           </button>
         )}
-        <div className="min-w-0 rounded-2xl rounded-tr-sm px-4 py-3 bg-brand-promo-primary text-surface-card whitespace-pre-line break-keep">
+        <div className="text-[15px] leading-[150%] min-w-0 rounded-2xl rounded-tr-sm px-4 py-2.5 bg-brand-promo-primary text-surface-card whitespace-pre-line break-keep">
           {sentence}
         </div>
       </div>

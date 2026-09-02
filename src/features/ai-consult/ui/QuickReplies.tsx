@@ -18,7 +18,7 @@ const LOGIN_ONLY_REPLIES = [
   '온라인 가입',
   '요금제 가입하기',
   '게임 하기',
-  '출석체크',
+  '출석 체크',
 ];
 const GUEST_ONLY_REPLIES = ['회원 가입하기'];
 

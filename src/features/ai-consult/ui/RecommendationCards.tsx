@@ -3,8 +3,6 @@ import { useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 
 import { PlanCard, toPlanBenefits } from '@/entities/plan';
-import { useIsLoggedIn } from '@/features/auth';
-import { Button } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import RecommendationDetailSheet from './RecommendationDetailSheet';
@@ -23,12 +21,7 @@ export default function RecommendationCards({
   plans,
   onPlanSubscribe,
   onPlanCompare,
-  onGenerateReport,
-  isLoading = false,
-  isGeneratingReport = false,
-  canShowReportButton = false,
 }: RecommendationCardsProps) {
-  const isLoggedIn = useIsLoggedIn();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
   const [emblaRef] = useEmblaCarousel({
@@ -50,11 +43,6 @@ export default function RecommendationCards({
   const handleCompare = (plan: RecommendedPlan) => {
     setOpen(false);
     onPlanCompare?.(plan);
-  };
-
-  const handleGenerateReport = () => {
-    if (!onGenerateReport || isLoading) return;
-    onGenerateReport(plans);
   };
 
   if (plans.length === 0) return null;
@@ -86,18 +74,6 @@ export default function RecommendationCards({
           ))}
         </div>
       </div>
-
-      {isLoggedIn && canShowReportButton && (
-        <Button
-          variant="secondary"
-          size="md"
-          className="w-full"
-          onClick={handleGenerateReport}
-          disabled={isLoading}
-        >
-          {isGeneratingReport ? '레포트 생성 중...' : '레포트 생성'}
-        </Button>
-      )}
 
       <RecommendationDetailSheet
         plan={selected}

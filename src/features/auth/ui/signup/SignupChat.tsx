@@ -12,6 +12,54 @@ interface SignupChatProps {
   onFinish?: () => void;
 }
 
+// 필드 에러 메시지 — 빨간 원 안에 흰색 느낌표 아이콘 + 에러 텍스트
+function FieldError({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-1 flex items-center gap-1 text-caption text-[12px] text-semantic-error">
+      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-semantic-error text-[9px] font-bold leading-3.5 text-white">
+        !
+      </span>
+      {children}
+    </p>
+  );
+}
+
+// 회원가입 폼 공용 필드 — 라벨(선택) + Input + FieldError를 한 묶음으로 렌더링
+interface SignupFieldProps extends Omit<
+  React.ComponentProps<typeof Input>,
+  'variant'
+> {
+  label?: React.ReactNode;
+  labelClassName?: string;
+  error?: string | null;
+}
+
+function SignupField({
+  label,
+  labelClassName = 'block text-[14px] font-semibold mb-1',
+  error,
+  className = '',
+  id,
+  ...inputProps
+}: SignupFieldProps) {
+  return (
+    <div>
+      {label && (
+        <label htmlFor={id} className={labelClassName}>
+          {label}
+        </label>
+      )}
+      <Input
+        id={id}
+        variant={error ? 'error' : 'default'}
+        className={`rounded-lg ${className}`}
+        {...inputProps}
+      />
+      {error && <FieldError>{error}</FieldError>}
+    </div>
+  );
+}
+
 export default function SignupChat({ onFinish }: SignupChatProps) {
   const {
     step,
@@ -44,64 +92,53 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     isLoggedIn || step === 'completed' || step === 'already-member';
 
   return (
-    <div className="flex flex-col gap-4 px-4">
+    <div className="flex flex-col gap-4">
       {!hideSignupUI && (
         <AIChat sentence="회원 가입을 위해 몇 가지만 확인할게요. 편하게 답해주세요 :)" />
       )}
 
       {step === 'basic-info' && !isLoggedIn && (
         <AIChat
+          fullWidth
           sentence={
-            <div className="flex flex-col gap-2 w-full">
-              <div className="text-caption text-fg-tertiary">기본 정보</div>
-              <div>
-                <Input
-                  value={info.name}
-                  onChange={handleChange('name')}
-                  placeholder="이름"
-                  variant={errors.name ? 'error' : 'default'}
-                />
-                {errors.name && (
-                  <p className="text-caption text-semantic-error mt-1">
-                    {errors.name}
-                  </p>
-                )}
+            <div className="flex flex-col gap-2.5 w-full">
+              <div className="text-[16px] font-medium text-fg-tertiary pt-2">
+                기본 정보
               </div>
-              <div>
-                <Input
-                  value={info.birth}
-                  onChange={handleChange('birth')}
-                  placeholder="생년월일 6자리 (YYMMDD)"
-                  inputMode="numeric"
-                  maxLength={6}
-                  variant={errors.birth ? 'error' : 'default'}
-                />
-                {errors.birth && (
-                  <p className="text-caption text-semantic-error mt-1">
-                    {errors.birth}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Input
-                  value={info.phone}
-                  onChange={handleChange('phone')}
-                  placeholder="전화번호"
-                  type="tel"
-                  variant={errors.phone ? 'error' : 'default'}
-                />
-                {errors.phone && (
-                  <p className="text-caption text-semantic-error mt-1">
-                    {errors.phone}
-                  </p>
-                )}
-              </div>
+              <SignupField
+                label="이름"
+                id="signup-name"
+                value={info.name}
+                onChange={handleChange('name')}
+                placeholder="홍길동"
+                error={errors.name}
+              />
+              <SignupField
+                label="생년월일"
+                id="signup-birth"
+                value={info.birth}
+                onChange={handleChange('birth')}
+                placeholder="생년월일 6자리 (YYMMDD)"
+                inputMode="numeric"
+                maxLength={6}
+                error={errors.birth}
+              />
+              <SignupField
+                label="전화번호"
+                id="signup-phone"
+                value={info.phone}
+                onChange={handleChange('phone')}
+                maxLength={11}
+                placeholder="010-0000-0000"
+                type="tel"
+                error={errors.phone}
+              />
               <Button
                 onClick={handleSubmitBasicInfo}
                 disabled={isSendingOtp}
-                className="mt-2 w-full"
+                className="w-full mb-1.5"
               >
-                {isSendingOtp ? '인증번호 발송 중...' : '다음 >'}
+                {isSendingOtp ? '인증번호 발송 중...' : '다음'}
               </Button>
             </div>
           }
@@ -133,26 +170,26 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <>
           <AIChat sentence="인증번호를 보내드렸어요. 3분 이내에 입력해주세요." />
           <AIChat
+            fullWidth
             sentence={
               <div className="flex flex-col gap-2 w-full">
-                <div className="flex items-center justify-between text-caption text-fg-tertiary">
-                  <span>인증번호</span>
-                  <span className="text-semantic-error">
-                    {formatTime(remainingSeconds)}
-                  </span>
-                </div>
-                <Input
+                <SignupField
+                  label={
+                    <div className="flex items-center justify-between">
+                      <span>인증번호</span>
+                      <span className="text-semantic-error">
+                        {formatTime(remainingSeconds)}
+                      </span>
+                    </div>
+                  }
+                  labelClassName="mb-1 text-caption text-fg-tertiary"
+                  id="signup-otp"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="인증번호"
                   inputMode="numeric"
-                  variant={verifyError ? 'error' : 'default'}
+                  error={verifyError}
                 />
-                {verifyError && (
-                  <p className="text-caption text-semantic-error">
-                    {verifyError}
-                  </p>
-                )}
                 <Button
                   onClick={handleVerifyCode}
                   disabled={code.trim().length === 0 || isVerifyingCode}
@@ -174,58 +211,47 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <>
           <AIChat sentence="로그인에 사용할 이메일과 비밀번호를 입력해주세요." />
           <AIChat
+            fullWidth
             sentence={
-              <div className="flex flex-col gap-2 w-full">
-                <div>
-                  <Input
+              <div className="flex flex-col gap-2.5 w-full">
+                <div className="text-[16px] font-medium text-fg-tertiary pt-2">
+                  기본 정보
+                </div>
+                <div className="flex flex-col gap-2.5 w-full">
+                  <SignupField
+                    label="이메일"
+                    id="signup-email"
                     type="email"
                     value={credentials.email}
                     onChange={handleCredentialsChange('email')}
                     placeholder="이메일"
-                    variant={credentialsErrors.email ? 'error' : 'default'}
+                    error={credentialsErrors.email}
                   />
-                  {credentialsErrors.email && (
-                    <p className="text-caption text-semantic-error mt-1">
-                      {credentialsErrors.email}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Input
+                  <SignupField
+                    label="비밀 번호"
+                    id="signup-password"
                     type="password"
                     value={credentials.password}
                     onChange={handleCredentialsChange('password')}
                     placeholder="비밀번호 (8자 이상)"
-                    variant={credentialsErrors.password ? 'error' : 'default'}
+                    error={credentialsErrors.password}
                   />
-                  {credentialsErrors.password && (
-                    <p className="text-caption text-semantic-error mt-1">
-                      {credentialsErrors.password}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Input
+                  <SignupField
+                    label="비밀 번호 확인"
+                    id="signup-password-confirm"
                     type="password"
                     value={credentials.passwordConfirm}
                     onChange={handleCredentialsChange('passwordConfirm')}
                     placeholder="비밀번호 확인"
-                    variant={
-                      credentialsErrors.passwordConfirm ? 'error' : 'default'
-                    }
+                    error={credentialsErrors.passwordConfirm}
                   />
-                  {credentialsErrors.passwordConfirm && (
-                    <p className="text-caption text-semantic-error mt-1">
-                      {credentialsErrors.passwordConfirm}
-                    </p>
-                  )}
+                  <Button
+                    onClick={handleSubmitCredentials}
+                    className="mt-2 w-full"
+                  >
+                    다음
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleSubmitCredentials}
-                  className="mt-2 w-full"
-                >
-                  다음 &gt;
-                </Button>
               </div>
             }
           />
@@ -236,9 +262,10 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <>
           <AIChat sentence="입력하신 내용을 확인해주세요." />
           <AIChat
+            fullWidth
             sentence={
               <div className="flex flex-col gap-3 w-full">
-                <div className="text-caption text-fg-tertiary">
+                <div className="text-[16px] font-medium text-fg-tertiary pt-2">
                   입력 내용 확인
                 </div>
                 <div className="flex flex-col gap-2">
@@ -271,11 +298,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                     및 본인 확인 · 보유 기간: 회원 탈퇴 시까지
                   </span>
                 </label>
-                {completeError && (
-                  <p className="text-caption text-semantic-error">
-                    {completeError}
-                  </p>
-                )}
+                {completeError && <FieldError>{completeError}</FieldError>}
                 <Button
                   onClick={handleCompleteSignup}
                   disabled={!agreedToPrivacy || isCompletingSignup}
@@ -293,14 +316,14 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
         <AIChat
           variant="success"
           sentence="회원가입이 완료되었어요! 🎉
-          자동 로그인이 진행되었고, 이전 채팅과 이어서 대화할 수 있습니다"
+          자동 로그인이 진행되었고, 이전 채팅과 이어서 대화할 수 있습니다."
         />
       )}
 
       {step === 'already-member' && (
         <AIChat
           variant="success"
-          sentence="이미 가입되어 있는 번호예요! 자동으로 로그인했어요 🎉"
+          sentence="이미 가입되어 있는 번호예요! 자동으로 로그인했습니다."
         />
       )}
     </div>
