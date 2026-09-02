@@ -39,7 +39,7 @@ export default function MultipleChoices({
               className="group min-h-[58px] w-full max-w-full justify-start gap-3 text-left"
             >
               <ChoiceMark>{optionMarks[index] ?? index + 1}</ChoiceMark>
-              <span className="min-w-0 flex-1 break-words text-regular-12-130">
+              <span className="min-w-0 flex-1 truncate text-regular-12-130">
                 {option.label}
               </span>
             </Button>
