@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import type { QuizKind } from '@/features/chat-quiz';
@@ -28,13 +28,34 @@ function modeToCategory(
   return undefined;
 }
 
+// 상담 API 호출 중 발생한 에러를 메시지 목록에 추가한다.
+function handleConsultError(
+  setMessages: Dispatch<SetStateAction<ChatMessage[]>>,
+  error: unknown,
+) {
+  // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        type: 'ai' as const,
+        sentence:
+          '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+        quickReplies: ['메뉴로 돌아가기'],
+      },
+    ]);
+  } else {
+    setMessages((prev) => [...prev, buildErrorMessage(error)]);
+  }
+}
+
 export interface UseChatActionsDeps {
   isLoggedIn: boolean;
   isLoading: boolean;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   messages: ChatMessage[];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
-  input: string;
   setInput: Dispatch<SetStateAction<string>>;
   profile: ConsultInput;
   setProfile: Dispatch<SetStateAction<ConsultInput>>;
@@ -98,6 +119,13 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
 
   // 에러 발생 시 재시도를 위해 마지막 사용자 입력을 보관
   const lastUserInputRef = useRef<string | null>(null);
+  const handleSendRef =
+    useRef<
+      (
+        text: string,
+        options?: { skipUserMessage?: boolean },
+      ) => Promise<void> | null
+    >(null);
 
   const handleSend = useCallback(
     async (text: string, options?: { skipUserMessage?: boolean }) => {
@@ -144,7 +172,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
               }
               return prev;
             });
-            handleSend(lastInput, { skipUserMessage: true });
+            handleSendRef.current?.(lastInput, { skipUserMessage: true });
           }
         },
       });
@@ -179,21 +207,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
         );
         addAIResponse(response, nextProfile, nextProfile.mode);
       } catch (error) {
-        // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              type: 'ai' as const,
-              sentence:
-                '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
-              quickReplies: ['메뉴로 돌아가기'],
-            },
-          ]);
-        } else {
-          setMessages((prev) => [...prev, buildErrorMessage(error)]);
-        }
+        handleConsultError(setMessages, error);
       } finally {
         setIsLoading(false);
         clearRequest(signal);
@@ -222,6 +236,11 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
       clearRequest,
     ],
   );
+
+  // handleSend를 재귀적으로 호출할 때 TDZ/불변성 린트 경고를 피하기 위해 ref 사용
+  useEffect(() => {
+    handleSendRef.current = handleSend;
+  }, [handleSend]);
 
   const handleFormSubmit = useCallback(
     async (values: Partial<ConsultInput>, summary: string) => {
@@ -260,21 +279,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
         const response = await requestConsult(merged, signal);
         addAIResponse(response, merged, 'recommend');
       } catch (error) {
-        // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              type: 'ai' as const,
-              sentence:
-                '응답 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
-              quickReplies: ['메뉴로 돌아가기'],
-            },
-          ]);
-        } else {
-          setMessages((prev) => [...prev, buildErrorMessage(error)]);
-        }
+        handleConsultError(setMessages, error);
       } finally {
         setIsLoading(false);
         clearRequest(signal);

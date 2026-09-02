@@ -80,7 +80,6 @@ export function useChat() {
     setIsLoading: state.setIsLoading,
     messages: state.messages,
     setMessages: state.setMessages,
-    input: state.input,
     setInput: state.setInput,
     profile: state.profile,
     setProfile: state.setProfile,
@@ -142,6 +141,5 @@ export function useChat() {
     confirmMultipleChoice: quiz.confirmMultipleChoice,
     closeSheetGame: games.closeSheetGame,
     activeGameMeta: games.activeGameMeta,
-    playedTodayGameIds,
   };
 }
