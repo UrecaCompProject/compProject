@@ -54,7 +54,7 @@ export default function RecommendationDetailSheet({
       onOpenChange={onOpenChange}
       title="요금제 조회"
       footer={
-        <div className="flex gap-2 w-full">
+        <div className="flex gap-2 w-full p-4">
           <Button
             variant="outline"
             size="md"
