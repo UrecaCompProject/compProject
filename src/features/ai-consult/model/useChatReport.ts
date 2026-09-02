@@ -77,10 +77,12 @@ export function useChatReport({
 
       const signal = startRequest();
 
+      const conversation = buildConversationLog(messages);
+
       try {
         const report = await generateReport(
           {
-            conversation: buildConversationLog(messages),
+            conversation,
             currentPlan: effectiveCurrentPlan || '미등록',
             recommendationResult: buildRecommendationResult(recommendations),
             reportKind,
@@ -102,6 +104,7 @@ export function useChatReport({
               userProfile.isLoggedIn ?? false,
             ),
             report,
+            category: reportKind,
           },
         ]);
         return report;
