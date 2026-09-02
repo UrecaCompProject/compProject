@@ -108,10 +108,27 @@ export default function CardMatchGame({
   );
   const isCleared = matchedCount === PAIR_COUNT;
 
-  const phaseRef = useRef(phase);
-  useEffect(() => {
-    phaseRef.current = phase;
-  }, [phase]);
+  // 매칭 연출용 setTimeout들을 세션 단위로 관리한다.
+  // - sessionRef: 새 게임을 시작하면 증가. 이전 게임에서 예약된 콜백이
+  //   새 게임에 끼어들지 못하도록 콜백마다 세션 번호를 비교한다.
+  // - pendingTimers: 재시작/언마운트 시 남은 타이머를 정리한다.
+  // - clearedRef: 마지막 짝을 맞춘 순간 true. 시간 초과 판정과 보상(onWin)
+  //   중복 호출을 막는다.
+  const sessionRef = useRef(0);
+  const pendingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const clearedRef = useRef(false);
+
+  const scheduleGameTimeout = (fn: () => void, ms: number) => {
+    const id = setTimeout(fn, ms);
+    pendingTimers.current.push(id);
+    return id;
+  };
+  const clearGameTimeouts = () => {
+    pendingTimers.current.forEach(clearTimeout);
+    pendingTimers.current = [];
+  };
+
+  useEffect(() => clearGameTimeouts, []);
 
   // 시작하면 뒷면 상태 → 잠깐 뒤 전체를 뒤집어 보여줌 → 다시 덮는다
   useEffect(() => {
@@ -133,6 +150,8 @@ export default function CardMatchGame({
     if (phase !== 'playing' || !previewDone) return;
 
     const timer = setTimeout(() => {
+      // 이미 마지막 짝을 맞췄으면 시간 초과로 처리하지 않는다 (막판 클리어 보호)
+      if (clearedRef.current) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           setPhase('result');
@@ -151,7 +170,11 @@ export default function CardMatchGame({
     if (phase === 'intro') {
       setBackOverride(null);
     } else {
-      setBackOverride(() => setPhase('intro'));
+      // 뒤로 가면 진행 중인 게임을 버리는 것이므로 예약된 연출/보상 타이머도 취소
+      setBackOverride(() => {
+        clearGameTimeouts();
+        setPhase('intro');
+      });
     }
   }, [phase, setBackOverride]);
 
@@ -160,6 +183,9 @@ export default function CardMatchGame({
   }, [setBackOverride]);
 
   const handleStart = () => {
+    clearGameTimeouts();
+    sessionRef.current += 1;
+    clearedRef.current = false;
     setDeck(createDeck());
     setFlipped([]);
     setMoves(0);
@@ -184,13 +210,18 @@ export default function CardMatchGame({
       setMoves((m) => m + 1);
       setLockBoard(true);
       const [firstId, secondId] = nextFlipped;
+      const session = sessionRef.current;
 
       if (deck[firstId].faceIndex === deck[secondId].faceIndex) {
         const nextMatchedCount = matchedCount + 1;
         const matchedFaceIndex = deck[firstId].faceIndex;
+        const isFinalPair = nextMatchedCount === PAIR_COUNT;
 
-        setTimeout(() => {
-          if (phaseRef.current !== 'playing') return;
+        // 마지막 짝은 이 시점에 이미 클리어 확정 → 시간 초과 판정을 즉시 막는다
+        if (isFinalPair) clearedRef.current = true;
+
+        scheduleGameTimeout(() => {
+          if (sessionRef.current !== session) return;
 
           setDeck((prev) =>
             prev.map((card) =>
@@ -203,19 +234,18 @@ export default function CardMatchGame({
           setFlipped([]);
           setLockBoard(false);
 
-          if (nextMatchedCount === PAIR_COUNT) {
-            // 마지막 짝은 '맞춘 짝' 칸이 색으로 채워지는 모습을 보여준 뒤
-            // 결과 화면으로 넘어간다. (같은 콜백에서 바로 setPhase하면
-            // 색이 칠해지기 전에 화면이 전환됨)
-            setTimeout(() => {
-              if (phaseRef.current !== 'playing') return;
+          if (isFinalPair) {
+            // '맞춘 짝' 칸이 색으로 채워지는 모습을 보여준 뒤 결과 화면으로 넘어간다
+            scheduleGameTimeout(() => {
+              if (sessionRef.current !== session) return;
               setPhase('result');
               onWin?.(reward);
             }, 450);
           }
         }, 400);
       } else {
-        setTimeout(() => {
+        scheduleGameTimeout(() => {
+          if (sessionRef.current !== session) return;
           setFlipped([]);
           setLockBoard(false);
         }, 700);
