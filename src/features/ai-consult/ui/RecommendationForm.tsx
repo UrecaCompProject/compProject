@@ -5,8 +5,8 @@ import type { ConsultForm, ConsultInput } from '@/shared/lib/aiConsult';
 
 const PRIORITY_LABELS: Record<string, string> = {
   budget: '가격 우선',
-  data: '데이터 용량 우선',
-  max_data: '최대 데이터',
+  data: '데이터 우선',
+  max_data: '무제한 우선',
 };
 
 // 나이 필드에서 "무관"을 고르면 서버가 "값 없음"으로 취급하는 사실 값을 그대로 제출한다.
@@ -21,20 +21,30 @@ const NO_PREFERENCE = 'no_preference';
 
 const DATA_USAGE_BUCKETS: { label: string; value: number | string }[] = [
   { label: '5GB 이하', value: 5 },
-  { label: '5GB ~ 10GB', value: 10 },
-  { label: '10GB ~ 20GB', value: 20 },
-  { label: '20GB ~ 40GB', value: 40 },
-  { label: '무제한', value: 100 },
+  { label: '5GB ~ 15GB', value: 15 },
+  { label: '15GB ~ 30GB', value: 30 },
+  { label: '30GB ~ 70GB', value: 70 },
+  { label: '70GB 이상', value: 135 },
+  { label: '무제한', value: 9999 },
   { label: '미확인', value: NO_PREFERENCE },
 ];
 
 const BUDGET_BUCKETS: { label: string; value: number | string }[] = [
-  { label: '5만원 이하', value: 50000 },
-  { label: '5만원 ~ 10만원', value: 100000 },
-  { label: '10만원 ~ 20만원', value: 200000 },
-  { label: '20만원 ~ 30만원', value: 300000 },
+  { label: '3만원 이하', value: 30000 },
+  { label: '3만원 ~ 5만원', value: 50000 },
+  { label: '5만원 ~ 7만원', value: 70000 },
+  { label: '7만원 ~ 9만원', value: 90000 },
+  { label: '9만원 이상', value: 110000 },
   { label: '무관', value: NO_PREFERENCE },
 ];
+
+function getNumberBucketLabel(
+  fieldName: string,
+  value: number | string,
+): string | undefined {
+  const buckets = fieldName === 'budget' ? BUDGET_BUCKETS : DATA_USAGE_BUCKETS;
+  return buckets.find((bucket) => bucket.value === value)?.label;
+}
 
 function NumberBucketGroup({
   buckets,
@@ -176,11 +186,13 @@ export default function RecommendationForm({
           const number = typeof value === 'number' ? value : Number(value);
           if (!isNaN(number)) {
             (result as Record<string, unknown>)[key] = number;
+            const bucketLabel = getNumberBucketLabel(field.name, value);
             summaryParts.push(
               `${field.label}: ${
-                field.name === 'budget'
+                bucketLabel ??
+                (field.name === 'budget'
                   ? `${number.toLocaleString()}원`
-                  : `${number}GB`
+                  : `${number}GB`)
               }`,
             );
           }

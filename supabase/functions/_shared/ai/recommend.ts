@@ -143,17 +143,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     required: false,
   });
 
-  const ottOptions = [
-    '넷플릭스',
-    '유튜브 프리미엄',
-    '디즈니+',
-    '왓챠',
-    '웨이브',
-    '쿠팡플레이',
-    '애플 뮤직',
-    '멜론',
-    '스포티파이',
-  ];
+  const ottOptions = ['넷플릭스', '디즈니+티빙'];
   fields.push({
     name: 'ott',
     label: 'OTT 혜택',
