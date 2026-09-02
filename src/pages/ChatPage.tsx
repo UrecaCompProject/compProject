@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   ChatInput,
@@ -44,6 +44,7 @@ export default function ChatPage() {
     handleEditMessage,
     handleSignupFinished,
     openSignupChat,
+    requireLogin,
     handleFormSubmit,
     handleGenerateReport,
     handlePlanCompare,
@@ -62,15 +63,9 @@ export default function ChatPage() {
     confirmMultipleChoice,
     closeSheetGame,
     activeGameMeta,
-  } = useChat();
+  } = useChat({ signinModal: SigninModal });
 
   const openModal = useModalStore((state) => state.open);
-  const handleRequireLogin = useCallback(() => {
-    openModal({
-      title: '회원관리',
-      content: <SigninModal onSignupClick={openSignupChat} />,
-    });
-  }, [openModal, openSignupChat]);
 
   const messageSlots = useMemo(
     () => ({
@@ -234,7 +229,7 @@ export default function ChatPage() {
         onStartQuiz={startQuiz}
         onStartScratch={startScratch}
         isLoggedIn={isLoggedIn}
-        onRequireLogin={handleRequireLogin}
+        onRequireLogin={requireLogin}
         disabled={isLoading}
         menuSlots={menuSlots}
       />

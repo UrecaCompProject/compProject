@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { useEffect, useRef } from 'react';
 
 import { useIsLoggedIn } from '@/entities/user';
@@ -14,7 +15,11 @@ import { useChatReport } from './useChatReport';
 import { useChatState } from './useChatState';
 import { useChatSubscription } from './useChatSubscription';
 
-export function useChat() {
+interface UseChatParams {
+  signinModal: ComponentType<{ onSignupClick?: () => void }>;
+}
+
+export function useChat({ signinModal }: UseChatParams) {
   const isLoggedIn = useIsLoggedIn();
   const state = useChatState({ isLoggedIn });
 
@@ -31,6 +36,7 @@ export function useChat() {
 
   const { requireLogin, openSignupChat } = useChatAuthGate({
     setMessages: state.setMessages,
+    signinModal,
   });
 
   const { recordPlay, playedTodayGameIds } = useMissionCompletion();
@@ -123,6 +129,7 @@ export function useChat() {
     handleEditMessage: actions.handleEditMessage,
     handleSignupFinished: subscription.handleSignupFinished,
     openSignupChat,
+    requireLogin,
     handleFormSubmit: actions.handleFormSubmit,
     handleGenerateReport: report.handleGenerateReport,
     handlePlanCompare: compare.handlePlanCompare,

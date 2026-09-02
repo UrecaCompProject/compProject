@@ -1,13 +1,17 @@
 import { useCallback } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
+import type { ComponentType, Dispatch, SetStateAction } from 'react';
 
-import { SigninModal } from '@/features/auth';
 import { useModalStore } from '@/shared';
 
 import type { ChatMessage } from '../types';
 
+interface SigninModalSlot {
+  onSignupClick?: () => void;
+}
+
 export interface UseChatAuthGateDeps {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
+  signinModal: ComponentType<SigninModalSlot>;
 }
 
 export interface ChatAuthGate {
@@ -17,6 +21,7 @@ export interface ChatAuthGate {
 
 export function useChatAuthGate({
   setMessages,
+  signinModal: SigninModal,
 }: UseChatAuthGateDeps): ChatAuthGate {
   const openModal = useModalStore((state) => state.open);
 
@@ -35,7 +40,7 @@ export function useChatAuthGate({
       title: '회원관리',
       content: <SigninModal onSignupClick={openSignupChat} />,
     });
-  }, [openModal, openSignupChat]);
+  }, [openModal, openSignupChat, SigninModal]);
 
   return { requireLogin, openSignupChat };
 }
