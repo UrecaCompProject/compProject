@@ -199,7 +199,7 @@ export function useChat() {
   }, [isLoggedIn, resetChat]);
 
   // useCurrentPlan이 enabled 상태일 때 자동으로 fetch/무효화되므로
-  // 별도 loadCurrentPlan 호출은 불필요.
+  // 별도의 요금제 로드 호출은 불필요.
 
   const {
     subscriptionOpen,
