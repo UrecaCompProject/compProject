@@ -28,6 +28,8 @@ type MissionItemProps = {
   mission: Mission;
   onAction?: (mission: Mission) => void;
   finished?: boolean;
+  // 완료된 미션에서 실제로 획득한 배지 수 (서버 game_results.score)
+  earnedScore?: number;
 };
 
 // 게임 리스트 카드 컴포넌트
@@ -36,8 +38,22 @@ export default function MissionItem({
   mission,
   onAction,
   finished,
+  earnedScore,
 }: MissionItemProps) {
   const Icon = missionIcons[mission.icon];
+
+  // 보상 표시
+  // - 랜덤 보상 미션(스크래치): 완료 시 실제 획득량, 그 전엔 "배지 랜덤"
+  // - 고정 보상 미션: 항상 "배지 N개"
+  let rewardText: string;
+  if (mission.randomReward) {
+    rewardText =
+      finished && earnedScore != null
+        ? `배지 ${earnedScore}개 획득`
+        : '배지 랜덤';
+  } else {
+    rewardText = `배지 ${mission.reward}개`;
+  }
 
   return (
     <li className="flex items-center gap-2.5 rounded-xl bg-surface-card px-2.5 py-2.5">
@@ -54,7 +70,7 @@ export default function MissionItem({
 
         <span className="flex items-center gap-1 text-medium-12-130 text-fg-tertiary">
           <img src={badgeImage} alt="" className="h-3.5 w-3.5" />
-          배지 {mission.reward}개
+          {rewardText}
         </span>
       </div>
 

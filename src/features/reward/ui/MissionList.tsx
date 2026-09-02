@@ -14,7 +14,7 @@ type MissionListProps = {
 // 게임 보여주는 리스트 컴포넌트
 export default function MissionList({ onAction }: MissionListProps) {
   const badgeBalance = useBadgeBalance();
-  const { playedTodayGameIds } = useMissionCompletion();
+  const { playedTodayGameIds, earnedScoreByMission } = useMissionCompletion();
   return (
     <section className="bg-surface-page px-4 pb-4 pt-3">
       <div className="mb-3 flex items-center justify-between">
@@ -36,6 +36,7 @@ export default function MissionList({ onAction }: MissionListProps) {
             mission={mission}
             onAction={onAction}
             finished={playedTodayGameIds.has(mission.uuid)}
+            earnedScore={earnedScoreByMission.get(mission.uuid)}
           />
         ))}
       </ul>

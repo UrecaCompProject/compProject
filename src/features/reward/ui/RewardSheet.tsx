@@ -72,7 +72,9 @@ export default function RewardSheet({
     // 혹시 남아있더라도 이 분기가 우선한다.
     if (mission.id === 'scratch') {
       handleOpenChange(false);
-      onStartScratch?.(mission.reward);
+      // 스크래치 보상은 ScratchGame이 1~5 중 랜덤으로 정한다.
+      // 여기서 고정값을 넘기면 랜덤이 무시되므로 아무것도 넘기지 않는다.
+      onStartScratch?.();
       return;
     }
 

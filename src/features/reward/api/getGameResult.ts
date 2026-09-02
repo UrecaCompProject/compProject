@@ -14,14 +14,21 @@ function todayRange() {
   };
 }
 
-// userId가 오늘 플레이한 게임의 game_id 목록을 조회한다.
-// (game_results에 오늘 날짜 row가 있는 game_id = 오늘 이미 플레이한 게임)
-export async function getTodayPlayedGameIds(userId: string): Promise<string[]> {
+export type TodayPlayedGame = {
+  gameId: string;
+  score: number;
+};
+
+// userId가 오늘 플레이한 게임 목록을 조회한다. (game_id + 획득 점수)
+// game_results에 오늘 날짜 row가 있는 game_id = 오늘 이미 플레이한 게임
+export async function getTodayPlayedGames(
+  userId: string,
+): Promise<TodayPlayedGame[]> {
   const { startOfToday, startOfTomorrow } = todayRange();
 
   const { data, error } = await supabase
     .from('game_results')
-    .select('game_id')
+    .select('game_id, score')
     .eq('user_id', userId)
     .gte('played_at', startOfToday)
     .lt('played_at', startOfTomorrow);
@@ -30,7 +37,10 @@ export async function getTodayPlayedGameIds(userId: string): Promise<string[]> {
     throw new Error(`게임 플레이 기록 조회 실패: ${error.message}`);
   }
 
-  return (data ?? []).map((row) => row.game_id);
+  return (data ?? []).map((row) => ({
+    gameId: row.game_id,
+    score: row.score ?? 0,
+  }));
 }
 
 // userId가 오늘 이 게임을 이미 플레이했는지 확인한다.

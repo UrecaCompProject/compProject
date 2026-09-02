@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { Button } from '@/shared';
 import badgeImage from '@/shared/assets/images/badge.svg';
 
 const CARD_W = 316;
@@ -14,7 +13,6 @@ const MAX_BADGE_REWARD = 5;
 
 const LABEL = '여기를 긁어보세요';
 const REWARD_DESCRIPTION = '나의 쿠폰함에서 확인해보세요';
-const CTA_LABEL = '쿠폰함 확인하기';
 
 // 브러시 경로 (373 x 216 viewBox 기준, 가로로 넓게 퍼지는 형태)
 const BRUSH_D =
@@ -38,7 +36,6 @@ type ScratchGameProps = {
 export default function ScratchGame({
   reward: rewardProp,
   onWin,
-  onClose,
 }: ScratchGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isCleared, setIsCleared] = useState(false);
@@ -339,29 +336,16 @@ export default function ScratchGame({
         <div className="absolute inset-0 box-border flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#6C5CE7] to-[#7C9BFF] px-6 text-center text-white">
           <img src={badgeImage} alt="" className="w-12 h-12" />
           <div className="text-[19px] font-bold">배지 {reward}개 획득!</div>
-          <div className="mb-1 text-[13px] opacity-85">
-            {REWARD_DESCRIPTION}
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            round
-            className="mt-1"
-            onClick={onClose}
-          >
-            {CTA_LABEL}
-          </Button>
+          <div className="text-[13px] opacity-85">{REWARD_DESCRIPTION}</div>
         </div>
         <canvas
           ref={canvasRef}
           className="absolute inset-0 block cursor-grab touch-none"
         />
       </div>
-      {!isCleared && (
-        <div className="text-medium-12-130 text-fg-tertiary">
-          스크래치 카드를 긁어보세요
-        </div>
-      )}
+      <div className="text-medium-12-130 text-fg-tertiary">
+        {isCleared ? '배지가 적립되었어요' : '스크래치 카드를 긁어보세요'}
+      </div>
     </div>
   );
 }

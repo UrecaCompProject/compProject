@@ -5,7 +5,10 @@ export type Mission = {
   id: string;
   uuid: string;
   title: string;
-  reward: number;
+  // 고정 보상. 보상이 랜덤인 미션(스크래치)은 생략하고 randomReward를 쓴다.
+  reward?: number;
+  // 보상이 플레이할 때 랜덤으로 정해지는 미션인지 여부 (스크래치: 배지 1~5개)
+  randomReward?: boolean;
   actionLabel: '시작' | '공유';
   icon: MissionIcon;
 };
