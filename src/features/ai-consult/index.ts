@@ -13,7 +13,6 @@ export { ReportCard } from '@/features/consult-report';
 export {
   PlanSubscriptionSheet,
   PlanSelector,
-  useSubscriptionStore,
 } from '@/features/plan-subscription';
 export type { SubscriptionForm } from '@/features/plan-subscription';
 

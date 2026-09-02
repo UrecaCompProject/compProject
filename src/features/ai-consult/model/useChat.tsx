@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useCurrentPlan } from '@/entities/plan';
 import { useIsLoggedIn } from '@/entities/user';
 import { postQuestion } from '@/features/ai-consult/api/postQuestion';
 import { SigninModal } from '@/features/auth';
 import { useChatQuiz } from '@/features/chat-quiz';
 import type { QuizKind } from '@/features/chat-quiz';
-import { useGameStore, useActiveGameMeta } from '@/features/games';
+import { useActiveGameMeta, useGameStore } from '@/features/games';
 import type { GameId } from '@/features/games';
-import { useSubscriptionStore } from '@/features/plan-subscription';
 import {
   GetBadgeModal,
   missions,
@@ -149,12 +149,13 @@ export function useChat() {
     [isLoggedIn],
   );
 
-  const subscribedCurrentPlan = useSubscriptionStore((s) => s.currentPlan);
-  const loadCurrentPlan = useSubscriptionStore((s) => s.loadCurrentPlan);
+  const { data: currentPlan } = useCurrentPlan(isLoggedIn);
 
-  // 사용자가 직접 입력한 currentPlan이 우선, 없으면 구독 스토어의 값을 사용
-  const effectiveCurrentPlan =
-    profile.currentPlan ?? subscribedCurrentPlan?.planName;
+  // 사용자가 직접 입력한 currentPlan이 우선, 없으면 DB의 현재 요금제를 사용
+  const effectiveCurrentPlan = useMemo(
+    () => profile.currentPlan ?? currentPlan?.planName,
+    [profile.currentPlan, currentPlan?.planName],
+  );
 
   const wasLoggedInRef = useRef(isLoggedIn);
 
@@ -197,14 +198,8 @@ export function useChat() {
     wasLoggedInRef.current = isLoggedIn;
   }, [isLoggedIn, resetChat]);
 
-  // 로그인 시 DB에서 현재 요금제를 로드해 구독 스토어에 반영
-  useEffect(() => {
-    if (isLoggedIn) {
-      loadCurrentPlan().catch(() => {
-        // 미가입 사용자 등 조회 실패는 무시
-      });
-    }
-  }, [isLoggedIn, loadCurrentPlan]);
+  // useCurrentPlan이 enabled 상태일 때 자동으로 fetch/무효화되므로
+  // 별도 loadCurrentPlan 호출은 불필요.
 
   const {
     subscriptionOpen,
