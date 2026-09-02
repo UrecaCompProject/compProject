@@ -1,4 +1,4 @@
-import { AIChat } from '@/features/ai-consult';
+import AIChat from '@/features/ai-consult/ui/AIChat';
 
 import ScratchGame from './ScratchGame';
 

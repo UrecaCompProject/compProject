@@ -1,10 +1,12 @@
+import type { ComponentType, ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 
-import { SignupChat } from '@/features/auth';
-import { ChatQuizMessage } from '@/features/chat-quiz';
-import type { QuizQuestionMessage } from '@/features/chat-quiz';
-import { PlanSubscriptionSheet } from '@/features/plan-subscription';
-import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
+import type {
+  ConsultInput,
+  RecommendedPlan,
+  ReportOutput,
+  CompareResult,
+} from '@/shared/lib/aiConsult';
 
 import AIChat from './AIChat';
 import AIChatExtras from './AIChatExtras';
@@ -13,6 +15,41 @@ import MyChat from './MyChat';
 import ScratchGameMessage from './ScratchGameMessage';
 
 import type { ChatMessage } from '../types';
+
+type QuizMessage = Extract<
+  ChatMessage,
+  { type: 'quiz-question' | 'quiz-result' }
+>;
+type QuizQuestionMessage = Extract<ChatMessage, { type: 'quiz-question' }>;
+
+interface ChatMessageListSlots {
+  ReportCard: ComponentType<{ report: ReportOutput }>;
+  CompareResultSheet: ComponentType<{
+    result?: CompareResult;
+    onSubscribe?: (plan: RecommendedPlan) => void;
+    onRecompare?: (planAName: string, planBName: string) => void;
+  }>;
+  SignupChat: ComponentType<{ onFinish?: () => void }>;
+  ChatQuizMessage: ComponentType<{
+    message: QuizMessage;
+    onOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
+    onMultipleChoiceSelect: (messageId: number, optionId: string) => void;
+    onMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
+    AIChat: ComponentType<{ sentence: ReactNode; className?: string }>;
+  }>;
+  PlanSubscriptionSheet: ComponentType<{
+    active?: boolean;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    plan: RecommendedPlan | null;
+    onComplete?: () => void;
+  }>;
+  ScratchGame: ComponentType<{
+    reward?: number;
+    onWin?: (reward: number) => void;
+    onClose?: () => void;
+  }>;
+}
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
@@ -37,6 +74,7 @@ interface ChatMessageListProps {
   onRegenerate?: () => void;
   onEditMessage?: (messageId: number) => void;
   onReportButtonVisibleChange?: (visible: boolean) => void;
+  slots: ChatMessageListSlots;
 }
 
 // 이 값(px) 이내로 스크롤이 바닥에 가까우면 스크롤 방향과 무관하게 항상 노출
@@ -65,6 +103,7 @@ export default function ChatMessageList({
   onRegenerate,
   onEditMessage,
   onReportButtonVisibleChange,
+  slots,
 }: ChatMessageListProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -204,6 +243,10 @@ export default function ChatMessageList({
                   onGenerateReport={onGenerateReport}
                   onFormSubmit={onFormSubmit}
                   formDefaults={formDefaults}
+                  slots={{
+                    ReportCard: slots.ReportCard,
+                    CompareResultSheet: slots.CompareResultSheet,
+                  }}
                 />
               </>
             )}
@@ -220,16 +263,17 @@ export default function ChatMessageList({
             )}
 
             {message.type === 'signup' && (
-              <SignupChat onFinish={onSignupFinished} />
+              <slots.SignupChat onFinish={onSignupFinished} />
             )}
 
             {(message.type === 'quiz-question' ||
               message.type === 'quiz-result') && (
-              <ChatQuizMessage
+              <slots.ChatQuizMessage
                 message={message}
                 onOxAnswer={onQuizOxAnswer}
                 onMultipleChoiceSelect={onQuizMultipleChoiceSelect}
                 onMultipleChoiceConfirm={onQuizMultipleChoiceConfirm}
+                AIChat={AIChat}
               />
             )}
 
@@ -238,6 +282,7 @@ export default function ChatMessageList({
                 reward={message.reward}
                 onWin={onScratchWin}
                 onClose={onScratchClose}
+                scratchGame={slots.ScratchGame}
               />
             )}
           </div>
@@ -245,7 +290,7 @@ export default function ChatMessageList({
         {isLoading && <ChatLoadingIndicator />}
       </div>
 
-      <PlanSubscriptionSheet
+      <slots.PlanSubscriptionSheet
         active={subscriptionOpen}
         open={subscriptionOpen}
         onOpenChange={onSubscriptionClose ?? (() => {})}

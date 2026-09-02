@@ -1,5 +1,8 @@
-import { AIChat } from '@/features/ai-consult';
-import { MultipleChoiceQuiz, OxQuiz, QuizResult } from '@/features/chat-quiz';
+import type { ComponentType, ReactNode } from 'react';
+
+import MultipleChoiceQuiz from './MultipleChoiceQuiz';
+import OxQuiz from './OxQuiz';
+import QuizResult from './QuizResult';
 
 import type { QuizQuestionMessage, QuizResultMessage } from '../type';
 
@@ -8,6 +11,7 @@ type ChatQuizMessageProps = {
   onOxAnswer: (messageId: number, answer: 'o' | 'x') => void;
   onMultipleChoiceSelect: (messageId: number, optionId: string) => void;
   onMultipleChoiceConfirm: (message: QuizQuestionMessage) => void;
+  AIChat: ComponentType<{ sentence: ReactNode; className?: string }>;
 };
 const MULTIPLE_CHOICE_BUBBLE_CLASSNAME = '!max-w-[92%]';
 
@@ -16,6 +20,7 @@ export default function ChatQuizMessage({
   onOxAnswer,
   onMultipleChoiceSelect,
   onMultipleChoiceConfirm,
+  AIChat,
 }: ChatQuizMessageProps) {
   if (message.type === 'quiz-result') {
     return (

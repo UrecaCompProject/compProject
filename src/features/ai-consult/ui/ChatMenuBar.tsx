@@ -1,13 +1,32 @@
+import type { ComponentType } from 'react';
 import { useRef, useState } from 'react';
 
 import { UserRound, CreditCard, Gift, FileSpreadsheet } from 'lucide-react';
 
 import type { QuizKind } from '@/features/chat-quiz';
-import { ReportSheet } from '@/features/consult-report';
-import { PlanQuickSheet } from '@/features/plan-detail';
-import { RewardSheet } from '@/features/reward';
-import { MyPageSheet } from '@/features/usage';
 import { IconBadge, useClickOutside } from '@/shared';
+
+export interface ChatMenuBarSlots {
+  MyPageSheet: ComponentType<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onRequestPlanRecommend?: () => void;
+  }>;
+  PlanQuickSheet: ComponentType<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }>;
+  RewardSheet: ComponentType<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onStartQuiz?: (quizType: QuizKind) => void;
+    onStartScratch?: (reward?: number) => void;
+  }>;
+  ReportSheet: ComponentType<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }>;
+}
 
 interface ChatMenuBarProps {
   isMenuOpen: boolean;
@@ -15,6 +34,7 @@ interface ChatMenuBarProps {
   onStartQuiz?: (quizType: QuizKind) => void;
   onStartScratch?: (reward?: number) => void;
   onSend?: (text: string) => void;
+  slots: ChatMenuBarSlots;
 }
 
 // 채팅 입력창 위 메뉴 아이콘 바(마이페이지, 요금제, 혜택/이벤트, 상담 리포트)와
@@ -25,6 +45,7 @@ export default function ChatMenuBar({
   onStartQuiz,
   onStartScratch,
   onSend,
+  slots,
 }: ChatMenuBarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [myPageOpen, setMyPageOpen] = useState(false);
@@ -92,7 +113,7 @@ export default function ChatMenuBar({
         </div>
       </div>
 
-      <MyPageSheet
+      <slots.MyPageSheet
         open={myPageOpen}
         onOpenChange={setMyPageOpen}
         onRequestPlanRecommend={() => {
@@ -101,16 +122,16 @@ export default function ChatMenuBar({
         }}
       />
 
-      <PlanQuickSheet open={planOpen} onOpenChange={setPlanOpen} />
+      <slots.PlanQuickSheet open={planOpen} onOpenChange={setPlanOpen} />
 
-      <RewardSheet
+      <slots.RewardSheet
         open={rewardOpen}
         onOpenChange={setRewardOpen}
         onStartQuiz={onStartQuiz}
         onStartScratch={onStartScratch}
       />
 
-      <ReportSheet open={reportOpen} onOpenChange={setReportOpen} />
+      <slots.ReportSheet open={reportOpen} onOpenChange={setReportOpen} />
     </div>
   );
 }

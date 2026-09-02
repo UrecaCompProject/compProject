@@ -32,7 +32,6 @@
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.8",
     "vaul": "^1.1.2",
-    "vitest": "^4.1.10",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
@@ -51,6 +50,7 @@
     "@vitejs/plugin-react": "^6.0.4",
     "@vitest/browser-playwright": "4.1.10",
     "@vitest/coverage-v8": "4.1.10",
+    "vitest": "^4.1.10",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.5",

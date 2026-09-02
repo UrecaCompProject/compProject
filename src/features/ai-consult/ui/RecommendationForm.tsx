@@ -186,7 +186,10 @@ export default function RecommendationForm({
           const number = typeof value === 'number' ? value : Number(value);
           if (!isNaN(number)) {
             (result as Record<string, unknown>)[key] = number;
-            const bucketLabel = getNumberBucketLabel(field.name, value);
+            const bucketLabel = getNumberBucketLabel(
+              field.name,
+              value as string | number,
+            );
             summaryParts.push(
               `${field.label}: ${
                 bucketLabel ??
