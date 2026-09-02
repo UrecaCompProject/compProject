@@ -39,7 +39,5 @@ export async function getUsage(userId: string): Promise<UsageMonthlyRow[]> {
     throw new Error(`사용량 조회 실패: ${error.message}`);
   }
 
-  console.log(data);
-
   return ((data ?? []) as Record<string, unknown>[]).map(toUsageMonthlyRow);
 }
