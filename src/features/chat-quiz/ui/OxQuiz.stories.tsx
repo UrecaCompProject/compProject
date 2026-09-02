@@ -15,7 +15,6 @@ const meta = {
   component: OxQuiz,
   args: {
     question: oxQuestions[0],
-    number: 1,
     selectedAnswer: null,
     onSelect: () => undefined,
   },
@@ -48,7 +47,6 @@ function OxQuizConversation() {
         sentence={
           <OxQuiz
             question={question}
-            number={1}
             selectedAnswer={selectedAnswer}
             disabled={selectedAnswer !== null}
             onSelect={setSelectedAnswer}

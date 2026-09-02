@@ -10,7 +10,6 @@ const OX_OPTIONS: QuizOption[] = [
 
 type OxQuizProps = {
   question: OxQuestion;
-  number: number;
   selectedAnswer: 'o' | 'x' | null;
   disabled?: boolean;
   onSelect: (answer: 'o' | 'x') => void;
@@ -18,14 +17,13 @@ type OxQuizProps = {
 
 export default function OxQuiz({
   question,
-  number,
   selectedAnswer,
   disabled = false,
   onSelect,
 }: OxQuizProps) {
   return (
     <div className="flex w-full flex-col gap-5">
-      <Question number={number} question={question.question} />
+      <Question question={question.question} />
       <OxChoices
         options={OX_OPTIONS}
         selectedId={selectedAnswer}
