@@ -20,7 +20,7 @@ export default function MultipleChoiceQuiz({
   onConfirm,
 }: MultipleChoiceQuizProps) {
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col gap-2">
       <Question question={question.question} />
       <MultipleChoices
         options={question.options}
