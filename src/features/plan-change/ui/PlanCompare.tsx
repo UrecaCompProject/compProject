@@ -204,7 +204,7 @@ export default function PlanCompare({
     );
 
     return (
-      <div className={`flex flex-col ${className ?? 'w-[358px]'}`}>
+      <div className={`flex flex-col px-4 pt-2 ${className ?? 'w-[358px]'}`}>
         <TicketCard>
           {renderHeader()}
           <div className="border-b border-fg-primary" />
