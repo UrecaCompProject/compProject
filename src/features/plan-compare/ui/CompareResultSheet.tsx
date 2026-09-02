@@ -146,7 +146,7 @@ export default function CompareResultSheet({
         onBack={detailView ? () => setDetailView(null) : undefined}
         title={detailView ? '요금제 상세' : '요금제 비교'}
         description={detailView ? undefined : result?.summary}
-        size="large"
+        size="full"
         bodyClassName={detailView ? 'px-0 bg-surface-page' : 'px-5'}
         scrollResetKey={detailView ?? 'compare'}
       >

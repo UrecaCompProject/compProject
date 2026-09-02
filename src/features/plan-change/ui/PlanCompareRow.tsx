@@ -13,27 +13,15 @@ export default function PlanCompareRow({
   selected,
   currentHighlighted = false,
 }: PlanCompareRowProps) {
+  const currentColor = currentHighlighted
+    ? 'text-compare-selected-strong'
+    : 'text-fg-tertiary';
+
   return (
     <div className="grid grid-cols-2 gap-4 py-3">
       <div className="flex flex-col gap-1">
-        <p
-          className={`text-[12px] font-medium ${
-            currentHighlighted
-              ? 'text-compare-selected-strong'
-              : 'text-compare-neutral'
-          }`}
-        >
-          {label}
-        </p>
-        <p
-          className={`text-[14px] font-bold ${
-            currentHighlighted
-              ? 'text-compare-selected-strong'
-              : 'text-fg-tertiary'
-          }`}
-        >
-          {current}
-        </p>
+        <p className={`text-[12px] font-medium ${currentColor}`}>{label}</p>
+        <p className={`text-[14px] font-bold ${currentColor}`}>{current}</p>
       </div>
       <div className="flex flex-col gap-1">
         <p className="text-[12px] font-medium text-compare-selected-strong">
