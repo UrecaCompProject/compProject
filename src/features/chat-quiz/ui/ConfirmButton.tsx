@@ -16,7 +16,7 @@ export default function ConfirmButton({
       size="lg"
       disabled={disabled}
       onClick={onClick}
-      className="h-[51px] w-full max-w-[358px] rounded-xl text-[16px] font-extrabold disabled:text-fg-disabled"
+      className="w-full max-w-[358px]"
     >
       선택했어요
     </Button>
