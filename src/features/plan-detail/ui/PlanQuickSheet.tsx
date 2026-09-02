@@ -164,10 +164,10 @@ export default function PlanQuickSheet({
             subscribing ? (
               shell.footer
             ) : comparing ? null : selectedPlan ? (
-              <div className="flex w-full gap-2">
+              <div className="flex w-full gap-2 p-4">
                 <Button
                   variant="outline"
-                  size="lg"
+                  size="md"
                   className="flex-1"
                   onClick={() => setCompareOpen(true)}
                   disabled={!currentPlan}
@@ -176,7 +176,7 @@ export default function PlanQuickSheet({
                 </Button>
                 <Button
                   variant="primary"
-                  size="lg"
+                  size="md"
                   className="flex-1"
                   onClick={() => setIsSubscribeOpen(true)}
                 >
