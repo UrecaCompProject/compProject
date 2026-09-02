@@ -57,7 +57,7 @@ export default function RecommendationDetailSheet({
         <div className="flex gap-2 w-full">
           <Button
             variant="outline"
-            size="lg"
+            size="md"
             className="flex-1"
             onClick={() => onCompare(plan)}
           >
@@ -65,7 +65,7 @@ export default function RecommendationDetailSheet({
           </Button>
           <Button
             variant="primary"
-            size="lg"
+            size="md"
             className="flex-1"
             onClick={() => onSubscribe(plan)}
           >
