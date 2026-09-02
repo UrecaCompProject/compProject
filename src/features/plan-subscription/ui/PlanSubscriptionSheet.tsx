@@ -237,9 +237,8 @@ export default function PlanSubscriptionSheet({
   onExit,
   renderShell,
 }: PlanSubscriptionSheetProps) {
-  // plan을 미리 받고 진입하면(요금제 상세에서 선택) 1단계(요금제 선택)는 건너뛴다.
-  const firstStep: SubscriptionStep = plan ? 'delivery' : 'planSelect';
-  const firstStepIndex = STEPS.indexOf(firstStep);
+  const firstStep: SubscriptionStep = 'planSelect';
+  const firstStepIndex = 0;
 
   const [step, setStep] = useState<SubscriptionStep>(firstStep);
   const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
@@ -253,7 +252,7 @@ export default function PlanSubscriptionSheet({
   const prevActiveRef = useRef(active);
   useEffect(() => {
     if (active && !prevActiveRef.current) {
-      setStep(plan ? 'delivery' : 'planSelect');
+      setStep('planSelect');
       setSelectedPlan(plan);
       setForm(initialForm);
       setExpandedTerm(null);
@@ -400,8 +399,7 @@ export default function PlanSubscriptionSheet({
   const handlePrev = () => {
     const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
     const index = order.indexOf(step);
-    // 진입 단계(firstStep)보다 앞선 단계로는 돌아가지 않는다.
-    setStep(order[Math.max(firstStepIndex, index - 1)] ?? firstStep);
+    setStep(order[Math.max(0, index - 1)]);
   };
 
   const allAgreed =
@@ -429,7 +427,7 @@ export default function PlanSubscriptionSheet({
         <p className="text-center text-caption text-error">{submitError}</p>
       )}
       <div className="flex gap-2 w-full">
-        {step !== firstStep && step !== 'complete' && (
+        {step !== 'complete' && step !== 'planSelect' && (
           <Button
             key={`nav-prev-${step}`}
             variant="outline"
@@ -497,6 +495,15 @@ export default function PlanSubscriptionSheet({
         onChange={setStep}
         minIndex={firstStepIndex}
       />
+
+      {selectedPlan && step === 'agreement' && (
+        <section className="space-y-2">
+          <h6 className="text-body-sm font-semibold text-fg-primary">
+            가입할 요금제
+          </h6>
+          <PlanSummary plan={selectedPlan} />
+        </section>
+      )}
 
       {step === 'planSelect' && (
         <section className="space-y-4">
