@@ -30,8 +30,10 @@ export default function OxChoices({
               size="md"
               active={isSelected}
               onClick={() => onSelect(option.id)}
-              className={`relative border-2 h-[150px] w-full overflow-hidden rounded-[8px] px-0 py-0 ${
-                isO ? '!bg-brand-soft' : '!bg-accent-soft hover:border-red-400!'
+              className={`relative border-2 h-37.5! w-full overflow-hidden rounded-lg px-0 py-0 ${
+                isO
+                  ? 'bg-brand-soft! hover:border-brand-promo-primary'
+                  : 'bg-accent-soft! hover:border-red-400!'
               }`}
             >
               <span
@@ -43,7 +45,7 @@ export default function OxChoices({
               <img
                 src={imageSource}
                 alt=""
-                className="absolute -translate-x-1/2 -bottom-[9px] left-1/2 h-[92px] w-[92px] object-contain"
+                className="absolute -translate-x-1/2 -bottom-2.25 left-1/2 h-23 w-23 object-contain"
               />
             </Button>
           </li>
