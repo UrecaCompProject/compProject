@@ -9,6 +9,7 @@ import type {
   QuizResultMessage,
 } from '@/shared/types/quiz';
 
+import type { EtcConsultKind } from './constants/etcConsult';
 import type { MyInfoContent } from './lib/myInfoQuery';
 
 export type MessageType =
@@ -43,6 +44,8 @@ export type ChatMessage =
       // "내 요금제 뭐야" / "배지 몇 개야" 응답 — 요금제명·가격·배지 개수를
       // 강조 색으로 렌더링하기 위한 구조화 데이터
       myInfo?: MyInfoContent;
+      // "기타 상담" > "만든이" / "고객센터" 안내 — 채팅 인라인 렌더링
+      etcConsult?: EtcConsultKind;
       category?: MessageCategory;
     }
   | { id: number; type: 'user'; sentence: string; category?: MessageCategory }

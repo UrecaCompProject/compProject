@@ -197,6 +197,40 @@ export async function routeQuickReply(
     return 'handled';
   }
 
+  // "기타 상담" — 만든이 / 고객센터 안내로 분기하는 퀵리플라이를 띄운다.
+  if (text === '기타 상담') {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: '기타 상담' },
+      buildAIMessage('무엇을 도와드릴까요?', [
+        '만든 이',
+        '고객센터',
+        '메뉴로 돌아가기',
+      ]),
+    ]);
+    return 'handled';
+  }
+
+  // "만든이" / "고객센터" — 채팅 인라인 안내 (ChatMessageList가 etcConsult로 렌더)
+  if (text === '만든 이' || text === '고객센터') {
+    const kind = text === '만든 이' ? 'makers' : 'customerCenter';
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text },
+      {
+        id: Date.now() + 1,
+        type: 'ai',
+        sentence: '',
+        etcConsult: kind,
+        quickReplies: [
+          kind === 'makers' ? '고객센터' : '만든 이',
+          '메뉴로 돌아가기',
+        ],
+      },
+    ]);
+    return 'handled';
+  }
+
   // 회원가입 흐름
   if (text === '회원 가입하기') {
     openSignupChat();

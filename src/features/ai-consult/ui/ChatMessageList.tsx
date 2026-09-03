@@ -11,6 +11,7 @@ import type { PlanDetailItem } from '@/shared/types/plan';
 
 import AIChatExtras from './AIChatExtras';
 import ChatLoadingIndicator from './ChatLoadingIndicator';
+import EtcConsultAnswer from './EtcConsultAnswer';
 import MyInfoAnswer from './MyInfoAnswer';
 import ScratchGameMessage from './ScratchGameMessage';
 
@@ -284,6 +285,8 @@ export default function ChatMessageList({
                       </div>
                     ) : message.myInfo ? (
                       <MyInfoAnswer content={message.myInfo} />
+                    ) : message.etcConsult ? (
+                      <EtcConsultAnswer kind={message.etcConsult} />
                     ) : (
                       message.sentence
                     )
