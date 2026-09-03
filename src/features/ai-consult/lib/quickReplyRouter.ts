@@ -237,8 +237,21 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // 요금제 가입 흐름
-  if (text === '온라인 가입' || text === '요금제 가입하기') {
+  // 요금제 가입/신청 흐름 — 퀵리플라이("요금제 가입하기")든 자유 입력("요금제 신청할래")이든
+  // 온라인/영업점 경로 선택 단계 없이 바로 가입 시트를 연다.
+  const isSubscribeIntent =
+    text === '온라인 가입' ||
+    text === '요금제 가입하기' ||
+    /요금제\s*가입|가입\s*하기|가입\s*할래|신청/.test(text);
+  if (isSubscribeIntent) {
+    // 자유 입력이면 사용자 발화를 한 번 남긴다 (정형 퀵리플라이 문구는 그대로 두지 않음)
+    if (text !== '온라인 가입' && text !== '요금제 가입하기') {
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: 'user', sentence: text, category: 'plan' },
+      ]);
+    }
+
     if (!isLoggedIn) {
       setMessages((prev) => [
         ...prev,
@@ -250,8 +263,14 @@ export async function routeQuickReply(
       return 'handled';
     }
 
-    const lastPlan = findLastRecommendedPlan(messages);
-    openSubscription(lastPlan ?? null);
+    setMessages((prev) => [
+      ...prev,
+      buildAIMessage(
+        '요금제 가입 화면을 열었어요. 원하는 요금제를 선택해 가입을 진행해 주세요.',
+        ['메뉴로 돌아가기'],
+      ),
+    ]);
+    openSubscription(findLastRecommendedPlan(messages) ?? null);
     return 'handled';
   }
 

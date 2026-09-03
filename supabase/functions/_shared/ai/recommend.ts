@@ -695,11 +695,11 @@ function buildSubscribeResponse(isLoggedIn: boolean): RecommendOutput {
   return {
     recommendations: [],
     notice: isLoggedIn
-      ? '가입하실 요금제나 가입 경로를 알려주세요. 온라인 가입과 영업점 방문 중 편한 방법을 안내해드릴게요.'
+      ? '요금제 가입 화면을 열었어요. 원하는 요금제를 선택해 가입을 진행해 주세요.'
       : '요금제 가입은 로그인 후에 가능해요. 회원가입을 먼저 진행해주세요.',
     quickReplies: isLoggedIn
-      ? ['온라인 가입', '영업점 방문', '메뉴로 돌아가기']
-      : ['회원 가입하기', '영업점 방문', '메뉴로 돌아가기'],
+      ? ['메뉴로 돌아가기']
+      : ['회원 가입하기', '메뉴로 돌아가기'],
     mode: 'subscribe',
   };
 }
@@ -940,7 +940,9 @@ export async function generateQuickReplies(
     return ['현재 요금제와 비교', '요금제 이름 직접 입력', '메뉴로 돌아가기'];
   }
   if (mode === 'subscribe') {
-    return ['온라인 가입', '영업점 방문', '메뉴로 돌아가기'];
+    return input.isLoggedIn
+      ? ['메뉴로 돌아가기']
+      : ['회원 가입하기', '메뉴로 돌아가기'];
   }
   if (mode === 'out_of_scope') {
     return input.isLoggedIn

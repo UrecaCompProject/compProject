@@ -10,7 +10,7 @@ import type {
 import type { GameId } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
-import { buildErrorMessage } from '../lib/chatHelpers';
+import { buildErrorMessage, findLastRecommendedPlan } from '../lib/chatHelpers';
 
 import { useChatConsult } from './useChatConsult';
 import { useChatRouter } from './useChatRouter';
@@ -196,7 +196,12 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     retryLastInput,
   });
 
-  const consult = useChatConsult({ addAIResponse });
+  const consult = useChatConsult({
+    addAIResponse,
+    // 서버가 LLM 의도 분류로 가입(subscribe)이라 판단한 경우에도 바로 가입 시트를 연다.
+    onSubscribeMode: () =>
+      openSubscription(findLastRecommendedPlan(messages) ?? null),
+  });
 
   const handleSend = useCallback(
     async (text: string, options?: { skipUserMessage?: boolean }) => {
