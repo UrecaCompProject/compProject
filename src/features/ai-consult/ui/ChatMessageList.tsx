@@ -11,6 +11,7 @@ import type { PlanDetailItem } from '@/shared/types/plan';
 
 import AIChatExtras from './AIChatExtras';
 import ChatLoadingIndicator from './ChatLoadingIndicator';
+import MyInfoAnswer from './MyInfoAnswer';
 import ScratchGameMessage from './ScratchGameMessage';
 
 import type { ChatMessage } from '../types';
@@ -281,6 +282,8 @@ export default function ChatMessageList({
                           리포트 보기
                         </Button>
                       </div>
+                    ) : message.myInfo ? (
+                      <MyInfoAnswer content={message.myInfo} />
                     ) : (
                       message.sentence
                     )

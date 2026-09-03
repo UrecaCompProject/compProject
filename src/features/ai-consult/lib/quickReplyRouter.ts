@@ -8,6 +8,7 @@ import type { GameId } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
 import { GAME_LIST } from '../constants/gameList';
+import { useChatMenuSheetStore } from '../model/useChatMenuSheetStore';
 
 import {
   buildAIMessage,
@@ -17,6 +18,7 @@ import {
   getQuizIntent,
 } from './chatHelpers';
 import { handleGameSelect } from './gameRouter';
+import { detectMenuSheet, menuSheetOpenMessage } from './menuSheetQuery';
 import { buildMyInfoAnswer, detectMyInfoIntent } from './myInfoQuery';
 
 import type { ChatGameId, SheetGameId } from '../constants/gameList';
@@ -99,15 +101,37 @@ export async function routeQuickReply(
   // 본인의 요금제/배지만 바로 답하고, 타인 정보·민감정보는 거절한다.
   const myInfoIntent = detectMyInfoIntent(text);
   if (myInfoIntent) {
-    const { sentence, quickReplies } = buildMyInfoAnswer(myInfoIntent, {
-      isLoggedIn,
-      currentPlan,
-      badgeBalance,
-    });
+    const { sentence, quickReplies, content } = buildMyInfoAnswer(
+      myInfoIntent,
+      {
+        isLoggedIn,
+        currentPlan,
+        badgeBalance,
+      },
+    );
     setMessages((prev) => [
       ...prev,
       { id: Date.now(), type: 'user', sentence: text },
-      buildAIMessage(sentence, quickReplies),
+      {
+        id: Date.now() + 1,
+        type: 'ai',
+        sentence,
+        quickReplies,
+        myInfo: content,
+      },
+    ]);
+    return 'handled';
+  }
+
+  // "마이페이지 보여줘", "전체 요금제 알려줘", "이벤트 페이지", "리포트 보여줘"
+  // — 메뉴 이름을 채팅으로 말하면 해당 바텀시트를 연다.
+  const menuSheet = detectMenuSheet(text);
+  if (menuSheet) {
+    useChatMenuSheetStore.getState().setOpenSheet(menuSheet);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text },
+      buildAIMessage(menuSheetOpenMessage(menuSheet)),
     ]);
     return 'handled';
   }
@@ -161,9 +185,14 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // 퀴즈 의도 감지 — "OX 퀴즈 하자", "통신 상식 퀴즈" 등
+  // 퀴즈 의도 감지 — "OX 퀴즈 하자", "통신 상식 퀴즈" 등.
+  // 퀵 리플라이로 게임을 고를 때처럼 사용자가 입력한 문장도 한 번 남긴다.
   const quizIntent = getQuizIntent(text);
   if (quizIntent) {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text, category: 'game' },
+    ]);
     startQuiz(quizIntent, { includeUserMessage: false });
     return 'handled';
   }

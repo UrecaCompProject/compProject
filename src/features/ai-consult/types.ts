@@ -9,6 +9,8 @@ import type {
   QuizResultMessage,
 } from '@/shared/types/quiz';
 
+import type { MyInfoContent } from './lib/myInfoQuery';
+
 export type MessageType =
   'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result' | 'scratch-game';
 
@@ -38,6 +40,9 @@ export type ChatMessage =
       planCompare?: boolean;
       // 에러 메시지 여부 — AIChat에 error variant 적용 + 재시도 퀵리플라이 표시
       isError?: boolean;
+      // "내 요금제 뭐야" / "배지 몇 개야" 응답 — 요금제명·가격·배지 개수를
+      // 강조 색으로 렌더링하기 위한 구조화 데이터
+      myInfo?: MyInfoContent;
       category?: MessageCategory;
     }
   | { id: number; type: 'user'; sentence: string; category?: MessageCategory }

@@ -47,9 +47,16 @@ interface MyInfoData {
   badgeBalance: number;
 }
 
+// 요금제명·가격·데이터·배지 개수를 강조 색으로 렌더링하기 위한 구조화 데이터.
+// (거절/로그인 안내에는 없음 — 평문 sentence만 쓴다.)
+export type MyInfoContent =
+  | { kind: 'plan'; planName: string; fee?: string; dataAmount?: string }
+  | { kind: 'badge'; count: number };
+
 export interface MyInfoAnswer {
   sentence: string;
   quickReplies: string[];
+  content?: MyInfoContent;
 }
 
 const LOGIN_REQUIRED: MyInfoAnswer = {
@@ -83,6 +90,7 @@ export function buildMyInfoAnswer(
     return {
       sentence: `현재 보유하신 배지는 총 ${badgeBalance.toLocaleString('ko-KR')}개예요.`,
       quickReplies: ['게임 하기', '출석체크', '메뉴로 돌아가기'],
+      content: { kind: 'badge', count: badgeBalance },
     };
   }
 
@@ -95,16 +103,21 @@ export function buildMyInfoAnswer(
     };
   }
 
-  const parts = [`현재 이용 중인 요금제는 '${currentPlan.planName}'이에요.`];
+  const fee =
+    currentPlan.monthlyFee !== undefined
+      ? `${currentPlan.monthlyFee.toLocaleString('ko-KR')}원`
+      : undefined;
+  const dataAmount = currentPlan.data || undefined;
+
+  const parts = [`현재 이용 중인 요금제는 ${currentPlan.planName}이에요.`];
   const detail: string[] = [];
-  if (currentPlan.monthlyFee !== undefined) {
-    detail.push(`월 ${currentPlan.monthlyFee.toLocaleString('ko-KR')}원`);
-  }
-  if (currentPlan.data) detail.push(`데이터 ${currentPlan.data}`);
+  if (fee) detail.push(`월 ${fee}`);
+  if (dataAmount) detail.push(`데이터 ${dataAmount}`);
   if (detail.length > 0) parts.push(detail.join(' · '));
 
   return {
     sentence: parts.join('\n'),
     quickReplies: ['요금제 비교하기', '요금제 추천받기', '메뉴로 돌아가기'],
+    content: { kind: 'plan', planName: currentPlan.planName, fee, dataAmount },
   };
 }
