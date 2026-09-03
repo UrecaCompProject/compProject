@@ -7,7 +7,8 @@ export type ChatMode =
   | 'general'
   | 'game'
   | 'attendance'
-  | 'report';
+  | 'report'
+  | 'out_of_scope';
 
 export interface ConsultRequest {
   currentPlan?: string;
@@ -24,6 +25,15 @@ export interface ConsultRequest {
   // 레포트 생성용 필드
   conversation?: string;
   recommendationResult?: string;
+  // 'plan' = 요금제 추천 기반 요약, 'general' = 일반 대화 요약
+  reportKind?: 'plan' | 'general';
+  // 상담에서 확정된 사용자 조건 요약
+  userProfile?: string;
+  // 요금제 비교용 필드
+  comparePlanA?: string;
+  comparePlanB?: string;
+  // 추천 정보 입력 폼에서 사용자가 "무관/미확인"을 선택해 명시적으로 건너뛴 필드명
+  skippedFields?: string[];
 }
 
 export interface ConsultResponse {
@@ -54,5 +64,46 @@ export interface ConsultResponse {
     recommendationReason: string;
     monthlySavingAmount: number;
     importantConditions: string[];
+  };
+  compareResult?: {
+    summary: string;
+    planAAdvantage: string;
+    planBAdvantage: string;
+    recommendedPlanId: string;
+    reason: string;
+    planA: {
+      planId: string;
+      planName: string;
+      reason: string;
+      savingAmount: number;
+      monthlyFee?: number;
+      data?: string;
+      benefits?: string[];
+      category?: string;
+      targetAge?: string;
+      dataSpeedAfter?: string;
+      voice?: string;
+      message?: string;
+      shareData?: string;
+      tethering?: string;
+      notes?: string;
+    };
+    planB: {
+      planId: string;
+      planName: string;
+      reason: string;
+      savingAmount: number;
+      monthlyFee?: number;
+      data?: string;
+      benefits?: string[];
+      category?: string;
+      targetAge?: string;
+      dataSpeedAfter?: string;
+      voice?: string;
+      message?: string;
+      shareData?: string;
+      tethering?: string;
+      notes?: string;
+    };
   };
 }

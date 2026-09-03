@@ -6,7 +6,9 @@ export type ChatMode =
   | 'subscribe'
   | 'general'
   | 'game'
-  | 'attendance';
+  | 'attendance'
+  | 'report'
+  | 'out_of_scope';
 
 export interface ConsultInput {
   currentPlan?: string;
@@ -20,6 +22,17 @@ export interface ConsultInput {
   userMessage?: string;
   mode?: ChatMode;
   isLoggedIn?: boolean;
+  // 요금제 비교 모드에서 비교할 두 요금제 이름.
+  // 프론트엔드에서 "현재 요금제와 비교" 시 currentPlan + 추천 요금제 이름을 설정.
+  comparePlanA?: string;
+  comparePlanB?: string;
+  // "다른 요금제 보기" 재질의 시 이미 추천한 요금제 planId 배열.
+  // filterRecommendPlans에서 제외해 새로운 요금제가 추천되도록 함.
+  excludePlanIds?: string[];
+  // 추천 정보 입력 폼에서 사용자가 "무관/미확인"을 선택해 명시적으로 건너뛴 필드명
+  // (ageGroup/dataUsage/budget). 값이 비어있어도 buildInfoRequest/buildInfoForm이
+  // 다시 물어보지 않도록 참고한다.
+  skippedFields?: string[];
 }
 
 export interface RecommendedPlan {
@@ -59,6 +72,7 @@ export interface RecommendOutput {
   quickReplies?: string[];
   mode?: ChatMode;
   form?: ConsultForm;
+  compareResult?: CompareResult;
 }
 
 export interface UsageAnalysisOutput {
@@ -85,10 +99,24 @@ export interface CompareOutput {
   reason: string;
 }
 
+// CompareOutput에 프론트엔드 렌더링에 필요한 두 요금제 상세 정보를 추가한 비교 결과.
+export interface CompareResult extends CompareOutput {
+  planA: RecommendedPlan;
+  planB: RecommendedPlan;
+}
+
 export interface ReportInput {
   conversation: string;
   currentPlan: string;
   recommendationResult: string;
+  reportKind?: 'plan' | 'general';
+  // 상담에서 확정된 사용자 조건 요약
+  userProfile?: string;
+}
+
+export interface ReportQAPair {
+  question: string;
+  answer: string;
 }
 
 export interface ReportOutput {
@@ -99,4 +127,5 @@ export interface ReportOutput {
   recommendationReason: string;
   monthlySavingAmount: number;
   importantConditions: string[];
+  qaPairs: ReportQAPair[];
 }

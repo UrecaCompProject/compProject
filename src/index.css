@@ -1,10 +1,10 @@
 @import 'pretendard/dist/web/variable/pretendardvariable.css';
 @import 'tailwindcss';
 
-@import './styles/theme/colors.css';
-@import './styles/theme/typography.css';
-@import './styles/theme/shadow.css';
-@import './styles/theme/animation.css';
+@import './shared/styles/theme/colors.css';
+@import './shared/styles/theme/typography.css';
+@import './shared/styles/theme/shadow.css';
+@import './shared/styles/theme/animation.css';
 
 :root {
   font-family:

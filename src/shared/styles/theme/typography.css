@@ -1,0 +1,47 @@
+@theme {
+  --font-sans: 'Pretendard Variable', 'Pretendard', sans-serif;
+
+  --text-title: 18px;
+  --text-title--line-height: 24px;
+  --text-title--font-weight: 700;
+
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 150%;
+  --text-body-lg--font-weight: 500;
+
+  --text-semibold-16-130: 16px;
+  --text-semibold-16-130--line-height: 130%;
+  --text-semibold-16-130--font-weight: 600;
+
+  --text-body: 15px;
+  --text-body--line-height: 150%;
+  --text-body--font-weight: 500;
+
+  --text-regular-14-130: 14px;
+  --text-regular-14-130--line-height: 130%;
+  --text-regular-14-130--font-weight: 500;
+
+  --text-caption: 14px;
+  --text-caption--line-height: 150%;
+  --text-caption--font-weight: 500;
+
+  --text-regular-14-130: 14px;
+  --text-regular-14-130--line-height: 130%;
+  --text-regular-14-130--font-weight: 400;
+
+  --text-chip: 14px;
+  --text-chip--line-height: 130%;
+  --text-chip--font-weight: 600;
+
+  --text-regular-12-130: 12px;
+  --text-regular-12-130--line-height: 130%;
+  --text-regular-12-130--font-weight: 400;
+
+  --text-medium-12-130: 12px;
+  --text-medium-12-130--line-height: 130%;
+  --text-medium-12-130--font-weight: 600;
+
+  --text-bold-16-140: 16px;
+  --text-bold-16-140--line-height: 140%;
+  --text-bold-16-140--font-weight: 700;
+}

@@ -66,10 +66,48 @@ const unusedImportsRules = {
   ],
 };
 
+// FSD 레이어 의존성 규칙 — 상위 레이어가 하위 레이어로만 import 가능
+// app → pages → widgets → features → entities → shared
+const fsdBoundaryRules = {
+  'import-x/no-restricted-paths': [
+    'error',
+    {
+      zones: [
+        // shared는 다른 모든 레이어를 import할 수 없음
+        {
+          target: './src/shared/**',
+          from: './src/(app|pages|widgets|features|entities)/**',
+        },
+        // entities는 features, widgets, pages, app을 import할 수 없음
+        {
+          target: './src/entities/**',
+          from: './src/(app|pages|widgets|features)/**',
+        },
+        // features는 widgets, pages, app을 import할 수 없음
+        {
+          target: './src/features/**',
+          from: './src/(app|pages|widgets)/**',
+        },
+        // widgets는 pages, app을 import할 수 없음
+        {
+          target: './src/widgets/**',
+          from: './src/(app|pages)/**',
+        },
+        // pages는 app을 import할 수 없음
+        {
+          target: './src/pages/**',
+          from: './src/app/**',
+        },
+      ],
+    },
+  ],
+};
+
 export default defineConfig([
   globalIgnores([
     'dist',
     'build',
+    'storybook-static',
     'node_modules',
     'stats.html',
     // Supabase Edge Functions(Deno 런타임)는 npm: specifier 를 사용하므로
@@ -108,6 +146,7 @@ export default defineConfig([
     rules: {
       ...importOrderRules,
       ...unusedImportsRules,
+      ...fsdBoundaryRules,
     },
   },
 

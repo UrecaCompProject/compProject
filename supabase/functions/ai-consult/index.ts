@@ -23,6 +23,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         conversation: body.conversation ?? '',
         currentPlan: body.currentPlan ?? '미등록',
         recommendationResult: body.recommendationResult ?? '',
+        reportKind: body.reportKind ?? 'plan',
+        userProfile: body.userProfile ?? '',
       });
       return new Response(JSON.stringify({ report, mode: 'report' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
