@@ -1,5 +1,3 @@
-import { ChevronRight } from 'lucide-react';
-
 import { Button, useModalStore } from '@/shared';
 import badgeImage from '@/shared/assets/images/badge.svg';
 
@@ -63,18 +61,18 @@ export default function CheckIn() {
           <span className="text-brand-promo-primary">{currentStreak}일째</span>
         </h2>
 
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="sm"
           onClick={handleOpenCheckInModal}
           disabled={isCheckedToday}
-          className="inline-flex items-center text-regular-12-130 text-fg-tertiary disabled:text-fg-disabled"
         >
           {isCheckedToday ? '출석 완료' : '출석체크'}
-          {!isCheckedToday && <ChevronRight size={12} />}
-        </button>
+        </Button>
       </div>
 
-      <ol className="mx-auto flex w-full min-w-[288px] max-w-100 items-start justify-between">
+      <ol className="flex w-full min-w-[288px] items-start justify-between">
         {days.map((day, index) => {
           const checked = weekChecks[index];
 
@@ -82,7 +80,7 @@ export default function CheckIn() {
             <li
               key={day}
               aria-label={`${day}요일 ${checked ? '출석 완료' : '미출석'}`}
-              className="flex w-8 shrink-0 flex-col items-center gap-1.5"
+              className="flex flex-col items-center w-8 gap-1.5 shrink-0"
             >
               <span
                 className={`inline-flex h-8.5 w-8.5 items-center justify-center rounded-full ${
@@ -93,11 +91,11 @@ export default function CheckIn() {
                 `}
               >
                 {checked && (
-                  <span className="flex items-center justify-center rounded-full h-7 w-7 bg-reward-locked">
+                  <span className="flex items-center justify-center rounded-full w-7 h-7 bg-reward-locked">
                     <img
                       src={badgeImage}
                       alt=""
-                      className="h-5.5 w-5.5 object-contain"
+                      className="object-contain w-5.5 h-5.5"
                     />
                   </span>
                 )}
