@@ -72,7 +72,7 @@ export default function CheckIn() {
         </Button>
       </div>
 
-      <ol className="flex w-full min-w-[288px] items-start justify-between">
+      <ol className="mx-auto flex w-full max-w-105 items-start justify-between">
         {days.map((day, index) => {
           const checked = weekChecks[index];
 
