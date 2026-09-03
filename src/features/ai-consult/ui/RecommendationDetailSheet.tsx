@@ -15,7 +15,8 @@ interface RecommendationDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubscribe: (plan: RecommendedPlan) => void;
-  onCompare: (plan: RecommendedPlan) => void;
+  // 비교 대상이 없는 화면(예: 레포트 상세)에서는 "비교하기" 버튼 자체를 숨긴다.
+  onCompare?: (plan: RecommendedPlan) => void;
   PlanDetailContent: ComponentType<PlanDetailContentProps>;
 }
 
@@ -62,16 +63,19 @@ export default function RecommendationDetailSheet({
       open={open}
       onOpenChange={onOpenChange}
       title="요금제 조회"
+      bg="bg-surface-page"
       footer={
-        <div className="flex gap-2 w-full p-4">
-          <Button
-            variant="outline"
-            size="md"
-            className="flex-1"
-            onClick={() => onCompare(plan)}
-          >
-            비교 하기
-          </Button>
+        <div className="flex gap-2 w-full">
+          {onCompare && (
+            <Button
+              variant="outline"
+              size="md"
+              className="flex-1"
+              onClick={() => onCompare(plan)}
+            >
+              비교 하기
+            </Button>
+          )}
           <Button
             variant="primary"
             size="md"

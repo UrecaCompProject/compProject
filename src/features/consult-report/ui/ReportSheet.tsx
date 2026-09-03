@@ -3,11 +3,18 @@ import { useState } from 'react';
 
 import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { PlanDetailItem } from '@/shared/types/plan';
 
 import { useReports } from '../model/useReports';
 
 import PreviewReport from './PreviewReport';
 import ReportDetail from './ReportDetail';
+
+interface PlanDetailContentProps {
+  plan: PlanDetailItem | null;
+  isLoading: boolean;
+  error: string | null;
+}
 
 interface ReportSheetSlots {
   PlanSubscriptionSheet: ComponentType<{
@@ -16,6 +23,14 @@ interface ReportSheetSlots {
     onOpenChange?: (open: boolean) => void;
     plan: RecommendedPlan | null;
     onComplete?: () => void;
+  }>;
+  PlanDetailContent: ComponentType<PlanDetailContentProps>;
+  PlanDetailSheet: ComponentType<{
+    plan: RecommendedPlan | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSubscribe: (plan: RecommendedPlan) => void;
+    PlanDetailContent: ComponentType<PlanDetailContentProps>;
   }>;
 }
 
@@ -32,7 +47,7 @@ type ReportView = 'list' | 'detail';
 export default function ReportSheet({
   open,
   onOpenChange,
-  slots: { PlanSubscriptionSheet },
+  slots: { PlanSubscriptionSheet, PlanDetailContent, PlanDetailSheet },
   openLatest = false,
 }: ReportSheetProps) {
   const { data: reports = [], isLoading } = useReports(open);
@@ -130,6 +145,8 @@ export default function ReportSheet({
               key={selectedReportId ?? 'empty'}
               report={selectedReport}
               onSelectPlan={handleSelectPlan}
+              PlanDetailContent={PlanDetailContent}
+              PlanDetailSheet={PlanDetailSheet}
             />
           </div>
         </div>

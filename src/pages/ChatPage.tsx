@@ -8,6 +8,7 @@ import {
 } from '@/features/ai-consult';
 import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { useChat } from '@/features/ai-consult/model/useChat';
+import RecommendationDetailSheet from '@/features/ai-consult/ui/RecommendationDetailSheet';
 import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
 import { SigninModal, SignupChat } from '@/features/auth';
 import { ChatQuizMessage } from '@/features/chat-quiz';
@@ -149,7 +150,16 @@ export default function ChatPage() {
         onOpenChange: (open: boolean) => void;
         openLatest?: boolean;
       }) {
-        return <ReportSheet {...props} slots={{ PlanSubscriptionSheet }} />;
+        return (
+          <ReportSheet
+            {...props}
+            slots={{
+              PlanSubscriptionSheet,
+              PlanDetailContent,
+              PlanDetailSheet: RecommendationDetailSheet,
+            }}
+          />
+        );
       },
     [],
   );
