@@ -9,7 +9,6 @@ export { default as RecommendationForm } from './ui/RecommendationForm';
 
 // 분리된 feature에서 re-export (하위 호환)
 export { CompareResultSheet } from '@/features/plan-compare';
-export { ReportCard } from '@/features/consult-report';
 export {
   PlanSubscriptionSheet,
   PlanSelector,

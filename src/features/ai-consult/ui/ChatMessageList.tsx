@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { SignupChat } from '@/features/auth';
 import { ChatQuizMessage } from '@/features/chat-quiz';
 import type { QuizQuestionMessage } from '@/features/chat-quiz';
+import { ReportSheet } from '@/features/consult-report';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
+import { Button } from '@/shared';
 import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import AIChat from './AIChat';
@@ -73,6 +75,9 @@ export default function ChatMessageList({
   // 스크롤 이벤트에서 계속 갱신 — 퀵 리플라이·ChatMenuBar가 펼쳐져 container
   // 크기가 바뀌는 시점에 "그 직전에 바닥 근처였는지"를 판단하는 데 쓰인다.
   const wasNearBottomRef = useRef(true);
+  // 레포트 생성 완료 말풍선의 "레포트 보기" 버튼 — 가장 최근 레포트 상세로
+  // 바로 진입하는 상담 리포트 바텀시트를 연다.
+  const [latestReportSheetOpen, setLatestReportSheetOpen] = useState(false);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -185,7 +190,22 @@ export default function ChatMessageList({
             {message.type === 'ai' && (
               <>
                 <AIChat
-                  sentence={message.sentence}
+                  sentence={
+                    message.report ? (
+                      <div className="flex flex-col items-start gap-2.5">
+                        <span>{message.sentence}</span>
+                        <Button
+                          onClick={() => setLatestReportSheetOpen(true)}
+                          size="md"
+                          className="w-full"
+                        >
+                          레포트 보기
+                        </Button>
+                      </div>
+                    ) : (
+                      message.sentence
+                    )
+                  }
                   variant={message.isError ? 'error' : 'default'}
                   onRegenerate={onRegenerate}
                   showRegenerate={
@@ -251,6 +271,12 @@ export default function ChatMessageList({
         onOpenChange={onSubscriptionClose ?? (() => {})}
         plan={subscriptionPlan ?? null}
         onComplete={onSignupFinished}
+      />
+
+      <ReportSheet
+        open={latestReportSheetOpen}
+        onOpenChange={setLatestReportSheetOpen}
+        openLatest
       />
     </div>
   );

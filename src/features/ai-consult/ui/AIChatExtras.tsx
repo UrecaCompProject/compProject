@@ -1,4 +1,3 @@
-import { ReportCard } from '@/features/consult-report';
 import { CompareResultSheet } from '@/features/plan-compare';
 import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -44,8 +43,6 @@ export default function AIChatExtras({
           onPlanCompare={onPlanCompare}
         />
       )}
-
-      {message.report && <ReportCard report={message.report} />}
 
       {message.compareResult && (
         <CompareResultSheet

@@ -12,17 +12,33 @@ import ReportDetail from './ReportDetail';
 type ReportSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // true면 열릴 때 목록 대신 가장 최근 레포트 상세로 바로 진입한다.
+  openLatest?: boolean;
 };
 
 type ReportView = 'list' | 'detail';
 
-export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
+export default function ReportSheet({
+  open,
+  onOpenChange,
+  openLatest = false,
+}: ReportSheetProps) {
   const { data: reports = [], isLoading } = useReports(open);
-  const [activeView, setActiveView] = useState<ReportView>('list');
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  // 사용자가 목록/상세를 직접 오가면 값이 채워지고, null이면 openLatest 여부로
+  // "기본 뷰"를 렌더링 중에 계산한다 — 비동기로 도착하는 reports를 기다렸다가
+  // 이펙트에서 setState하는 대신, 데이터가 준비된 순간 바로 파생시킨다.
+  const [manualView, setManualView] = useState<ReportView | null>(null);
+  const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
+
+  const defaultView: ReportView =
+    openLatest && !isLoading && reports.length > 0 ? 'detail' : 'list';
+  const activeView = manualView ?? defaultView;
+  const selectedReportId =
+    manualSelectedId ??
+    (activeView === 'detail' ? (reports[0]?.id ?? null) : null);
 
   // 상세는 이미 받아둔 목록 배열에서 골라 쓴다 — 클릭할 때마다 재조회하지 않음.
   const selectedReport =
@@ -30,19 +46,21 @@ export default function ReportSheet({ open, onOpenChange }: ReportSheetProps) {
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
-      setActiveView('list');
+      // 다음에 열릴 때 openLatest 기준으로 기본 뷰를 다시 계산하도록 초기화
+      setManualView(null);
+      setManualSelectedId(null);
     }
 
     onOpenChange(nextOpen);
   };
 
   const handleBack = () => {
-    setActiveView('list');
+    setManualView('list');
   };
 
   const handleSelectReport = (id: string) => {
-    setSelectedReportId(id);
-    setActiveView('detail');
+    setManualSelectedId(id);
+    setManualView('detail');
   };
 
   const handleSelectPlan = (plan: RecommendedPlan) => {
