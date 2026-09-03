@@ -60,8 +60,9 @@
   --color-coupon-soft: #fff8e9;
 
   /* Chat */
-  /* surface-pressed(#ebf0fa) 계열의 옅고 맑은 파랑. 말풍선은 그림자로 배경과 분리 */
-  --color-chat-mine: #cfe0fa;
+  /* 내 말풍선. surface-page(#f5f7fc) 배경 위 옅은 파랑 틴트.
+     색 대비는 작고 경계는 shadow-chat-mine(좁은 blur)이 만든다. */
+  --color-chat-mine: #e3ecfb;
 
   /* Game */
   /* 카드 뒤집기 타이머가 얼마 안 남았을 때 색. semantic-error(#c9455f)는 탁하고,

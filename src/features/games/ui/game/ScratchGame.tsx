@@ -332,8 +332,8 @@ export default function ScratchGame({
 
   return (
     <div className="flex flex-col items-center gap-3.5">
-      <div className="relative h-[280px] w-[316px] overflow-hidden rounded-[20px] bg-surface-card shadow-[inset_0_4px_4px_0_rgba(255,255,255,0.25),0_4px_40px_0_rgba(0,0,0,0.1)]">
-        <div className="absolute inset-0 box-border flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#6C5CE7] to-[#7C9BFF] px-6 text-center text-white">
+      <div className="relative h-70 w-79 overflow-hidden rounded-[20px] bg-surface-card shadow-[inset_0_4px_4px_0_rgba(255,255,255,0.25),0_4px_40px_0_rgba(0,0,0,0.1)]">
+        <div className="absolute inset-0 box-border flex flex-col items-center justify-center gap-2 bg-linear-to-br from-[#6C5CE7] to-[#7C9BFF] px-6 text-center text-white">
           <img src={badgeImage} alt="" className="w-12 h-12" />
           <div className="text-[19px] font-bold">배지 {reward}개 획득!</div>
           <div className="text-[13px] opacity-85">{REWARD_DESCRIPTION}</div>

@@ -83,7 +83,7 @@ export const rewardHandlers = [
       return HttpResponse.json(
         {
           code: '23505',
-          message: '오늘은 이미 출석 체크를 완료했어요.',
+          message: '오늘은 이미 출석체크를 완료했어요.',
         },
         { status: 409 },
       );

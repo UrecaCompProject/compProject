@@ -21,7 +21,7 @@ export async function saveReport(report: ReportOutput) {
     .insert({
       user_id: userData.user.id,
       summary_title:
-        report.otherNotes.title || `${report.currentPlan} 요금제 추천 레포트`,
+        report.otherNotes.title || `${report.currentPlan} 요금제 추천 리포트`,
       summary: report.otherNotes.summary,
       analysis_input: {
         currentPlan: report.currentPlan,
@@ -39,7 +39,7 @@ export async function saveReport(report: ReportOutput) {
     .single();
 
   if (reportError) {
-    throw new Error(`레포트 저장 실패: ${reportError.message}`);
+    throw new Error(`리포트 저장 실패: ${reportError.message}`);
   }
 
   const reportId = reportData.id;

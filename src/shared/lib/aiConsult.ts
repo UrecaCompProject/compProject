@@ -194,11 +194,11 @@ export async function generateReport(
   });
 
   if (error) {
-    throw new Error(`레포트 생성 실패: ${error.message}`);
+    throw new Error(`리포트 생성 실패: ${error.message}`);
   }
 
   if (!data?.report) {
-    throw new Error('레포트 응답이 비어 있습니다.');
+    throw new Error('리포트 응답이 비어 있습니다.');
   }
 
   return data.report;

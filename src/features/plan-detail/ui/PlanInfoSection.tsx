@@ -79,7 +79,7 @@ export default function PlanInfoSection({ plan }: PlanInfoSectionProps) {
           <h3 className="text-[16px] font-semibold text-fg-secondary">
             Plan Benefits
           </h3>
-          <div className="flex flex-col gap-[10px]">
+          <div className="flex flex-col gap-2.5">
             {allBenefits.map((benefit, index) => (
               <Card
                 key={benefit}

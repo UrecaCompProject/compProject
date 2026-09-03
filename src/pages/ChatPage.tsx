@@ -32,6 +32,7 @@ import {
   GetBadgeModal,
   missions,
   RewardSheet,
+  useAttendance,
   useMissionCompletion,
 } from '@/features/reward';
 import { MyPageSheet } from '@/features/usage';
@@ -44,6 +45,7 @@ export default function ChatPage() {
     useState(true);
 
   const { recordPlay, playedTodayGameIds } = useMissionCompletion();
+  const { checkIn, weekChecks, todayIndex } = useAttendance();
   const openGame = useGameStore((state) => state.openGame);
   const closeGame = useGameStore((state) => state.closeGame);
   const activeGameMeta = useActiveGameMeta();
@@ -90,6 +92,7 @@ export default function ChatPage() {
     mission: { recordPlay, playedTodayGameIds },
     game: { openGame, closeGame },
     reward: { GetBadgeModal, scratchMissionUuid, quizMissionUuids },
+    attendance: { checkIn, isCheckedInToday: weekChecks[todayIndex] },
   });
 
   const openModal = useModalStore((state) => state.open);

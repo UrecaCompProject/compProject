@@ -37,6 +37,7 @@ export interface UseChatRouterDeps {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  checkInAttendance: () => Promise<void>;
   playedTodayGameIds: Set<string>;
   retryLastInput: () => void;
 }
@@ -63,6 +64,7 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     retryLastInput,
   } = deps;
@@ -87,6 +89,7 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
         fetchCompare,
         startQuiz,
         openSheetGame,
+        checkInAttendance,
         playedTodayGameIds,
         signal,
         retryLastInput,
@@ -106,6 +109,7 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
       fetchCompare,
       startQuiz,
       openSheetGame,
+      checkInAttendance,
       playedTodayGameIds,
       retryLastInput,
     ],

@@ -9,6 +9,7 @@ import { getWelcomeQuickReplies } from '../lib/chatHelpers';
 
 import { useChatAbort } from './useChatAbort';
 import { useChatActions } from './useChatActions';
+import { useChatAttendance } from './useChatAttendance';
 import { useChatAuthGate } from './useChatAuthGate';
 import { useChatCompare } from './useChatCompare';
 import { useChatGames } from './useChatGames';
@@ -44,14 +45,26 @@ interface RewardDeps {
   quizMissionUuids: Partial<Record<QuizKind, string>>;
 }
 
+interface AttendanceDeps {
+  checkIn: () => Promise<{ streak: number; badgeCount: number }>;
+  isCheckedInToday: boolean;
+}
+
 export interface UseChatParams {
   signinModal: ComponentType<{ onSignupClick?: () => void }>;
   mission: MissionDeps;
   game: GameDeps;
   reward: RewardDeps;
+  attendance: AttendanceDeps;
 }
 
-export function useChat({ signinModal, mission, game, reward }: UseChatParams) {
+export function useChat({
+  signinModal,
+  mission,
+  game,
+  reward,
+  attendance,
+}: UseChatParams) {
   const isLoggedIn = useIsLoggedIn();
   const state = useChatState({ isLoggedIn });
 
@@ -87,6 +100,14 @@ export function useChat({ signinModal, mission, game, reward }: UseChatParams) {
   const subscription = useChatSubscription({
     isLoggedIn,
     setMessages: state.setMessages,
+  });
+
+  const chatAttendance = useChatAttendance({
+    isLoggedIn,
+    setMessages: state.setMessages,
+    setIsLoading: state.setIsLoading,
+    checkIn: attendance.checkIn,
+    isCheckedInToday: attendance.isCheckedInToday,
   });
 
   const wasLoggedInRef = useRef(isLoggedIn);
@@ -152,6 +173,7 @@ export function useChat({ signinModal, mission, game, reward }: UseChatParams) {
     fetchCompare: compare.fetchCompare,
     startQuiz: quiz.startQuiz,
     openSheetGame: games.openSheetGame,
+    checkInAttendance: chatAttendance.handleCheckIn,
     playedTodayGameIds: mission.playedTodayGameIds,
     aiResponseCount: state.aiResponseCount,
   });

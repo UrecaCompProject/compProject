@@ -76,6 +76,7 @@ export interface UseChatActionsDeps {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  checkInAttendance: () => Promise<void>;
   playedTodayGameIds: Set<string>;
   aiResponseCount: number;
 }
@@ -113,6 +114,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     aiResponseCount,
   } = deps;
@@ -153,6 +155,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     retryLastInput,
   });

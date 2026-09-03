@@ -1,3 +1,5 @@
+import { FileText } from 'lucide-react';
+
 interface ReportGenerateButtonProps {
   onGenerate: () => void;
   isLoading?: boolean;
@@ -5,7 +7,7 @@ interface ReportGenerateButtonProps {
   visible?: boolean;
 }
 
-// 5회 AI 응답 후 리포트 생성 버튼을 독립 렌더링, 응답 로딩 중이거나
+// 5회 AI 응답 후 리포트 생성 바를 독립 렌더링, 응답 로딩 중이거나
 // 스크롤이 아래로 내려가 있을 때는 페이드 아웃
 export default function ReportGenerateButton({
   onGenerate,
@@ -26,15 +28,16 @@ export default function ReportGenerateButton({
         onClick={onGenerate}
         disabled={isLoading}
         className="
-          inline-flex h-10 cursor-pointer items-center justify-center
-          rounded-full border border-border bg-brand-pale px-5
-          text-body font-semibold text-brand-secondary shadow-shadow
+          flex h-10 w-fit cursor-pointer items-center justify-center gap-2 px-6
+          rounded-full border border-brand-secondary bg-brand-primary
+          text-caption font-semibold text-white shadow-float
           transition-colors duration-100
-          hover:border-border-strong
-          disabled:cursor-not-allowed disabled:text-fg-disabled
+          hover:bg-brand-secondary
+          disabled:cursor-not-allowed disabled:opacity-60
         "
       >
-        {isGeneratingReport ? '리포트 생성 중...' : '리포트 생성'}
+        <FileText size={15} strokeWidth={2.25} />
+        {isGeneratingReport ? '리포트 생성 중...' : '상담 리포트 만들기'}
       </button>
     </div>
   );

@@ -80,7 +80,7 @@ export async function getReport(userId: string): Promise<ReportRow[]> {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) throw new Error(`레포트 조회 실패: ${error.message}`);
+  if (error) throw new Error(`리포트 조회 실패: ${error.message}`);
 
   const reports = (data ?? []) as ReportRowBase[];
   if (reports.length === 0) return [];

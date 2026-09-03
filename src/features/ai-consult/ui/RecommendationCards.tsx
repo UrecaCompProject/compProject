@@ -74,7 +74,8 @@ export default function RecommendationCards({
                 benefits={toPlanBenefits(plan)}
                 context="chat"
                 reason={plan.reason}
-                className="h-full"
+                // 좁은 화면에선 85vw, 넓은 화면에선 카드가 무한정 늘어나지 않도록 상한
+                className="h-full max-w-90"
                 onDetail={() => handleOpen(plan)}
                 onSelect={() => handleSubscribe(plan)}
               />
