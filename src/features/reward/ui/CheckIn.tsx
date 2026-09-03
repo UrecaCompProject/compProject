@@ -65,6 +65,7 @@ export default function CheckIn() {
           type="button"
           variant="primary"
           size="sm"
+          className="text-medium-12-130"
           onClick={handleOpenCheckInModal}
           disabled={isCheckedToday}
         >
