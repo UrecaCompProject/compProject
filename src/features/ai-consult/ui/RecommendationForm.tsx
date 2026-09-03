@@ -104,7 +104,9 @@ export default function RecommendationForm({
     const initial: Record<string, string | number | string[]> = {};
     for (const field of form.fields) {
       const key = field.name;
-      const raw = defaultValues?.[key as keyof ConsultInput];
+      // 클라이언트 프로필(defaultValues)에 값이 없으면, 서버가 대화에서 추출해
+      // 내려준 field.value를 초기값으로 사용한다.
+      const raw = defaultValues?.[key as keyof ConsultInput] ?? field.value;
       if (field.type === 'number') {
         initial[key] = typeof raw === 'number' ? raw : '';
       } else if (field.type === 'multi-select') {

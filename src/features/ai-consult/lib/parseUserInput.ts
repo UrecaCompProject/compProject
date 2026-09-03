@@ -68,7 +68,11 @@ export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
   ) {
     next.dataUsage = (next.dataUsage ?? 0) + 5;
     next.priority = 'data';
-  } else if (/무제한|완전\s*무제한|데이터\s*많이/.test(t)) {
+  } else if (
+    /무제한|완전\s*무제한|데이터\s*많이/.test(t) &&
+    // "예산 무제한 / 가격 무제한 / 요금 무제한"은 데이터가 아니라 예산 제한 해제이므로 제외
+    !/(예산|가격|요금)\s*(?:은|는|이|가)?\s*무제한/.test(t)
+  ) {
     next.dataUsage = 100;
     next.priority = 'max_data';
   }

@@ -11,6 +11,12 @@ export type ChatMode =
   | 'report'
   | 'out_of_scope';
 
+// 최근 대화 맥락 한 턴. 슬롯 추출/의도 분류 시 Edge Function에 함께 전달한다.
+export interface ConversationTurn {
+  role: 'user' | 'ai';
+  text: string;
+}
+
 export interface ConsultInput {
   currentPlan?: string;
   dataUsage?: number;
@@ -33,6 +39,9 @@ export interface ConsultInput {
   // 추천 정보 입력 폼에서 사용자가 "무관/미확인"을 선택해 명시적으로 건너뛴 필드명
   // (ageGroup/dataUsage/budget). 값이 비어있어도 다시 물어보지 않도록 서버가 참고한다.
   skippedFields?: string[];
+  // 최근 대화 맥락 (오래된 순, 최대 8턴). Edge Function의 슬롯 추출/의도 분류에만
+  // 쓰이며 프로필로 누적 저장하지 않는다.
+  history?: ConversationTurn[];
 }
 
 export interface ReportInput {
@@ -74,6 +83,8 @@ export interface ConsultFormField {
   type: 'select' | 'number' | 'text' | 'multi-select';
   options?: string[];
   required?: boolean;
+  // 대화에서 이미 파악된 초기값 — 폼을 미리 선택된 상태로 렌더링하기 위함
+  value?: string | number | string[];
 }
 
 export interface ConsultForm {
@@ -89,6 +100,18 @@ export interface ConsultResponse {
   form?: ConsultForm;
   report?: ReportOutput;
   compareResult?: CompareResult;
+  // 서버가 대화 맥락 분석으로 확정/조정/해제한 조건 슬롯의 최종 상태. 클라이언트
+  // 프로필에 병합해 다음 턴에도 이어지도록 한다. null은 "해제/미설정" — 해당 값을 지운다.
+  resolvedSlots?: {
+    ageGroup: string | null;
+    dataUsage: number | null;
+    budget: number | null;
+    priority: 'budget' | 'data' | 'max_data' | null;
+    ott: string[] | null;
+    currentPlan: string | null;
+  };
+  // "처음부터 다시" 등으로 이전 조건을 전부 버렸는지 여부
+  resetConditions?: boolean;
 }
 
 export interface ReportQAPair {
