@@ -58,7 +58,7 @@ export default function ReportCard({ report }: ReportCardProps) {
     <Card border="primary" radius="16" gap="16" className="mt-3 mx-4">
       <div className="flex items-center gap-2">
         <IconBadge icon={FileText} color="brand" size={32} radius={8} />
-        <h4 className="text-body font-semibold text-fg-primary">상담 레포트</h4>
+        <h4 className="text-body font-semibold text-fg-primary">상담 리포트</h4>
       </div>
 
       <p className="text-body-sm text-fg-secondary leading-relaxed">

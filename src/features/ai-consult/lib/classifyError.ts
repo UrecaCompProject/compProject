@@ -96,7 +96,7 @@ function detectErrorType(error: unknown): ErrorType {
     message.includes('functionshttperror') ||
     message.includes('요청 실패') ||
     message.includes('상담 요청 실패') ||
-    message.includes('레포트 생성 실패')
+    message.includes('리포트 생성 실패')
   ) {
     return 'server';
   }

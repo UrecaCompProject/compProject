@@ -99,7 +99,7 @@ export function useChatReport({
           {
             id: Date.now(),
             type: 'ai',
-            sentence: `레포트가 생성되어 저장되었어요.\n\n${report.summary}`,
+            sentence: `리포트가 생성되어 저장되었어요.\n\n${report.summary}`,
             quickReplies: getWelcomeQuickReplies(
               userProfile.isLoggedIn ?? false,
             ),
@@ -117,7 +117,7 @@ export function useChatReport({
               id: Date.now(),
               type: 'ai' as const,
               sentence:
-                '레포트 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
+                '리포트 생성을 중지했어요. 다시 시도하거나 새 질문을 입력해 주세요.',
               quickReplies: ['메뉴로 돌아가기'],
             },
           ]);

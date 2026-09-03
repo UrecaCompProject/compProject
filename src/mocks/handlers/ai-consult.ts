@@ -53,7 +53,7 @@ function buildRecommendResponse(input: ConsultInput): ConsultResponse {
   return {
     recommendations,
     notice: '고객님의 사용 패턴을 분석한 결과, 다음 요금제를 추천드립니다.',
-    quickReplies: ['요금제 비교하기', '레포트 받기', '다른 요금제 보기'],
+    quickReplies: ['요금제 비교하기', '리포트 받기', '다른 요금제 보기'],
     mode: 'recommend',
   };
 }
@@ -108,7 +108,7 @@ function buildReportResponse(input: ReportInput): {
   return {
     mode: 'report',
     report: {
-      summary: '상담 내용을 바탕으로 요금제 추천 레포트를 생성했습니다.',
+      summary: '상담 내용을 바탕으로 요금제 추천 리포트를 생성했습니다.',
       usageType: '일반 사용자',
       currentPlan: input.currentPlan || '미확인',
       recommendedPlans: input.recommendationResult
