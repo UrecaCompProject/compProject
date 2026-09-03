@@ -17,6 +17,11 @@ type BottomSheetProps = {
   size?: BottomSheetSize;
   dismissible?: boolean;
   className?: string;
+  // 시트 전체(핸들/헤더/바디/푸터) 배경색. 단일 배경 클래스만 적용되도록
+  // className에 색을 얹지 않고 이 prop으로 교체한다 — 유틸리티 클래스 두 개가
+  // 같은 속성(배경색)을 다투면 어느 쪽이 이기는지 Tailwind 빌드 순서에 따라
+  // 달라져 신뢰할 수 없기 때문.
+  bg?: string;
   bodyClassName?: string;
   // 이 값이 바뀔 때마다 본문 스크롤을 맨 위로 되돌린다.
   // (children이 바뀌어도 스크롤 컨테이너 자체는 계속 마운트되어 있어 scrollTop이 유지되기 때문)
@@ -45,6 +50,7 @@ export default function BottomSheet({
   size = 'large',
   dismissible = true,
   className = '',
+  bg = 'bg-surface-card',
   bodyClassName = 'px-5',
   scrollResetKey,
   bodyRef: externalBodyRef,
@@ -76,7 +82,7 @@ export default function BottomSheet({
             fixed bottom-0 left-1/2 z-50
             flex w-full max-w-[768px]
             -translate-x-1/2 flex-col
-            rounded-t-3xl bg-surface-card
+            rounded-t-3xl ${bg}
             outline-none
             transition-[height,max-height] duration-300 ease-out
             ${sizeClasses[size]}

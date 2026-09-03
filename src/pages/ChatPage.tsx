@@ -6,16 +6,13 @@ import {
   QuickReplies,
   RefreshCheckModal,
 } from '@/features/ai-consult';
-import {
-  findLastRecommendations,
-  getWelcomeQuickReplies,
-} from '@/features/ai-consult/lib/chatHelpers';
+import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { useChat } from '@/features/ai-consult/model/useChat';
+import RecommendationDetailSheet from '@/features/ai-consult/ui/RecommendationDetailSheet';
 import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
 import { SigninModal, SignupChat } from '@/features/auth';
 import { ChatQuizMessage } from '@/features/chat-quiz';
 import {
-  ReportCard,
   ReportGenerateConfirmModal,
   ReportSheet,
 } from '@/features/consult-report';
@@ -151,15 +148,25 @@ export default function ChatPage() {
       function WrappedReportSheet(props: {
         open: boolean;
         onOpenChange: (open: boolean) => void;
+        openLatest?: boolean;
       }) {
-        return <ReportSheet {...props} slots={{ PlanSubscriptionSheet }} />;
+        return (
+          <ReportSheet
+            {...props}
+            slots={{
+              PlanSubscriptionSheet,
+              PlanDetailContent,
+              PlanDetailSheet: RecommendationDetailSheet,
+            }}
+          />
+        );
       },
     [],
   );
 
   const messageSlots = useMemo(
     () => ({
-      ReportCard,
+      ReportSheet: WrappedReportSheet,
       CompareResultSheet: WrappedCompareResultSheet,
       SignupChat,
       ChatQuizMessage,
@@ -167,7 +174,7 @@ export default function ChatPage() {
       ScratchGame,
       PlanDetailContent,
     }),
-    [WrappedCompareResultSheet],
+    [WrappedReportSheet, WrappedCompareResultSheet],
   );
   const menuSlots = useMemo(
     () => ({
@@ -232,10 +239,10 @@ export default function ChatPage() {
   };
 
   // 레포트 생성이 끝나면 퀵 리플라이가 접혀 있던 상태라도 강제로 펼친다.
-  // 이전에 추천받은 요금제가 있으면 함께 넘겨서, 무조건 일반 상담 리포트로
-  // 처리돼 요금제 정보가 빠지는 일이 없게 한다.
+  // 추천 요금제는 handleGenerateReport 내부에서 대화 전체를 훑어 모으므로
+  // (여러 번 추천받았으면 그만큼 여러 라운드) 여기서 따로 넘길 값은 없다.
   const handleGenerateReportAndExpand = async () => {
-    await handleGenerateReport(findLastRecommendations(messages));
+    await handleGenerateReport();
     setIsQuickRepliesCollapsed(false);
   };
 

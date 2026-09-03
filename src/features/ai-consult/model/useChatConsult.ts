@@ -10,6 +10,7 @@ export interface UseChatConsultDeps {
     response: ConsultResponse,
     request: ConsultInput,
     defaultMode: ConsultInput['mode'],
+    startsNewRecommendGroup?: boolean,
   ) => void;
 }
 
@@ -40,7 +41,8 @@ export function useChatConsult({
   const submitForm = useCallback(
     async (request: ConsultInput, signal: AbortSignal) => {
       const response = await requestConsult(request, signal);
-      addAIResponse(response, request, 'recommend');
+      // 정보 입력 폼 제출로 얻은 응답 — 새 groupId를 발급하는 라운드로 표시
+      addAIResponse(response, request, 'recommend', true);
     },
     [addAIResponse],
   );

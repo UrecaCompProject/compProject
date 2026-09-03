@@ -5,6 +5,8 @@ import { useIsLoggedIn } from '@/entities/user';
 import type { GameId } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
+import { getWelcomeQuickReplies } from '../lib/chatHelpers';
+
 import { useChatAbort } from './useChatAbort';
 import { useChatActions } from './useChatActions';
 import { useChatAuthGate } from './useChatAuthGate';
@@ -87,6 +89,25 @@ export function useChat({ signinModal, mission, game, reward }: UseChatParams) {
     setMessages: state.setMessages,
   });
 
+  const wasLoggedInRef = useRef(isLoggedIn);
+  const { resetChat, setMessages } = state;
+
+  useEffect(() => {
+    if (wasLoggedInRef.current && !isLoggedIn) {
+      resetChat();
+    } else if (!wasLoggedInRef.current && isLoggedIn) {
+      // 채팅 도중 로그인하면 웰컴 메시지의 퀵 리플라이를 로그인 기준으로 갱신합니다.
+      setMessages((prev) => {
+        if (prev.length === 0 || prev[0].type !== 'ai') return prev;
+        return [
+          { ...prev[0], quickReplies: getWelcomeQuickReplies(true) },
+          ...prev.slice(1),
+        ];
+      });
+    }
+    wasLoggedInRef.current = isLoggedIn;
+  }, [isLoggedIn, resetChat, setMessages]);
+
   const compare = useChatCompare({
     profile: state.profile,
     isLoggedIn,
@@ -102,6 +123,7 @@ export function useChat({ signinModal, mission, game, reward }: UseChatParams) {
   const report = useChatReport({
     messages: state.messages,
     effectiveCurrentPlan,
+    changedPlan: subscription.changedPlan,
     userProfile: state.profile,
     isLoading: state.isLoading,
     setIsLoading: state.setIsLoading,

@@ -16,8 +16,10 @@ export default function ReportGenerateConfirmModal({
 
   return (
     <div className="flex flex-col gap-2 text-center text-body text-fg-tertiary">
-      레포트를 생성하면 지금까지의 대화 내용이 초기화되고 레포트 요약만 채팅에
-      남아요.
+      <div className="wrap-normal break-keep">
+        레포트를 생성하면 지금까지의 대화 내용이 초기화되고 레포트 요약만 채팅에
+        남아요.
+      </div>
       <br />
       <br />
       레포트를 생성하시겠어요?
