@@ -145,7 +145,7 @@ export default function BottomSheet({
 
             <div
               ref={bodyRef}
-              className={`min-h-0 flex-1 overflow-y-auto ${bodyClassName}`}
+              className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${bodyClassName}`}
             >
               {children}
             </div>
