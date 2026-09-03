@@ -377,7 +377,7 @@ export function useChatAuthGate({
 
   const requireLogin = useCallback(() => {
     openModal({
-      title: '회원관리',
+      title: '로그인',
       content: <SigninModal onSignupClick={openSignupChat} />,
     });
   }, [openModal, openSignupChat]);

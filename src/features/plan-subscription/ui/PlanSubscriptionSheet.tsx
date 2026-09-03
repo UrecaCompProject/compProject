@@ -42,6 +42,9 @@ export interface SubscriptionShell {
   onBack?: () => void;
   size: 'content' | 'large';
   children: ReactNode;
+  // 약관 동의 후 가입 신청 요청이 진행 중일 때 false — 호출부는 자신의
+  // BottomSheet에 그대로 전달해 스와이프/배경 클릭/닫기 버튼으로 닫히지 않게 한다.
+  dismissible: boolean;
 }
 
 interface PlanSubscriptionSheetProps {
@@ -200,14 +203,14 @@ function PlanSelectItem({
           : 'border-border bg-white hover:bg-surface-page'
       }`}
     >
+      {isCurrent && (
+        <div className="rounded-full w-fit bg-brand-promo-primary/10 px-2 py-0.5 text-[12px] font-medium mb-2 text-brand-promo-primary">
+          현재 요금제
+        </div>
+      )}
       <div className="flex items-baseline justify-between">
         <span className="flex items-center gap-1.5 text-body font-semibold text-fg-primary">
           {plan.planName}
-          {isCurrent && (
-            <span className="rounded-full bg-brand-promo-primary/10 px-2 py-0.5 text-caption font-semibold text-brand-promo-primary">
-              현재 요금제
-            </span>
-          )}
         </span>
         <span className="text-body font-bold text-brand-promo-secondary">
           월 {plan.monthlyFee?.toLocaleString()}원
@@ -237,10 +240,16 @@ export default function PlanSubscriptionSheet({
   onExit,
   renderShell,
 }: PlanSubscriptionSheetProps) {
-  const firstStep: SubscriptionStep = 'planSelect';
-  const firstStepIndex = 0;
+  // 요금제를 미리 정하고 들어온 경우(요금제 상세 "신청하기" 등)는 요금제 선택을
+  // 다시 보여줄 필요가 없으므로 배송 단계부터 시작하고, 뒤로가기로도 선택
+  // 단계에 다시 진입할 수 없게 한다. plan이 없을 때만(예: 채팅에서 추천받은
+  // 요금제가 없는 채로 "요금제 가입하기") 선택 단계부터 시작한다.
+  const initialFirstStep: SubscriptionStep = plan ? 'delivery' : 'planSelect';
+  const [firstStep, setFirstStep] =
+    useState<SubscriptionStep>(initialFirstStep);
+  const firstStepIndex = STEPS.indexOf(firstStep);
 
-  const [step, setStep] = useState<SubscriptionStep>(firstStep);
+  const [step, setStep] = useState<SubscriptionStep>(initialFirstStep);
   const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
     plan,
   );
@@ -252,7 +261,9 @@ export default function PlanSubscriptionSheet({
   const prevActiveRef = useRef(active);
   useEffect(() => {
     if (active && !prevActiveRef.current) {
-      setStep('planSelect');
+      const nextFirstStep: SubscriptionStep = plan ? 'delivery' : 'planSelect';
+      setFirstStep(nextFirstStep);
+      setStep(nextFirstStep);
       setSelectedPlan(plan);
       setForm(initialForm);
       setExpandedTerm(null);
@@ -360,10 +371,10 @@ export default function PlanSubscriptionSheet({
     switch (step) {
       case 'planSelect':
         return '가입할 요금제를 선택해주세요';
-      case 'delivery':
-        return form.simType === 'usim'
-          ? '배송 주소를 입력해주세요'
-          : 'USIM 유형을 선택해주세요';
+      // case 'delivery':
+      //   return form.simType === 'usim'
+      //     ? '배송 주소를 입력해주세요'
+      //     : 'USIM 유형을 선택해주세요';
       case 'agreement':
         return '필수 약관에 모두 동의해주세요';
       default:
@@ -399,7 +410,7 @@ export default function PlanSubscriptionSheet({
   const handlePrev = () => {
     const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
     const index = order.indexOf(step);
-    setStep(order[Math.max(0, index - 1)]);
+    setStep(order[Math.max(firstStepIndex, index - 1)]);
   };
 
   const allAgreed =
@@ -416,18 +427,20 @@ export default function PlanSubscriptionSheet({
   }, [step]);
 
   const footer = (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-3 w-full">
       {/* 단계 전환 시 높이가 흔들리지 않도록 안내 문구 영역을 항상 한 줄 확보 */}
-      <p
-        className={`text-center text-caption text-error ${showHelper ? '' : 'invisible'}`}
-      >
-        {showHelper ? helperText : '\u00A0'}
-      </p>
+      {showHelper && (
+        <p
+          className={`text-center text-caption text-error ${showHelper ? '' : 'invisible'}`}
+        >
+          {showHelper ? helperText : '\u00A0'}
+        </p>
+      )}
       {submitError && (
         <p className="text-center text-caption text-error">{submitError}</p>
       )}
       <div className="flex gap-2 w-full">
-        {step !== 'complete' && step !== 'planSelect' && (
+        {step !== 'complete' && step !== firstStep && (
           <Button
             key={`nav-prev-${step}`}
             variant="outline"
@@ -489,7 +502,7 @@ export default function PlanSubscriptionSheet({
   const size: SubscriptionShell['size'] = 'large';
 
   const body = (
-    <div className="space-y-5 pb-2">
+    <div className="space-y-5 pb-4">
       <StepIndicator
         current={step}
         onChange={setStep}
@@ -752,6 +765,7 @@ export default function PlanSubscriptionSheet({
     onBack,
     size,
     children: body,
+    dismissible: !isSubmitting,
   };
 
   if (renderShell) return <>{renderShell(shell, scrollContainerRef)}</>;
@@ -765,6 +779,7 @@ export default function PlanSubscriptionSheet({
       footer={footer}
       onBack={onBack}
       size={size}
+      dismissible={!isSubmitting}
       bodyRef={scrollContainerRef}
     >
       {body}

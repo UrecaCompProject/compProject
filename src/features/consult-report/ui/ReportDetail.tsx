@@ -1,8 +1,6 @@
-import type { ComponentType } from 'react';
 import { useEffect, useRef } from 'react';
 
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
-import type { PlanDetailItem } from '@/shared/types/plan';
 
 import ComparedPlanCard from './ComparedPlanCard';
 import RecommendedPlansCard from './RecommendedPlansCard';
@@ -10,30 +8,15 @@ import ReportSummaryCard from './ReportSummaryCard';
 
 import type { ReportRow } from '../api/getReport';
 
-interface PlanDetailContentProps {
-  plan: PlanDetailItem | null;
-  isLoading: boolean;
-  error: string | null;
-}
-
 interface ReportDetailProps {
   report: ReportRow | null;
-  onSelectPlan?: (plan: RecommendedPlan) => void;
-  PlanDetailContent: ComponentType<PlanDetailContentProps>;
-  PlanDetailSheet: ComponentType<{
-    plan: RecommendedPlan | null;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onSubscribe: (plan: RecommendedPlan) => void;
-    PlanDetailContent: ComponentType<PlanDetailContentProps>;
-  }>;
+  // 요금제 행 클릭 — 요금제 조회 화면(ReportSheet의 슬라이딩 패널)을 연다.
+  onPlanClick?: (plan: RecommendedPlan) => void;
 }
 
 export default function ReportDetail({
   report,
-  onSelectPlan,
-  PlanDetailContent,
-  PlanDetailSheet,
+  onPlanClick,
 }: ReportDetailProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -82,12 +65,7 @@ export default function ReportDetail({
       />
 
       {groups.length > 0 && (
-        <RecommendedPlansCard
-          groups={groups}
-          onSelectPlan={onSelectPlan}
-          PlanDetailContent={PlanDetailContent}
-          PlanDetailSheet={PlanDetailSheet}
-        />
+        <RecommendedPlansCard groups={groups} onPlanClick={onPlanClick} />
       )}
 
       {analysis.comparedPlan && (
