@@ -531,7 +531,7 @@ function resolveNextMode(input: ConsultInput): ChatMode {
   if (/요금제\s*가입|가입\s*하기|신청/.test(t)) return 'subscribe';
   if (/상담|문의|질문|도움/.test(t)) return 'general';
   if (/게임|미니게임/.test(t)) return 'game';
-  if (/출석|출첵|출석체크/.test(t)) return 'attendance';
+  if (/출석|출첵|출석\s*체크/.test(t)) return 'attendance';
   if (/레포트|리포트|레포트\s*생성|리포트\s*생성/.test(t)) return 'report';
 
   // 메뉴 상태에서 통신과 무관한 입력은 상담 외 주제로 분기
@@ -555,7 +555,7 @@ function buildMenuResponse(isLoggedIn: boolean): RecommendOutput {
           '요금제 비교하기',
           '요금제 가입하기',
           '게임 하기',
-          '출석체크',
+          '출석 체크',
           '기타 상담',
         ]
       : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
@@ -730,9 +730,37 @@ function buildOutOfScopeResponse(isLoggedIn: boolean): RecommendOutput {
     notice:
       '죄송해요, 저는 통신 요금제 상담 도우미예요. 요금제 추천, 비교, 가입, 혜택 등 통신 관련 질문만 도와드릴 수 있어요. 아래 메뉴에서 원하는 항목을 선택해 주세요.',
     quickReplies: isLoggedIn
-      ? ['요금제 추천받기', '요금제 비교하기', '요금제 가입하기', '기타 상담']
+      ? [
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '요금제 가입하기',
+          '게임 하기',
+          '출석 체크',
+          '기타 상담',
+        ]
       : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
     mode: 'out_of_scope',
+  };
+}
+
+// 이미 진행 중이던 모드(예: 비교)에서 다음 입력을 해석하지 못했을 때의 응답 —
+// 직전 안내 문구를 그대로 반복하지 않고, 이해하지 못했음을 알리고 메뉴 선택을 유도한다.
+function buildNotUnderstoodResponse(isLoggedIn: boolean): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '잘 이해하지 못했습니다. 아래 메뉴에서 원하는 항목을 선택해 주시겠어요?',
+    quickReplies: isLoggedIn
+      ? [
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '요금제 가입하기',
+          '게임 하기',
+          '출석 체크',
+          '기타 상담',
+        ]
+      : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
+    mode: 'menu',
   };
 }
 
@@ -763,12 +791,12 @@ function buildGameResponse(): RecommendOutput {
   };
 }
 
-// 출석체크 기초 응답.
+// 출석 체크 기초 응답.
 function buildAttendanceResponse(): RecommendOutput {
   return {
     recommendations: [],
     notice:
-      '출석체크를 도와드릴게요. 오늘 출석을 등록하거나 누적 현황을 확인할 수 있어요.',
+      '출석 체크를 도와드릴게요. 오늘 출석을 등록하거나 누적 현황을 확인할 수 있어요.',
     quickReplies: ['오늘 출석 등록', '출석 현황 보기', '메뉴로 돌아가기'],
     mode: 'attendance',
   };
@@ -841,6 +869,12 @@ export async function recommendPlan(
     const parsedNames = parseComparePlanNames(input.userMessage ?? '', plans);
     if (parsedNames) {
       return comparePlans(input, plans, parsedNames[0], parsedNames[1]);
+    }
+    // 이미 비교 모드에서 안내를 받은 상태(input.mode === 'compare')인데도 요금제 이름을
+    // 파싱하지 못했다면, 직전과 같은 안내 문구를 그대로 반복하는 대신 이해하지 못했다는
+    // 응답으로 메뉴 선택을 유도한다. 이제 막 비교 모드에 진입한 첫 안내는 그대로 유지.
+    if (input.mode === 'compare') {
+      return buildNotUnderstoodResponse(input.isLoggedIn ?? false);
     }
     // 비교할 요금제가 지정되지 않았으면 안내 메시지
     return buildCompareResponse(input.isLoggedIn ?? false);
@@ -927,7 +961,7 @@ export async function generateQuickReplies(
           '요금제 비교하기',
           '요금제 가입하기',
           '게임 하기',
-          '출석체크',
+          '출석 체크',
           '기타 상담',
         ]
       : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'];
