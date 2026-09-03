@@ -1,9 +1,7 @@
 import { BenefitIconLabel } from '@/shared';
+import type { BenefitOption } from '@/shared/types/plan';
 
-export interface BenefitOption {
-  imageUrl: string;
-  label: string;
-}
+export type { BenefitOption };
 
 interface PlanCompareBenefitRowProps {
   label: string;

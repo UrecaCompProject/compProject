@@ -3,10 +3,8 @@ export { default as OxQuiz } from './ui/OxQuiz';
 export { default as QuizResult } from './ui/QuizResult';
 export { default as ChatQuizMessage } from './ui/ChatQuizMessage';
 
-export { multipleChoiceQuestions } from './data/multipleChoiceQuestions';
-export { oxQuestions } from './data/oxQuestions';
-
-export { useChatQuiz } from './model/useChatQuiz';
+export { multipleChoiceQuestions } from '@/shared/data/quiz/multipleChoiceQuestions';
+export { oxQuestions } from '@/shared/data/quiz/oxQuestions';
 
 export type {
   QuizKind,

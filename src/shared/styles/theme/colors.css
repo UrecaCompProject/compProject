@@ -4,6 +4,8 @@
   --color-brand-secondary: #3572c2;
   --color-brand-light: #a9c9f0;
   --color-brand-soft: #eef3f9;
+  /* brand-promo를 흰색에 가깝게 섞은 아주 옅은 맑은 틴트 (거의 흰색) */
+  --color-brand-pale: #f3f7fe;
 
   /* BrandPromo */
   --color-brand-promo-primary: #3d74f0;
@@ -59,7 +61,7 @@
 
   /* Chat */
   /* surface-pressed(#ebf0fa) 계열의 옅고 맑은 파랑. 말풍선은 그림자로 배경과 분리 */
-  --color-chat-mine: #d8e6fb;
+  --color-chat-mine: #cfe0fa;
 
   /* Game */
   /* 카드 뒤집기 타이머가 얼마 안 남았을 때 색. semantic-error(#c9455f)는 탁하고,

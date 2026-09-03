@@ -1,5 +1,7 @@
 import { Pencil } from 'lucide-react';
 
+import Tooltip from './Tooltip';
+
 interface MyChatProps {
   sentence: string;
   onEdit?: () => void;
@@ -18,13 +20,14 @@ export default function MyChat({
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center text-fg-tertiary hover:text-brand-primary transition-colors shrink-0"
+            className="group relative -m-1 flex shrink-0 cursor-pointer items-center rounded-md p-1 text-fg-tertiary/70 transition-colors hover:bg-surface-pressed hover:text-brand-primary"
             aria-label="메시지 수정"
           >
-            <Pencil size={14} strokeWidth={2.5} className="text-[#c3cfeb]" />
+            <Pencil size={14} strokeWidth={2.5} />
+            <Tooltip>편집</Tooltip>
           </button>
         )}
-        <div className="text-[15px] leading-[150%] min-w-0 rounded-2xl rounded-tr-sm px-4 py-2.5 bg-brand-promo-primary text-surface-card whitespace-pre-line break-keep">
+        <div className="text-[15px] leading-[150%] min-w-0 rounded-2xl rounded-tr-sm px-4 py-2.5 bg-chat-mine text-fg-primary shadow-chat-mine whitespace-pre-line break-keep">
           {sentence}
         </div>
       </div>

@@ -1,25 +1,6 @@
-export interface PlanDetailItem {
-  id: string;
-  name: string;
-  category: string;
-  targetAge: string;
-  dataTier: string;
-  monthlyFee: number;
-  data: string;
-  dataSpeedAfter: string;
-  voice: string;
-  callAmountMin: number | null;
-  message: string;
-  smsAmount: number | null;
-  shareData: string;
-  tethering: string;
-  notes: string;
-  benefits: string[];
-  ottBenefits: string[];
-  addOns: string[];
-  contractPeriodMonths: number | null;
-  couponText?: string | null;
-}
+import type { PlanDetailItem } from '@/shared/types/plan';
+
+export type { PlanDetailItem };
 
 export type PriceRangeKey = 'all' | 'under5' | '5to10' | '10to20' | '20to30';
 export type DataRangeKey =

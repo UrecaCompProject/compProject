@@ -1,6 +1,6 @@
+import type { ComponentType } from 'react';
 import { useState } from 'react';
 
-import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
@@ -9,11 +9,22 @@ import { useReports } from '../model/useReports';
 import PreviewReport from './PreviewReport';
 import ReportDetail from './ReportDetail';
 
+interface ReportSheetSlots {
+  PlanSubscriptionSheet: ComponentType<{
+    active?: boolean;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    plan: RecommendedPlan | null;
+    onComplete?: () => void;
+  }>;
+}
+
 type ReportSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   // true면 열릴 때 목록 대신 가장 최근 레포트 상세로 바로 진입한다.
   openLatest?: boolean;
+  slots: ReportSheetSlots;
 };
 
 type ReportView = 'list' | 'detail';
@@ -21,6 +32,7 @@ type ReportView = 'list' | 'detail';
 export default function ReportSheet({
   open,
   onOpenChange,
+  slots: { PlanSubscriptionSheet },
   openLatest = false,
 }: ReportSheetProps) {
   const { data: reports = [], isLoading } = useReports(open);

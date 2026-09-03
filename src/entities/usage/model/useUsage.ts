@@ -55,11 +55,10 @@ export function useUsage() {
     latestUsage?.data_used_gb,
     currentPlan?.dataAmountGb,
   );
-  // call_used_min은 실제로는 초 단위로 저장되어 있어 분 단위로 변환한 뒤 계산한다.
-  const callUsedMinutes =
-    latestUsage?.call_used_min != null
-      ? latestUsage.call_used_min / 60
-      : undefined;
+  // call_used_min은 실제로 초 단위이므로 분 단계로 변환해 잔여량을 계산한다.
+  const callUsedSeconds = latestUsage?.callUsedSeconds ?? 0;
+  const callUsedMinutes = callUsedSeconds / 60;
+
   const callRemaining = toRemaining(
     callUsedMinutes,
     currentPlan?.callAmountMin,
@@ -89,7 +88,7 @@ export function useUsage() {
     dataPercent,
     callRemaining,
     callPercent,
-    callUsedSeconds: latestUsage?.call_used_min,
+    callUsedSeconds,
     smsRemaining,
     smsPercent,
     gbBenefit,

@@ -1,13 +1,8 @@
 import { useState } from 'react';
 
-import type { QuizKind } from '@/features/chat-quiz';
-import {
-  GameLayer,
-  isGameId,
-  useActiveGameMeta,
-  useGameStore,
-} from '@/features/games';
 import { BottomSheet, useModalStore } from '@/shared';
+import type { GameInfrastructure } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import { useMissionCompletion } from '../model/useMissionCompletion';
 
@@ -19,6 +14,7 @@ import StoreContent from './store/StoreContent';
 import type { Mission } from '../types';
 
 type RewardSheetProps = {
+  game: GameInfrastructure;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStartQuiz?: (quizType: QuizKind) => void;
@@ -27,13 +23,8 @@ type RewardSheetProps = {
 
 type RewardView = 'reward' | 'store' | 'coupon';
 
-// const titles: Record<RewardView, string> = {
-//   reward: '혜택/이벤트',
-//   store: '혜택/이벤트',
-//   coupon: '혜택/이벤트',
-// };
-
 export default function RewardSheet({
+  game,
   open,
   onOpenChange,
   onStartQuiz,
@@ -47,9 +38,7 @@ export default function RewardSheet({
     setActiveView(view);
     setViewEntryKey((key) => key + 1);
   };
-  const activeGame = useActiveGameMeta();
-  const openGame = useGameStore((state) => state.openGame);
-  const closeGame = useGameStore((state) => state.closeGame);
+  const { activeGameMeta, openGame, closeGame, isGameId, GameLayer } = game;
   const { recordPlay } = useMissionCompletion();
   const openModal = useModalStore((state) => state.open);
 
@@ -72,7 +61,9 @@ export default function RewardSheet({
     // 혹시 남아있더라도 이 분기가 우선한다.
     if (mission.id === 'scratch') {
       handleOpenChange(false);
-      onStartScratch?.(mission.reward);
+      // 스크래치 보상은 ScratchGame이 1~5 중 랜덤으로 정한다.
+      // 여기서 고정값을 넘기면 랜덤이 무시되므로 아무것도 넘기지 않는다.
+      onStartScratch?.();
       return;
     }
 
@@ -111,13 +102,14 @@ export default function RewardSheet({
     <BottomSheet
       open={open}
       onOpenChange={handleOpenChange}
-      title={activeGame?.title ?? '혜택/이벤트'}
+      title={activeGameMeta?.title ?? '혜택/이벤트'}
       onBack={
-        activeGame?.onBack ?? (activeView === 'reward' ? undefined : handleBack)
+        activeGameMeta?.onBack ??
+        (activeView === 'reward' ? undefined : handleBack)
       }
       size="full"
       bodyClassName={
-        activeGame || activeView !== 'coupon'
+        activeGameMeta || activeView !== 'coupon'
           ? 'px-0'
           : 'bg-surface-page px-5 py-4'
       }

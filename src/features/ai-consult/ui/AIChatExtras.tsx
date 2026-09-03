@@ -1,12 +1,33 @@
-import { CompareResultSheet } from '@/features/plan-compare';
-import type { ConsultInput, RecommendedPlan } from '@/shared/lib/aiConsult';
+import type { ComponentType } from 'react';
+
+import type {
+  ConsultInput,
+  RecommendedPlan,
+  CompareResult,
+} from '@/shared/lib/aiConsult';
+import type { PlanDetailItem } from '@/shared/types/plan';
 
 import RecommendationCards from './RecommendationCards';
 import RecommendationForm from './RecommendationForm';
 
 import type { ChatMessage } from '../types';
 
-// AI 메시지의 말풍선 이외 부가 콘텐츠(추천 카드, 레포트, 비교 결과, 요금제 선택기, 폼)를 렌더링
+// AI 메시지의 말풍선 이외 부가 콘텐츠(추천 카드, 비교 결과, 요금제 선택기, 폼)를 렌더링.
+// 레포트는 말풍선의 '레포트 보기' 버튼이 ReportSheet를 직접 여는 방식으로 대체돼
+// 여기서는 더 이상 다루지 않는다.
+interface AIChatExtrasSlots {
+  CompareResultSheet: ComponentType<{
+    result?: CompareResult;
+    onSubscribe?: (plan: RecommendedPlan) => void;
+    onRecompare?: (planAName: string, planBName: string) => void;
+  }>;
+  PlanDetailContent: ComponentType<{
+    plan: PlanDetailItem | null;
+    isLoading: boolean;
+    error: string | null;
+  }>;
+}
+
 interface AIChatExtrasProps {
   message: Extract<ChatMessage, { type: 'ai' }>;
   isLast: boolean;
@@ -19,6 +40,7 @@ interface AIChatExtrasProps {
   onGenerateReport?: (plans: RecommendedPlan[]) => void;
   onFormSubmit?: (values: Partial<ConsultInput>, summary: string) => void;
   formDefaults?: Partial<ConsultInput>;
+  slots: AIChatExtrasSlots;
 }
 
 export default function AIChatExtras({
@@ -30,6 +52,7 @@ export default function AIChatExtras({
   onRecompare,
   onFormSubmit,
   formDefaults,
+  slots,
 }: AIChatExtrasProps) {
   const hasRecommendations =
     !!message.recommendations && message.recommendations.length > 0;
@@ -41,11 +64,12 @@ export default function AIChatExtras({
           plans={message.recommendations}
           onPlanSubscribe={onPlanSubscribe}
           onPlanCompare={onPlanCompare}
+          PlanDetailContent={slots.PlanDetailContent}
         />
       )}
 
       {message.compareResult && (
-        <CompareResultSheet
+        <slots.CompareResultSheet
           key={`${message.compareResult.planA.planId}-${message.compareResult.planB.planId}`}
           result={message.compareResult}
           onSubscribe={(plan) => onPlanSubscribe?.(plan)}
@@ -54,7 +78,9 @@ export default function AIChatExtras({
       )}
 
       {message.planCompare && (
-        <CompareResultSheet onSubscribe={(plan) => onPlanSubscribe?.(plan)} />
+        <slots.CompareResultSheet
+          onSubscribe={(plan) => onPlanSubscribe?.(plan)}
+        />
       )}
 
       {message.form && isLast && onFormSubmit && (

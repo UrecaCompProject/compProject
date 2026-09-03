@@ -1,9 +1,7 @@
 import { useState } from 'react';
 
-import AIChat from '@/features/ai-consult/ui/AIChat';
-import MyChat from '@/features/ai-consult/ui/MyChat';
-
-import { oxQuestions } from '../data/oxQuestions';
+import { AIChat, MyChat } from '@/shared';
+import { oxQuestions } from '@/shared/data/quiz/oxQuestions';
 
 import OxQuiz from './OxQuiz';
 import QuizResult from './QuizResult';

@@ -1,10 +1,10 @@
-import type { QuizKind } from '@/features/chat-quiz';
 import type {
   CompareResult,
   ConsultInput,
   RecommendedPlan,
   RecommendedPlanGroup,
 } from '@/shared/lib/aiConsult';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import {
   BUDGET_BUCKETS,

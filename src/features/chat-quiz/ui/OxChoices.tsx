@@ -1,3 +1,4 @@
+import { Button } from '@/shared';
 import answerOImage from '@/shared/assets/images/answer-o.png';
 import answerXImage from '@/shared/assets/images/answer-x.png';
 
@@ -23,14 +24,14 @@ export default function OxChoices({
 
         return (
           <li key={option.id}>
-            <button
+            <Button
               type="button"
-              aria-pressed={isSelected}
+              variant="chip"
+              size="md"
+              active={isSelected}
               onClick={() => onSelect(option.id)}
-              className={`relative h-[132px] w-full overflow-hidden rounded-[20px] border-2 transition-colors ${
-                isO ? 'bg-brand-soft' : 'bg-accent-soft'
-              } ${
-                isSelected ? 'border-brand-promo-primary' : 'border-transparent'
+              className={`relative h-[132px] w-full overflow-hidden rounded-[20px] px-0 py-0 ${
+                isO ? '!bg-brand-soft' : '!bg-accent-soft'
               }`}
             >
               <span className="absolute left-0 right-0 top-4 z-10 text-[24px] font-semibold text-fg-primary">
@@ -42,7 +43,7 @@ export default function OxChoices({
                 alt=""
                 className="absolute bottom-0 left-1/2 h-[92px] w-[92px] -translate-x-1/2 object-contain"
               />
-            </button>
+            </Button>
           </li>
         );
       })}

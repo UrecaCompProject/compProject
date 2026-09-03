@@ -1,7 +1,10 @@
-import { multipleChoiceQuestions } from '../data/multipleChoiceQuestions';
-import { oxQuestions } from '../data/oxQuestions';
-
-import type { MultipleChoiceQuestion, OxQuestion, QuizKind } from '../type';
+import { multipleChoiceQuestions } from '@/shared/data/quiz/multipleChoiceQuestions';
+import { oxQuestions } from '@/shared/data/quiz/oxQuestions';
+import type {
+  MultipleChoiceQuestion,
+  OxQuestion,
+  QuizKind,
+} from '@/shared/types/quiz';
 
 function pickRandomItem<T>(items: readonly T[]): T {
   if (items.length === 0) {

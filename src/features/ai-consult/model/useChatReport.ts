@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { saveReport } from '@/features/consult-report';
+import { saveReport } from '@/entities/consult-report/api/saveReport';
 import { generateReport } from '@/shared/lib/aiConsult';
 import type {
   ConsultInput,

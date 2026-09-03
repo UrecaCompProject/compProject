@@ -1,5 +1,5 @@
-import type { QuizKind } from '@/features/chat-quiz';
-import type { GameId } from '@/features/games';
+import type { GameId } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 // 채팅 내에서 진행되는 게임 — 퀴즈는 useChatQuiz, 스크래치는 ScratchGame 컴포넌트
 export type ChatGameId = 'ox' | 'multiple-choice' | 'scratch';

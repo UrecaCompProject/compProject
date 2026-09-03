@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 
 import { RefreshCw } from 'lucide-react';
 
+import Tooltip from './Tooltip';
+
 type AIChatVariant = 'default' | 'success' | 'error';
 
 const AIChatBubbleVariants: Record<AIChatVariant, string> = {
@@ -18,6 +20,7 @@ interface AIChatProps {
   /** 폼처럼 내부 요소가 w-full로 채워지는 콘텐츠는 true로 — 말풍선이
    * 내용 크기로 눌리지 않고 max-w까지 항상 꽉 차게 늘어난다. */
   fullWidth?: boolean;
+  className?: string;
 }
 
 export default function AIChat({
@@ -26,6 +29,7 @@ export default function AIChat({
   onRegenerate,
   showRegenerate = false,
   fullWidth = false,
+  className,
 }: AIChatProps) {
   return (
     <div className="flex gap-2 px-4">
@@ -34,7 +38,7 @@ export default function AIChat({
       </div>
       <div className="flex items-end gap-2 mt-2 w-full">
         <div
-          className={`text-[15px] leading-[150%] shadow-shadow rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[82%] whitespace-pre-line break-keep ${fullWidth ? 'w-full' : 'w-fit'} ${AIChatBubbleVariants[variant]}`}
+          className={`text-[15px] leading-[150%] shadow-shadow rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-[82%] whitespace-pre-line break-keep ${fullWidth ? 'w-full' : 'w-fit'} ${AIChatBubbleVariants[variant]} ${className ?? ''}`}
           role={variant === 'error' ? 'alert' : undefined}
         >
           {sentence}
@@ -43,11 +47,11 @@ export default function AIChat({
           <button
             type="button"
             onClick={onRegenerate}
-            className="flex items-center gap-1 text-caption text-fg-tertiary hover:text-brand-primary transition-colors w-fit"
+            className="group relative -m-1 flex w-fit shrink-0 cursor-pointer items-center gap-1 rounded-md p-1 text-caption text-fg-tertiary/70 transition-colors hover:bg-surface-pressed hover:text-brand-primary"
             aria-label="응답 재생성"
           >
-            <RefreshCw size={16} strokeWidth={2.5} className="text-[#c3cfeb]" />
-            {/* 재생성 */}
+            <RefreshCw size={16} strokeWidth={2.5} />
+            <Tooltip>재생성</Tooltip>
           </button>
         )}
       </div>

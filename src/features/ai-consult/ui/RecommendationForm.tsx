@@ -3,17 +3,48 @@ import { useState } from 'react';
 import { Button } from '@/shared';
 import type { ConsultForm, ConsultInput } from '@/shared/lib/aiConsult';
 
-import {
-  BUDGET_BUCKETS,
-  DATA_USAGE_BUCKETS,
-  findBucketLabel,
-  NO_PREFERENCE,
-  PRIORITY_LABELS,
-} from '../constants/consultBuckets';
+const PRIORITY_LABELS: Record<string, string> = {
+  budget: '가격 우선',
+  data: '데이터 우선',
+  max_data: '무제한 우선',
+};
 
 // 나이 필드에서 "무관"을 고르면 서버가 "값 없음"으로 취급하는 사실 값을 그대로 제출한다.
 const AGE_NO_PREFERENCE = '미제공';
 const AGE_NO_PREFERENCE_LABEL = '무관';
+
+// 데이터 사용량/예산은 서버가 숫자 입력 필드로 내려주지만, 정확한 수치 대신
+// 구간(칩)으로 고르게 하고 선택한 구간의 대표값을 실제 제출값으로 사용한다.
+// "미확인/무관" 칩은 이 문자열 sentinel을 값으로 가지며, 숫자로 변환할 수 없어
+// handleSubmit에서 자연히 제출 대상에서 빠진다 (서버 쪽 "값 없음" 처리와 동일).
+const NO_PREFERENCE = 'no_preference';
+
+const DATA_USAGE_BUCKETS: { label: string; value: number | string }[] = [
+  { label: '5GB 이하', value: 5 },
+  { label: '5GB ~ 15GB', value: 15 },
+  { label: '15GB ~ 30GB', value: 30 },
+  { label: '30GB ~ 70GB', value: 70 },
+  { label: '70GB 이상', value: 135 },
+  { label: '무제한', value: 9999 },
+  { label: '미확인', value: NO_PREFERENCE },
+];
+
+const BUDGET_BUCKETS: { label: string; value: number | string }[] = [
+  { label: '3만원 이하', value: 30000 },
+  { label: '3만원 ~ 5만원', value: 50000 },
+  { label: '5만원 ~ 7만원', value: 70000 },
+  { label: '7만원 ~ 9만원', value: 90000 },
+  { label: '9만원 이상', value: 110000 },
+  { label: '무관', value: NO_PREFERENCE },
+];
+
+function getNumberBucketLabel(
+  fieldName: string,
+  value: number | string,
+): string | undefined {
+  const buckets = fieldName === 'budget' ? BUDGET_BUCKETS : DATA_USAGE_BUCKETS;
+  return buckets.find((bucket) => bucket.value === value)?.label;
+}
 
 function NumberBucketGroup({
   buckets,
@@ -155,11 +186,10 @@ export default function RecommendationForm({
           const number = typeof value === 'number' ? value : Number(value);
           if (!isNaN(number)) {
             (result as Record<string, unknown>)[key] = number;
-            const buckets =
-              field.name === 'budget' ? BUDGET_BUCKETS : DATA_USAGE_BUCKETS;
-            // 사용자가 실제로 고른 건 대표값(정수)이 아니라 "5GB ~ 10GB" 같은 구간이므로,
-            // 채팅 로그·레포트에는 대표값이 아니라 그 구간 라벨이 그대로 남게 한다.
-            const bucketLabel = findBucketLabel(buckets, number);
+            const bucketLabel = getNumberBucketLabel(
+              field.name,
+              value as string | number,
+            );
             summaryParts.push(
               `${field.label}: ${
                 bucketLabel ??

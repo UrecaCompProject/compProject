@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { postLogout } from '@/features/auth';
+import postLogout from '@/features/auth/api/postLogout';
 import { Button, useModalStore } from '@/shared';
 
 export default function LogoutCheckModal() {

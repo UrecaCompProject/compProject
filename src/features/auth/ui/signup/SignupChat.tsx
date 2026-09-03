@@ -1,8 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 
 import { useIsLoggedIn } from '@/entities/user';
-import AIChat from '@/features/ai-consult/ui/AIChat';
-import { Button, Input } from '@/shared';
+import { AIChat, Button, Input } from '@/shared';
 
 import { formatTime, maskBirth, maskName, maskPhone } from '../../lib/signup';
 import { useSignupFlow } from '../../model/useSignupFlow';
@@ -84,6 +83,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
     handleCredentialsChange,
     handleSubmitCredentials,
     handleCompleteSignup,
+    handleBackToCredentials,
   } = useSignupFlow(onFinish);
 
   // 회원가입 진행 중 로그인 완료 시 안내문구·입력폼 자동 숨김
@@ -299,13 +299,23 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   </span>
                 </label>
                 {completeError && <FieldError>{completeError}</FieldError>}
-                <Button
-                  onClick={handleCompleteSignup}
-                  disabled={!agreedToPrivacy || isCompletingSignup}
-                  className="w-full"
-                >
-                  {isCompletingSignup ? '처리 중...' : '가입 완료하기'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleBackToCredentials}
+                    disabled={isCompletingSignup}
+                    className="flex-1"
+                  >
+                    이전
+                  </Button>
+                  <Button
+                    onClick={handleCompleteSignup}
+                    disabled={!agreedToPrivacy || isCompletingSignup}
+                    className="flex-1"
+                  >
+                    {isCompletingSignup ? '처리 중...' : '가입 완료하기'}
+                  </Button>
+                </div>
               </div>
             }
           />

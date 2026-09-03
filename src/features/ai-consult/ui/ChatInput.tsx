@@ -2,11 +2,11 @@ import { useState } from 'react';
 
 import { ArrowUp, Menu, Square } from 'lucide-react';
 
-import { useIsLoggedIn, SigninModal } from '@/features/auth';
-import type { QuizKind } from '@/features/chat-quiz';
-import { Button, Input, useModalStore } from '@/shared';
+import { Button, Input } from '@/shared';
+import type { GameInfrastructure } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
-import ChatMenuBar from './ChatMenuBar';
+import ChatMenuBar, { type ChatMenuBarSlots } from './ChatMenuBar';
 
 interface ChatInputProps {
   value: string;
@@ -15,8 +15,11 @@ interface ChatInputProps {
   onStop?: () => void;
   onStartQuiz?: (quizType: QuizKind) => void;
   onStartScratch?: (reward?: number) => void;
-  onSignupClick?: () => void;
+  isLoggedIn: boolean;
+  onRequireLogin: () => void;
   disabled?: boolean;
+  game: GameInfrastructure;
+  menuSlots: ChatMenuBarSlots;
 }
 
 export default function ChatInput({
@@ -26,23 +29,17 @@ export default function ChatInput({
   onStop,
   onStartQuiz,
   onStartScratch,
-  onSignupClick,
+  isLoggedIn,
+  onRequireLogin,
   disabled = false,
+  game,
+  menuSlots,
 }: ChatInputProps) {
-  const isLogin = useIsLoggedIn();
-  const openModal = useModalStore((state) => state.open);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const requireLogin = () => {
-    openModal({
-      title: '회원관리',
-      content: <SigninModal onSignupClick={onSignupClick} />,
-    });
-  };
-
   const handleSend = () => {
-    if (!isLogin) {
-      requireLogin();
+    if (!isLoggedIn) {
+      onRequireLogin();
       return;
     }
     onSend(value);
@@ -51,7 +48,7 @@ export default function ChatInput({
   return (
     <div className="relative">
       <div className="flex items-center gap-2 px-4 py-3 bg-white border-t border-border">
-        {isLogin && (
+        {isLoggedIn && (
           <Button
             variant="secondary"
             size="icon"
@@ -72,14 +69,14 @@ export default function ChatInput({
             if (e.key === 'Enter') handleSend();
           }}
           onFocus={(e) => {
-            if (!isLogin) {
+            if (!isLoggedIn) {
               e.target.blur();
-              requireLogin();
+              onRequireLogin();
             }
           }}
-          readOnly={!isLogin}
+          readOnly={!isLoggedIn}
           placeholder={
-            isLogin ? 'AI에게 질문해보세요' : '로그인 후 질문할 수 있습니다'
+            isLoggedIn ? 'AI에게 질문해보세요' : '로그인 후 질문할 수 있습니다'
           }
           disabled={disabled}
           className="flex-1"
@@ -102,7 +99,7 @@ export default function ChatInput({
             size="icon"
             round
             onClick={handleSend}
-            disabled={!isLogin || !value.trim()}
+            disabled={!isLoggedIn || !value.trim()}
             aria-label="메시지 전송"
           >
             <ArrowUp size={16} />
@@ -113,9 +110,11 @@ export default function ChatInput({
       <ChatMenuBar
         isMenuOpen={isMenuOpen}
         onMenuClose={() => setIsMenuOpen(false)}
+        game={game}
         onStartQuiz={onStartQuiz}
         onStartScratch={onStartScratch}
         onSend={onSend}
+        slots={menuSlots}
       />
     </div>
   );

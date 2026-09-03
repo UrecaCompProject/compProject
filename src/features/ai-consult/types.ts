@@ -1,13 +1,13 @@
 import type {
-  QuizQuestionMessage,
-  QuizResultMessage,
-} from '@/features/chat-quiz';
-import type {
   CompareResult,
   ConsultForm,
   RecommendedPlan,
   ReportOutput,
 } from '@/shared/lib/aiConsult';
+import type {
+  QuizQuestionMessage,
+  QuizResultMessage,
+} from '@/shared/types/quiz';
 
 export type MessageType =
   'ai' | 'user' | 'signup' | 'quiz-question' | 'quiz-result' | 'scratch-game';

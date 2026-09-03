@@ -1,4 +1,4 @@
-import type { MultipleChoiceQuestion } from '../type';
+import type { MultipleChoiceQuestion } from '@/shared/types/quiz';
 
 export const multipleChoiceQuestions: MultipleChoiceQuestion[] = [
   {

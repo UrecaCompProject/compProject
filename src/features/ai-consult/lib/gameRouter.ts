@@ -1,5 +1,5 @@
-import type { QuizKind } from '@/features/chat-quiz';
-import type { GameId } from '@/features/games';
+import type { GameId } from '@/shared/types/games';
+import type { QuizKind } from '@/shared/types/quiz';
 
 import {
   CHAT_GAME_TO_QUIZ,
