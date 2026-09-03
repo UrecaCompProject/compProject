@@ -39,6 +39,9 @@ export interface UseChatConsultDeps {
     defaultMode: ConsultInput['mode'],
     startsNewRecommendGroup?: boolean,
   ) => void;
+  // 서버가 가입(subscribe) 의도로 응답하면 바로 가입 시트를 연다 —
+  // 클라이언트 정규식이 놓친 표현을 LLM 의도 분류가 잡은 경우를 위한 보강.
+  onSubscribeMode?: () => void;
 }
 
 export interface ChatConsult {
@@ -53,6 +56,7 @@ export interface ChatConsult {
 
 export function useChatConsult({
   addAIResponse,
+  onSubscribeMode,
 }: UseChatConsultDeps): ChatConsult {
   const sendQuestion = useCallback(
     async (
@@ -71,8 +75,9 @@ export function useChatConsult({
       // 정규식이 놓친 값, 상대적 재질의로 바뀐 값, 해제/초기화가 다음 턴에도 유지되도록.
       const mergedProfile = applyResolvedSlots(nextProfile, response);
       addAIResponse(response, mergedProfile, mergedProfile.mode);
+      if (response.mode === 'subscribe') onSubscribeMode?.();
     },
-    [addAIResponse],
+    [addAIResponse, onSubscribeMode],
   );
 
   const submitForm = useCallback(
