@@ -210,7 +210,10 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
         return;
       }
 
-      // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
+      // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료.
+      // 라우터가 처리하는 경우에도 입력창은 비워야 하므로(직접 타이핑한 질문이
+      // 라우터에서 처리될 수 있음) 라우터 호출 전에 입력창을 먼저 비운다.
+      setInput('');
       const signal = startRequest();
       const result = await router.handleQuickReply(text, signal);
 
@@ -232,7 +235,6 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
           },
         ]);
       }
-      setInput('');
 
       // 재시도를 위해 마지막 사용자 입력 보관
       lastUserInputRef.current = trimmed;

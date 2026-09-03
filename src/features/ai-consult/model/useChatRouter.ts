@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
+import { useCurrentPlan } from '@/entities/plan';
+import { useBadgeBalance } from '@/features/reward';
 import type {
   RecommendedPlan,
   ConsultInput,
@@ -69,6 +71,10 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
     retryLastInput,
   } = deps;
 
+  // 본인 정보 조회 답변용 — 로그인 상태에서만 실제 요청이 나간다.
+  const { data: currentPlan } = useCurrentPlan(isLoggedIn);
+  const badgeBalance = useBadgeBalance();
+
   const handleQuickReply = useCallback(
     async (text: string, signal: AbortSignal) => {
       const trimmed = text.trim();
@@ -80,6 +86,8 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
         profile,
         isLoggedIn,
         effectiveCurrentPlan,
+        currentPlan,
+        badgeBalance,
         setMessages,
         setProfile,
         setIsLoading,
@@ -100,6 +108,8 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
       profile,
       isLoggedIn,
       effectiveCurrentPlan,
+      currentPlan,
+      badgeBalance,
       setMessages,
       setProfile,
       setIsLoading,

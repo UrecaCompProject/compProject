@@ -17,6 +17,7 @@ import {
   getQuizIntent,
 } from './chatHelpers';
 import { handleGameSelect } from './gameRouter';
+import { buildMyInfoAnswer, detectMyInfoIntent } from './myInfoQuery';
 
 import type { ChatGameId, SheetGameId } from '../constants/gameList';
 import type { ChatMessage } from '../types';
@@ -34,6 +35,9 @@ export interface QuickReplyContext {
   profile: ConsultInput;
   isLoggedIn: boolean;
   effectiveCurrentPlan: string | undefined;
+  // "내 요금제 뭐야 / 배지 몇 개야" 류 본인 정보 조회 답변에 사용
+  currentPlan: RecommendedPlan | null | undefined;
+  badgeBalance: number;
   setMessages: SetMessages;
   setProfile: (p: ConsultInput) => void;
   setIsLoading: (v: boolean) => void;
@@ -68,6 +72,8 @@ export async function routeQuickReply(
     profile,
     isLoggedIn,
     effectiveCurrentPlan,
+    currentPlan,
+    badgeBalance,
     setMessages,
     setProfile,
     setIsLoading,
@@ -86,6 +92,23 @@ export async function routeQuickReply(
   // "다시 시도" 퀵리플라이 — 마지막 사용자 입력을 재전송
   if (text === '다시 시도') {
     retryLastInput();
+    return 'handled';
+  }
+
+  // "내 요금제 뭐야", "배지 몇 개야" 등 본인 정보 조회 — API로 확인 가능한
+  // 본인의 요금제/배지만 바로 답하고, 타인 정보·민감정보는 거절한다.
+  const myInfoIntent = detectMyInfoIntent(text);
+  if (myInfoIntent) {
+    const { sentence, quickReplies } = buildMyInfoAnswer(myInfoIntent, {
+      isLoggedIn,
+      currentPlan,
+      badgeBalance,
+    });
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text },
+      buildAIMessage(sentence, quickReplies),
+    ]);
     return 'handled';
   }
 
