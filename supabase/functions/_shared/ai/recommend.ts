@@ -185,7 +185,14 @@ function buildCandidateFilters(input: ConsultInput): PlanFilter[] {
     NonNullable<ConsultInput['priority']>,
     PlanFilter[]
   > = {
-    max_data: [(p) => ageOk(p) && p.monthly_fee <= budget, (p) => ageOk(p)],
+    max_data: [
+      // 요청한 데이터 하한을 지키면서 예산 내 → 하한만 지키면 → 예산만 지키면 → 연령만
+      (p) =>
+        ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
+      (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage,
+      (p) => ageOk(p) && p.monthly_fee <= budget,
+      (p) => ageOk(p),
+    ],
     data: [
       (p) =>
         ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
@@ -919,6 +926,12 @@ export async function recommendPlan(
   const candidates = filterRecommendPlans(plans, input);
   const notice = buildNotice(plans, input);
 
+  if (candidates.length === 0) {
+    return notice
+      ? { recommendations: [], notice, mode: 'recommend' }
+      : { recommendations: [], mode: 'recommend' };
+  }
+
   const codeRecs: RecommendOutput = {
     recommendations: candidates.slice(0, 3).map(
       (p) =>
@@ -930,14 +943,26 @@ export async function recommendPlan(
         }) as RecommendedPlan,
     ),
   };
-  const sanitized = await sanitizeRecommendations(codeRecs, plans, input);
 
-  if (!notice) return { ...sanitized, mode: 'recommend' };
+  // 사유 생성과 안내문 다듬기는 서로 독립적인 LLM 호출이므로 병렬로 실행한다.
+  const [sanitized, finalNotice] = await Promise.all([
+    sanitizeRecommendations(codeRecs, plans, input),
+    notice
+      ? refineNoticeText(candidates, input, notice)
+      : Promise.resolve<string | undefined>(undefined),
+  ]);
 
-  if (candidates.length === 0) {
-    return { recommendations: [], notice, mode: 'recommend' };
-  }
+  return finalNotice
+    ? { ...sanitized, notice: finalNotice, mode: 'recommend' }
+    : { ...sanitized, mode: 'recommend' };
+}
 
+// buildNotice가 만든 기본 안내문을 LLM으로 자연스럽게 다듬는다. 실패하면 원문을 유지한다.
+async function refineNoticeText(
+  candidates: Plan[],
+  input: ConsultInput,
+  fallbackNotice: string,
+): Promise<string> {
   const plansText = candidates.slice(0, 3).map(formatPlanForPrompt).join('\n');
   const filledPrompt = fillTemplate(noticePromptText, {
     currentPlan: input.currentPlan ?? '미등록',
@@ -946,17 +971,16 @@ export async function recommendPlan(
     ageGroup: input.ageGroup ?? '미제공',
     ott: input.ott?.join(', ') || '없음',
     priority: input.priority ?? 'budget',
-    fallback: notice,
+    fallback: fallbackNotice,
     plans: plansText,
   });
 
   try {
     const raw = await chatOpenAI(noticeSystemPrompt, filledPrompt);
     const parsed = safeJsonParse<{ notice: string }>(raw);
-    const finalNotice = parsed?.notice?.trim() || notice;
-    return { ...sanitized, notice: finalNotice, mode: 'recommend' };
+    return parsed?.notice?.trim() || fallbackNotice;
   } catch {
-    return { ...sanitized, notice, mode: 'recommend' };
+    return fallbackNotice;
   }
 }
 
