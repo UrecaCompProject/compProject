@@ -10,7 +10,11 @@ import type {
 import type { GameId } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
-import { buildErrorMessage, findLastRecommendedPlan } from '../lib/chatHelpers';
+import {
+  buildAIMessage,
+  buildErrorMessage,
+  findLastRecommendedPlan,
+} from '../lib/chatHelpers';
 
 import { useChatConsult } from './useChatConsult';
 import { useChatRouter } from './useChatRouter';
@@ -89,6 +93,7 @@ function handleConsultError(
 export interface UseChatActionsDeps {
   isLoggedIn: boolean;
   isLoading: boolean;
+  isSignupInProgress: boolean;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
   messages: ChatMessage[];
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
@@ -134,6 +139,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
   const {
     isLoggedIn,
     isLoading,
+    isSignupInProgress,
     setIsLoading,
     messages,
     setMessages,
@@ -208,6 +214,26 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
       const trimmed = text.trim();
       if (!trimmed || isLoading) return;
 
+      if (isSignupInProgress) {
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (
+            last?.type === 'ai' &&
+            last.sentence ===
+              '회원가입을 먼저 완료하거나 취소한 뒤 이용할 수 있어요.'
+          ) {
+            return prev;
+          }
+          return [
+            ...prev,
+            buildAIMessage(
+              '회원가입을 먼저 완료하거나 취소한 뒤 이용할 수 있어요.',
+            ),
+          ];
+        });
+        return;
+      }
+
       // 비로그인 상태로 5회 이상 대화했다면, 퀵리플라이 등 어떤 버튼을 눌러도
       // 실제 동작 대신 로그인 모달을 띄운다 (텍스트 입력은 ChatInput에서 이미 항상 막혀있음).
       if (!isLoggedIn && aiResponseCount >= 5) {
@@ -262,6 +288,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     },
     [
       isLoading,
+      isSignupInProgress,
       isLoggedIn,
       aiResponseCount,
       requireLogin,

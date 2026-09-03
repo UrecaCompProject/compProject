@@ -42,6 +42,7 @@ interface ChatMenuBarProps {
   onStartQuiz?: (quizType: QuizKind) => void;
   onStartScratch?: (reward?: number) => void;
   onSend?: (text: string) => void;
+  disabled?: boolean;
   slots: ChatMenuBarSlots;
 }
 
@@ -54,6 +55,7 @@ export default function ChatMenuBar({
   onStartQuiz,
   onStartScratch,
   onSend,
+  disabled = false,
   slots,
 }: ChatMenuBarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,8 +64,11 @@ export default function ChatMenuBar({
   const openSheet = useChatMenuSheetStore((s) => s.openSheet);
   const setOpenSheet = useChatMenuSheetStore((s) => s.setOpenSheet);
   const sheetHandlers = (sheet: ChatMenuSheet) => ({
-    open: openSheet === sheet,
-    onOpenChange: (next: boolean) => setOpenSheet(next ? sheet : null),
+    open: !disabled && openSheet === sheet,
+    onOpenChange: (next: boolean) => {
+      if (disabled) return;
+      setOpenSheet(next ? sheet : null);
+    },
   });
 
   useClickOutside(containerRef, isMenuOpen && openSheet === null, onMenuClose);
@@ -87,6 +92,7 @@ export default function ChatMenuBar({
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setOpenSheet('reward')}
+              disabled={disabled}
               aria-label="혜택/이벤트 메뉴 열기"
             >
               <IconBadge icon={Gift} size={52} radius={16} />
@@ -97,6 +103,7 @@ export default function ChatMenuBar({
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setOpenSheet('report')}
+              disabled={disabled}
               aria-label="상담 리포트 메뉴 열기"
             >
               <IconBadge icon={FileSpreadsheet} size={52} radius={16} />
@@ -107,6 +114,7 @@ export default function ChatMenuBar({
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setOpenSheet('plan')}
+              disabled={disabled}
               aria-label="요금제 메뉴 열기"
             >
               <IconBadge icon={CreditCard} size={52} radius={16} />
@@ -117,6 +125,7 @@ export default function ChatMenuBar({
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setOpenSheet('mypage')}
+              disabled={disabled}
               aria-label="마이페이지 열기"
             >
               <IconBadge icon={UserRound} size={52} radius={16} />
@@ -129,6 +138,7 @@ export default function ChatMenuBar({
       <slots.MyPageSheet
         {...sheetHandlers('mypage')}
         onRequestPlanRecommend={() => {
+          if (disabled) return;
           setOpenSheet(null);
           onSend?.('요금제 추천받기');
         }}

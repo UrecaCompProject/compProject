@@ -18,6 +18,7 @@ interface ChatInputProps {
   isLoggedIn: boolean;
   onRequireLogin: () => void;
   disabled?: boolean;
+  canStop?: boolean;
   game: GameInfrastructure;
   menuSlots: ChatMenuBarSlots;
 }
@@ -32,6 +33,7 @@ export default function ChatInput({
   isLoggedIn,
   onRequireLogin,
   disabled = false,
+  canStop = disabled,
   game,
   menuSlots,
 }: ChatInputProps) {
@@ -58,6 +60,7 @@ export default function ChatInput({
             // 같은 클릭의 click 이벤트가 다시 열어버리는 것을 막기 위해 전파를 막는다.
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            disabled={disabled}
           >
             <Menu size={20} />
           </Button>
@@ -83,7 +86,7 @@ export default function ChatInput({
           disabled={disabled}
           className="flex-1"
         />
-        {disabled ? (
+        {canStop ? (
           // 로딩 중 — 정지 버튼 표시
           <Button
             variant="primary"
@@ -101,7 +104,7 @@ export default function ChatInput({
             size="icon"
             round
             onClick={handleSend}
-            disabled={!isLoggedIn || !value.trim()}
+            disabled={disabled || !isLoggedIn || !value.trim()}
             aria-label="메시지 전송"
           >
             <ArrowUp size={16} />
@@ -110,12 +113,13 @@ export default function ChatInput({
       </div>
 
       <ChatMenuBar
-        isMenuOpen={isMenuOpen}
+        isMenuOpen={isMenuOpen && !disabled}
         onMenuClose={() => setIsMenuOpen(false)}
         game={game}
         onStartQuiz={onStartQuiz}
         onStartScratch={onStartScratch}
         onSend={onSend}
+        disabled={disabled}
         slots={menuSlots}
       />
     </div>

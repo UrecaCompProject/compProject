@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useIsLoggedIn } from '@/entities/user';
 import type { GameId } from '@/shared/types/games';
@@ -67,6 +67,7 @@ export function useChat({
 }: UseChatParams) {
   const isLoggedIn = useIsLoggedIn();
   const state = useChatState({ isLoggedIn });
+  const [isSignupInProgress, setIsSignupInProgress] = useState(false);
 
   const { effectiveCurrentPlan, addAIResponse } = useChatProfile({
     isLoggedIn,
@@ -82,6 +83,8 @@ export function useChat({
   const { requireLogin, openSignupChat } = useChatAuthGate({
     setMessages: state.setMessages,
     signinModal,
+    isSignupInProgress,
+    onSignupStart: () => setIsSignupInProgress(true),
   });
 
   const games = useChatGames({
@@ -112,6 +115,10 @@ export function useChat({
 
   const wasLoggedInRef = useRef(isLoggedIn);
   const { resetChat, setMessages } = state;
+  const handleSignupFinished = useCallback(() => {
+    setIsSignupInProgress(false);
+    subscription.handleSignupFinished();
+  }, [subscription]);
 
   // 비로그인 상태로 5회 이상 대화하면 로그인 모달을 한 번 자동으로 띄워 가입을 유도한다.
   const hasPromptedLoginRef = useRef(false);
@@ -125,6 +132,7 @@ export function useChat({
       // 아직 리셋이 반영되기 전(방금 끝난 로그인 세션 값)이라 신뢰할 수 없으므로,
       // 여기서 바로 return해 아래 5회 체크가 그 값을 보고 즉시 재발동하지 않게 한다.
       resetChat();
+      setIsSignupInProgress(false);
       hasPromptedLoginRef.current = false;
       return;
     }
@@ -180,6 +188,7 @@ export function useChat({
   const actions = useChatActions({
     isLoggedIn,
     isLoading: state.isLoading,
+    isSignupInProgress,
     setIsLoading: state.setIsLoading,
     messages: state.messages,
     setMessages: state.setMessages,
@@ -212,7 +221,8 @@ export function useChat({
     handleStop,
     handleRegenerate: actions.handleRegenerate,
     handleEditMessage: actions.handleEditMessage,
-    handleSignupFinished: subscription.handleSignupFinished,
+    isSignupInProgress,
+    handleSignupFinished,
     openSignupChat,
     requireLogin,
     handleFormSubmit: actions.handleFormSubmit,

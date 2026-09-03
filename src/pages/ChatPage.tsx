@@ -61,6 +61,7 @@ export default function ChatPage() {
     input,
     setInput,
     isLoading,
+    isSignupInProgress,
     isGeneratingReport,
     canShowReportButton,
     handleSend,
@@ -314,7 +315,7 @@ export default function ChatPage() {
         <QuickReplies
           replies={quickReplies}
           onReply={handleSendAndCollapse}
-          disabled={isLoading}
+          disabled={isLoading || isSignupInProgress}
           isLoggedIn={isLoggedIn}
           collapsed={isQuickRepliesCollapsed}
           onToggleCollapse={() =>
@@ -332,7 +333,8 @@ export default function ChatPage() {
         onStartScratch={startScratch}
         isLoggedIn={isLoggedIn}
         onRequireLogin={requireLogin}
-        disabled={isLoading}
+        disabled={isLoading || isSignupInProgress}
+        canStop={isLoading}
         game={gameInfrastructure}
         menuSlots={menuSlots}
       />
