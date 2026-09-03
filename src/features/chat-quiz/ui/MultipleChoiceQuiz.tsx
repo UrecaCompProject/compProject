@@ -1,4 +1,5 @@
-import ConfirmButton from './ConfirmButton';
+import { Button } from '@/shared';
+
 import MultipleChoices from './MultipleChoices';
 import Question from './Question';
 
@@ -20,7 +21,7 @@ export default function MultipleChoiceQuiz({
   onConfirm,
 }: MultipleChoiceQuizProps) {
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className="flex w-full flex-col gap-2 py-1.5">
       <Question question={question.question} />
       <MultipleChoices
         options={question.options}
@@ -30,7 +31,16 @@ export default function MultipleChoiceQuiz({
         }}
       />
       {!disabled && (
-        <ConfirmButton disabled={selectedId === null} onClick={onConfirm} />
+        <Button
+          variant="primary"
+          size="lg"
+          disabled={selectedId === null}
+          onClick={onConfirm}
+          className="w-full mt-2"
+        >
+          선택했어요
+        </Button>
+        // <ConfirmButton disabled={selectedId === null} onClick={onConfirm} />
       )}
     </div>
   );

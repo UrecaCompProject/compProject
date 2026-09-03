@@ -22,7 +22,7 @@ export default function OxQuiz({
   onSelect,
 }: OxQuizProps) {
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="flex w-full flex-col gap-2.5 py-1.5">
       <Question question={question.question} />
       <OxChoices
         options={OX_OPTIONS}
