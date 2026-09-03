@@ -75,19 +75,21 @@ function hasOttMatch(
 // 추천 전 반드시 필요한 정보가 누락되었는지 확인.
 // skippedFields에 있는 필드는 사용자가 "무관/미확인"을 명시적으로 선택한 것이므로
 // 값이 비어있어도(undefined) 다시 묻지 않는다 — "아직 안 물어봄"과 구분하기 위한 용도.
+// 나이는 없으면 ageMatches가 "무관"으로 처리해 필터링에 지장이 없으므로,
+// 폼을 강제로 띄우는 필수 조건에서 제외한다 — 월 데이터 사용량만 필수로 남긴다.
 function buildInfoRequest(input: ConsultInput): string | undefined {
   const skipped = input.skippedFields ?? [];
   const critical: string[] = [];
-  if (
-    (!input.ageGroup || input.ageGroup === '미제공') &&
-    !skipped.includes('ageGroup')
-  )
-    critical.push('나이');
   if (input.dataUsage === undefined && !skipped.includes('dataUsage'))
     critical.push('월 데이터 사용량');
 
   if (critical.length === 0) return undefined;
 
+  if (
+    (!input.ageGroup || input.ageGroup === '미제공') &&
+    !skipped.includes('ageGroup')
+  )
+    critical.push('나이');
   if (input.budget === undefined && !skipped.includes('budget'))
     critical.push('예산');
   // 나열된 항목 각각에 조사를 붙이면 "나이를, 예산을"처럼 어색해지므로,

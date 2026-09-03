@@ -49,16 +49,20 @@ export default function ReportSummaryCard({
           </div>
         </>
       )}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex flex-wrap gap-x-2 gap-y-1 font-medium text-[14px] text-brand-promo-primary">
-          <span className="wrap-normal break-keep"># {usageType}</span>
-          {importantConditions.map((condition) => (
-            <div key={condition} className="wrap-normal break-keep">
-              # {condition}
-            </div>
-          ))}
+      {(usageType || importantConditions.length > 0) && (
+        <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-2 gap-y-1 font-medium text-[14px] text-brand-promo-primary">
+            {usageType && (
+              <span className="wrap-normal break-keep"># {usageType}</span>
+            )}
+            {importantConditions.map((condition) => (
+              <div key={condition} className="wrap-normal break-keep">
+                # {condition}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   );
 }
