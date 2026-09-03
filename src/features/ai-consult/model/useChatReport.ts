@@ -82,8 +82,8 @@ export function useChatReport({
     ReportOutput | undefined
   > => {
     if (isLoading || isGeneratingReport) return;
-    // 상담 중 "요금제 추천받기"가 요청된 횟수만큼 라운드를 모두 모은다
-    // (여러 번 추천받았으면 recommendedPlans에도 그만큼 여러 개가 들어간다).
+    // 상담 중 "요금제 추천받기"가 요청된 횟수만큼 라운드를 전부 모은다 —
+    // 필터링 없이 원본 그대로, groupId로만 같은 정보 입력 세션을 구분한다.
     const recommendedGroups = findAllRecommendationGroups(messages);
     // 요금제 추천이 한 번도 없었으면 일반 대화 요약 리포트로 생성
     const reportKind: 'plan' | 'general' =

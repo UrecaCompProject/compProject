@@ -20,7 +20,8 @@ export async function saveReport(report: ReportOutput) {
     .from('consultation_reports')
     .insert({
       user_id: userData.user.id,
-      summary_title: `${report.currentPlan} 요금제 추천 레포트`,
+      summary_title:
+        report.otherNotes.title || `${report.currentPlan} 요금제 추천 레포트`,
       summary: report.otherNotes.summary,
       analysis_input: {
         currentPlan: report.currentPlan,

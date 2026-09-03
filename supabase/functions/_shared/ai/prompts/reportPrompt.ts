@@ -58,6 +58,9 @@ export const reportPromptText = `
 
 반드시 아래 형식의 유효한 JSON만 출력하세요. 각 필드의 의미는 다음과 같습니다.
 
+- title: 레포트 목록에 표시할 10-20자 이내의 한 줄 제목. summary를 압축한 명사구로,
+  상담의 핵심 특징이 드러나야 합니다.
+  예: "데이터 중심 20대 요금제 상담", "예산 절감형 요금제 변경 상담", "OTT 결합 요금제 문의"
 - summary: 1-2문장으로 상담 핵심만 요약하세요.
 - usageType: 사용자의 데이터/통화 사용 패턴을 5-10자 명사구로 표현하세요.
   사용자가 명시한 조건(데이터량, 예산, OTT, 연령대, 통화 빈도) 중 가장 두드러진 특징을 반영하세요.
@@ -74,6 +77,7 @@ export const reportPromptText = `
 - changedPlanAdvantage: RULES 5를 따라 작성하세요.
 
 {
+  "title": "string",
   "summary": "string",
   "usageType": "string",
   "importantConditions": ["string"],

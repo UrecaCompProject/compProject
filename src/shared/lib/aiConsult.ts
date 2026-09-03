@@ -100,6 +100,8 @@ export interface ReportQAPair {
 // 클라이언트가 이미 정확히 알고 있으므로(추천/비교/가입 이벤트) LLM은
 // 이 부분만 담당한다.
 export interface ReportNotes {
+  // 레포트 목록(PreviewReport)에 쓰는 한 줄 요약 제목 (예: "데이터 중심 20대 요금제 상담")
+  title: string;
   summary: string;
   usageType: string;
   importantConditions: string[];
@@ -109,10 +111,14 @@ export interface ReportNotes {
 }
 
 // 상담 중 "요금제 추천받기"가 한 번 이상 요청될 때마다 생기는 한 라운드.
-// target: 그 시점의 확정 조건("20대 / 5GB ~ 10GB / 5만원 ~ 10만원 / 넷플릭스")
+// target: 그 시점의 확정 조건("20대 / 5GB ~ 10GB / 5만원 ~ 10만원 / 넷플릭스").
+//         priority(정렬 기준)는 사용자에게 보여줄 "조건"이 아니라서 제외한다.
 // detail: 이 라운드를 요청하게 만든 문구 — 첫 추천은 '', 이후 "데이터가 더 큰
 //         요금제 보기" 같은 재질의는 그 문구 그대로
+// groupId: 같은 정보 입력(폼)에서 이어진 재질의들을 하나로 묶는 식별자 — 폼을
+//          새로 제출하기 전까지는 퀵리플라이 재질의 라운드가 전부 같은 값을 공유한다.
 export interface RecommendedPlanGroup {
+  groupId: string;
   target: string;
   detail: string;
   plans: RecommendedPlan[];

@@ -120,12 +120,16 @@ export function useChat() {
     abortControllerRef.current = null;
   }, []);
 
-  // AI 응답을 메시지 목록에 추가하고 profile을 갱신하는 공통 헬퍼
+  // AI 응답을 메시지 목록에 추가하고 profile을 갱신하는 공통 헬퍼.
+  // startsNewRecommendGroup: 정보 입력 폼을 새로 제출해서 얻은 응답이면 true로
+  // 넘겨받아 새 groupId를 발급한다 — 우선순위 입력 여부 같은 선택 항목에 기대는
+  // 텍스트 추론 대신, 호출부(폼 제출 핸들러)가 구조적으로 명시한다.
   const addAIResponse = useCallback(
     (
       response: ConsultResponse,
       request: ConsultInput,
       defaultMode: ConsultInput['mode'],
+      startsNewRecommendGroup = false,
     ) => {
       const mergedProfile: ConsultInput = {
         ...request,
@@ -152,6 +156,24 @@ export function useChat() {
             ? lastMessage.sentence
             : ''
           : '';
+        // 그룹 경계: 처음 추천이거나 정보 입력 폼을 새로 제출한 경우 새 groupId를
+        // 발급한다. 그 외 퀵리플라이 재질의는 직전 라운드의 groupId를 이어받는다.
+        const isNewGroup = !hasEarlierRound || startsNewRecommendGroup;
+        const previousGroupId = hasRecommendations
+          ? [...prev]
+              .reverse()
+              .find(
+                (m): m is Extract<ChatMessage, { type: 'ai' }> =>
+                  m.type === 'ai' &&
+                  !!m.recommendations &&
+                  m.recommendations.length > 0,
+              )?.recommendGroupId
+          : undefined;
+        const recommendGroupId = hasRecommendations
+          ? isNewGroup || !previousGroupId
+            ? crypto.randomUUID()
+            : previousGroupId
+          : undefined;
         return [
           ...prev,
           {
@@ -165,6 +187,7 @@ export function useChat() {
               ? buildRecommendTarget(mergedProfile)
               : undefined,
             recommendDetail: hasRecommendations ? recommendDetail : undefined,
+            recommendGroupId,
             compareResult: response.compareResult,
             category: modeToCategory(response.mode ?? defaultMode),
           },
@@ -503,7 +526,8 @@ export function useChat() {
           isLoggedIn,
         };
         const response = await requestConsult(merged, signal);
-        addAIResponse(response, merged, 'recommend');
+        // 정보 입력 폼 제출로 얻은 응답 — 새 groupId를 발급하는 라운드로 표시
+        addAIResponse(response, merged, 'recommend', true);
       } catch (error) {
         // 사용자가 의도적으로 중지한 경우 — AbortError는 안내 메시지만 표시
         if (error instanceof DOMException && error.name === 'AbortError') {

@@ -74,6 +74,7 @@ export interface ConsultResponse {
     }[];
   };
   report?: {
+    title: string;
     summary: string;
     usageType: string;
     importantConditions: string[];

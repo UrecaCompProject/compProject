@@ -8,13 +8,8 @@ import {
   DATA_USAGE_BUCKETS,
   findBucketLabel,
   NO_PREFERENCE,
+  PRIORITY_LABELS,
 } from '../constants/consultBuckets';
-
-const PRIORITY_LABELS: Record<string, string> = {
-  budget: '가격 우선',
-  data: '데이터 용량 우선',
-  max_data: '최대 데이터',
-};
 
 // 나이 필드에서 "무관"을 고르면 서버가 "값 없음"으로 취급하는 사실 값을 그대로 제출한다.
 const AGE_NO_PREFERENCE = '미제공';

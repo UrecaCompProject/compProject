@@ -124,6 +124,8 @@ export interface ReportQAPair {
 // 추천/비교/가입 요금제는 클라이언트가 이미 구조화된 데이터로 갖고 있으므로,
 // 이 Edge Function은 대화 요약(자유 서술 부분)만 생성한다.
 export interface ReportOutput {
+  // 레포트 목록에 쓰는 한 줄 요약 제목
+  title: string;
   summary: string;
   usageType: string;
   importantConditions: string[];

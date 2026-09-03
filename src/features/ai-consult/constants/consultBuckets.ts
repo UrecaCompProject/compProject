@@ -43,3 +43,11 @@ export function findBucketLabel(
 ): string | undefined {
   return buckets.find((bucket) => bucket.value === value)?.label;
 }
+
+// RecommendationForm(입력 폼 요약 문구)과 buildRecommendTarget(레포트용 target
+// 문자열)이 공유 — priority 값을 사람이 읽을 수 있는 라벨로 바꾼다.
+export const PRIORITY_LABELS: Record<string, string> = {
+  budget: '가격 우선',
+  data: '데이터 용량 우선',
+  max_data: '최대 데이터',
+};

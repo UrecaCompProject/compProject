@@ -111,7 +111,9 @@ export function findLastCompareResult(
 }
 
 // 그 시점의 확정 조건을 "20대 / 5GB ~ 10GB / 5만원 ~ 10만원 / 넷플릭스" 형태로 요약.
-// dataUsage/budget은 대표값(정수)이 아니라 사용자가 실제로 고른 구간 라벨을 되찾아 쓴다.
+// dataUsage/budget은 대표값(정수)이 아니라 사용자가 실제로 고른 구간 라벨을 되찾아
+// 쓴다. priority(정렬 기준)는 사용자에게 "조건"으로 보여줄 성격이 아니라서 제외한다
+// — 라운드 구분은 target 비교가 아니라 groupId로 한다.
 export function buildRecommendTarget(input: ConsultInput): string {
   const parts: string[] = [];
   if (input.ageGroup) parts.push(input.ageGroup);
@@ -144,6 +146,7 @@ export function findAllRecommendationGroups(
       message.recommendations.length > 0
     ) {
       groups.push({
+        groupId: message.recommendGroupId ?? '',
         target: message.recommendTarget ?? '',
         detail: message.recommendDetail ?? '',
         plans: message.recommendations,

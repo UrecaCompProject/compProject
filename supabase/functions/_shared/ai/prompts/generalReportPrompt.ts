@@ -46,6 +46,8 @@ export const generalReportPromptText = `
 
 반드시 아래 형식의 유효한 JSON만 출력하세요.
 
+- title: 레포트 목록에 표시할 10-20자 이내의 한 줄 제목. summary를 압축한 명사구로 작성하세요.
+  예: "요금제 변경 문의 상담", "가족 결합 할인 문의"
 - summary: 1-3문장으로 상담 핵심 질문과 답변을 요약하세요.
 - usageType: 빈 문자열("")을 출력하세요.
 - importantConditions: 상담에서 언급된 핵심 조건/키워드 0-3개를 문자열 배열로 작성하세요. 없으면 빈 배열.
@@ -54,6 +56,7 @@ export const generalReportPromptText = `
 - changedPlanAdvantage: RULES 4를 따라 작성하세요.
 
 {
+  "title": "string",
   "summary": "string",
   "usageType": "",
   "importantConditions": ["string"],
