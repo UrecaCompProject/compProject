@@ -117,6 +117,12 @@ export default function ChatMessageList({
   // 스크롤 이벤트에서 계속 갱신 — 퀵 리플라이·ChatMenuBar가 펼쳐져 container
   // 크기가 바뀌는 시점에 "그 직전에 바닥 근처였는지"를 판단하는 데 쓰인다.
   const wasNearBottomRef = useRef(true);
+  // 새 메시지로 content가 커져 scrollToLastMessageTop이 스크롤 위치를 잡으면
+  // true가 된다. 이 동안에는 container 높이 변화(전송 시 자동으로 접혔다
+  // 펼쳐지는 퀵 리플라이 등)로 인한 바닥 고정이 "새 메시지 상단 정렬"을
+  // 덮어써 화면이 맨 아래로 튕기지 않도록 막는다. 사용자가 직접 스크롤(휠·터치)
+  // 하면 해제되어 이후 뷰포트 변화에는 다시 바닥 고정이 동작한다.
+  const contentOwnsScrollRef = useRef(false);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -150,8 +156,21 @@ export default function ChatMessageList({
         target.getBoundingClientRect().top -
         container.getBoundingClientRect().top +
         container.scrollTop;
+      contentOwnsScrollRef.current = true;
       container.scrollTo({ top: offset, behavior: 'smooth' });
     };
+
+    // 사용자가 직접 스크롤하면 "새 메시지 상단 정렬" 소유권을 놓는다.
+    // (프로그램적 scrollTo는 wheel·touch 이벤트를 만들지 않으므로 구분된다.)
+    const releaseContentScrollOwnership = () => {
+      contentOwnsScrollRef.current = false;
+    };
+    container.addEventListener('wheel', releaseContentScrollOwnership, {
+      passive: true,
+    });
+    container.addEventListener('touchstart', releaseContentScrollOwnership, {
+      passive: true,
+    });
 
     // 퀵 리플라이·ChatMenuBar가 펼쳐지거나 접혀서 container 자체 높이가
     // 바뀔 때 실행된다. 원래 바닥 근처를 보고 있었다면 줄어든/늘어난
@@ -165,6 +184,16 @@ export default function ChatMessageList({
       if (!wasNearBottomRef.current || isInputFocused()) return;
       clearTimeout(stickToBottomTimeout);
       stickToBottomTimeout = setTimeout(() => {
+        // 조건을 예약 시점이 아니라 실제 실행 시점 기준으로 다시 확인한다.
+        // 디바운스가 도는 사이에 새 메시지가 들어와 scrollToLastMessageTop이
+        // 스크롤을 잡았다면(= content가 스크롤 소유) 바닥 고정은 건너뛴다.
+        if (
+          !wasNearBottomRef.current ||
+          isInputFocused() ||
+          contentOwnsScrollRef.current
+        ) {
+          return;
+        }
         container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
       }, 450);
     };
@@ -180,6 +209,11 @@ export default function ChatMessageList({
     return () => {
       observer.disconnect();
       clearTimeout(stickToBottomTimeout);
+      container.removeEventListener('wheel', releaseContentScrollOwnership);
+      container.removeEventListener(
+        'touchstart',
+        releaseContentScrollOwnership,
+      );
     };
   }, []);
 
