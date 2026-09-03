@@ -154,11 +154,16 @@ function sanitize(raw: {
   };
 }
 
+// 입력 토큰(=지연)을 줄이려 최근 5턴, 턴당 240자로 제한한다.
 function formatHistory(history: ConversationTurn[] | undefined): string {
   if (!history || history.length === 0) return '(없음)';
   return history
-    .slice(-8)
-    .map((h) => `${h.role === 'user' ? '사용자' : 'AI'}: ${h.text}`)
+    .slice(-5)
+    .map((h) => {
+      const who = h.role === 'user' ? '사용자' : 'AI';
+      const text = h.text.length > 240 ? `${h.text.slice(0, 240)}…` : h.text;
+      return `${who}: ${text}`;
+    })
     .join('\n');
 }
 
@@ -185,7 +190,7 @@ export async function analyzeInput(
   });
 
   try {
-    const raw = await chatOpenAI(analyzeSystemPrompt, filledPrompt, 300, true);
+    const raw = await chatOpenAI(analyzeSystemPrompt, filledPrompt, 200, true);
     const parsed = safeJsonParse<{
       intent?: string;
       slots?: Record<string, unknown>;

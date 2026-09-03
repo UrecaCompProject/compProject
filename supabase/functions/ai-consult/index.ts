@@ -32,13 +32,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // 구간별 소요 시간 로그 — Supabase Edge Function Logs에서 [timing] 확인
+    const t0 = Date.now();
+
     // 자연어 조건/의도를 LLM으로 보강한다. 실패하면 undefined → 기존 정규식 경로로 폴백.
     const analyzed = await analyzeInput(body);
+    const t1 = Date.now();
     const resolution = analyzed ? resolveConditions(body, analyzed) : undefined;
     const resolvedInput = resolution?.input ?? body;
 
     const result = await recommendPlan(resolvedInput, analyzed?.intent);
+    const t2 = Date.now();
     const quickReplies = await generateQuickReplies(resolvedInput, result);
+    const t3 = Date.now();
+
+    console.log(
+      `[timing] analyze=${t1 - t0}ms recommend=${t2 - t1}ms quickReplies=${t3 - t2}ms total=${t3 - t0}ms model=${Deno.env.get('OPENAI_MODEL') ?? 'gpt-4o-mini'} baseUrl=${Deno.env.get('OPENAI_BASE_URL') ?? 'default'}`,
+    );
 
     return new Response(
       JSON.stringify({

@@ -5,8 +5,6 @@ import type { Plan } from './data.ts';
 import {
   comparePromptText,
   generalReportPromptText,
-  noticePromptText,
-  reasonPromptText,
   reportPromptText,
 } from './prompts/index.ts';
 import { chatOpenAI } from './openai.ts';
@@ -20,9 +18,6 @@ import type {
   ReportInput,
   ReportOutput,
 } from './types.ts';
-
-const noticeSystemPrompt =
-  '당신은 통신 요금제 안내 문구 작성 AI입니다. 제공된 조건과 추천 후보를 바탕으로 1-2문장의 안내 문구를 JSON 형식으로 작성하세요.';
 
 // JSON 문자열을 안전하게 파싱. LLM이 마크다운 코드 블록으로 감싸 출력하거나 불완전한 JSON을 내놓을 경우를 대비.
 export function safeJsonParse<T>(text: string): T | undefined {
@@ -307,13 +302,8 @@ function findCurrentPlanFee(
   return found?.monthly_fee ?? 0;
 }
 
-const reasonSystemPrompt = `
-당신은 통신 요금제 추천 사유 작성 AI입니다.
-제공된 사용자 조건과 요금제 데이터만 사용해 각 후보의 추천 사유를 JSON 형식으로 작성하세요.
-존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
-`;
-
-// 코드 기반 fallback 사유 생성.
+// 추천 사유 문구 생성. 카드에는 데이터·요금·절감액만 노출되므로 LLM 없이 코드로
+// 생성한다(별도 LLM 호출을 없애 추천 응답 지연을 ~0.7s 단축).
 function buildCodeReason(plan: Plan, saving: number): string {
   let reason = `데이터 ${plan.data}, 월 ${plan.monthly_fee.toLocaleString()}원이에요.`;
   if (saving > 0) {
@@ -322,12 +312,12 @@ function buildCodeReason(plan: Plan, saving: number): string {
   return reason;
 }
 
-// LLM 출력을 실제 데이터로 보정하고, 이유는 OpenAI로 생성하되 실패 시 코드 fallback.
-async function sanitizeRecommendations(
+// LLM 출력을 실제 요금제 데이터로 보정하고 사유·절감액을 채운다.
+function sanitizeRecommendations(
   output: RecommendOutput,
   plans: Plan[],
   input: ConsultInput,
-): Promise<RecommendOutput> {
+): RecommendOutput {
   const currentPlanFee = findCurrentPlanFee(plans, input.currentPlan);
 
   const valid = output.recommendations
@@ -354,37 +344,10 @@ async function sanitizeRecommendations(
       } => r !== null,
     );
 
-  const plansText = valid.slice(0, 3).map(formatPlanForPrompt).join('\n');
-  const filledPrompt = fillTemplate(reasonPromptText, {
-    ageGroup: input.ageGroup ?? '미제공',
-    dataUsage: String(input.dataUsage ?? 0),
-    budget: input.budget ? String(input.budget) : '제한 없음',
-    currentPlan: input.currentPlan ?? '미등록',
-    priority: input.priority ?? 'budget',
-    ott: input.ott?.join(', ') || '없음',
-    plans: plansText,
-  });
-
-  let reasonByPlanId: Record<string, string> | undefined;
-  try {
-    const raw = await chatOpenAI(reasonSystemPrompt, filledPrompt);
-    const parsed = safeJsonParse<{
-      reasons: { planId: string; reason: string }[];
-    }>(raw);
-    if (parsed?.reasons) {
-      reasonByPlanId = Object.fromEntries(
-        parsed.reasons.map((r) => [String(r.planId), r.reason]),
-      );
-    }
-  } catch {
-    reasonByPlanId = undefined;
-  }
-
   const recommendations: RecommendedPlan[] = valid.slice(0, 3).map((r) => ({
     planId: r.planId,
     planName: r.planName,
-    reason:
-      reasonByPlanId?.[r.planId] || buildCodeReason(r.plan, r.savingAmount),
+    reason: buildCodeReason(r.plan, r.savingAmount),
     savingAmount: r.savingAmount,
     monthlyFee: r.plan.monthly_fee,
     data: r.plan.data,
@@ -435,15 +398,13 @@ function buildNotice(plans: Plan[], input: ConsultInput): string | undefined {
   }
 
   if (input.priority === 'data') {
-    const hasExactAny = plans.some(
+    const qualifying = plans.filter(
       (p) =>
         ageMatches(ageGroup, p.target_age) && parseDataGB(p.data) >= dataUsage,
     );
-    if (hasExactAny) {
-      const overBudgetSuffix = !hasExactInBudget
-        ? ' (추천되는 요금제는 모두 예산을 초과할 수 있습니다.)'
-        : '';
-      return `예산 ${budget.toLocaleString()}원 내에서는 데이터 ${dataUsage}GB 이상인 요금제가 없어, 데이터를 충족하는 요금제 중 가장 저렴한 순으로 추천해드리겠습니다.${overBudgetSuffix}`;
+    if (qualifying.length > 0) {
+      const cheapest = Math.min(...qualifying.map((p) => p.monthly_fee));
+      return `예산 ${budget.toLocaleString()}원 내에는 데이터 ${dataUsage}GB 이상인 요금제가 없어요. 데이터를 충족하는 가장 저렴한 요금제는 ${cheapest.toLocaleString()}원부터예요. 예산을 ${cheapest.toLocaleString()}원으로 올리거나 데이터 용량을 줄이면 선택지가 늘어나요.`;
     }
     return `데이터 ${dataUsage}GB 이상 요금제가 없어 가장 비슷한 용량의 요금제부터 추천해드리겠습니다.`;
   }
@@ -944,44 +905,11 @@ export async function recommendPlan(
     ),
   };
 
-  // 사유 생성과 안내문 다듬기는 서로 독립적인 LLM 호출이므로 병렬로 실행한다.
-  const [sanitized, finalNotice] = await Promise.all([
-    sanitizeRecommendations(codeRecs, plans, input),
-    notice
-      ? refineNoticeText(candidates, input, notice)
-      : Promise.resolve<string | undefined>(undefined),
-  ]);
+  const sanitized = sanitizeRecommendations(codeRecs, plans, input);
 
-  return finalNotice
-    ? { ...sanitized, notice: finalNotice, mode: 'recommend' }
+  return notice
+    ? { ...sanitized, notice, mode: 'recommend' }
     : { ...sanitized, mode: 'recommend' };
-}
-
-// buildNotice가 만든 기본 안내문을 LLM으로 자연스럽게 다듬는다. 실패하면 원문을 유지한다.
-async function refineNoticeText(
-  candidates: Plan[],
-  input: ConsultInput,
-  fallbackNotice: string,
-): Promise<string> {
-  const plansText = candidates.slice(0, 3).map(formatPlanForPrompt).join('\n');
-  const filledPrompt = fillTemplate(noticePromptText, {
-    currentPlan: input.currentPlan ?? '미등록',
-    dataUsage: String(input.dataUsage ?? 0),
-    budget: input.budget ? String(input.budget) : '제한 없음',
-    ageGroup: input.ageGroup ?? '미제공',
-    ott: input.ott?.join(', ') || '없음',
-    priority: input.priority ?? 'budget',
-    fallback: fallbackNotice,
-    plans: plansText,
-  });
-
-  try {
-    const raw = await chatOpenAI(noticeSystemPrompt, filledPrompt);
-    const parsed = safeJsonParse<{ notice: string }>(raw);
-    return parsed?.notice?.trim() || fallbackNotice;
-  } catch {
-    return fallbackNotice;
-  }
 }
 
 // 모드에 맞는 Quick Reply 목록을 생성합니다.
