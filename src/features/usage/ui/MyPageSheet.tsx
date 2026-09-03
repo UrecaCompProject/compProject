@@ -52,8 +52,11 @@ export default function MyPageSheet({
         {/* 모바일 전화번호 정보 section */}
         <div className="flex flex-col px-4 py-3">
           <div className="leading-[170%] text-fg-tertiary text-[14px] ">
-            <span className="text-medium">모바일</span>
+            <p className="text-medium">개인 정보</p>
             <span className="ml-3 text-regular">
+              {maskPhone(user?.user_metadata?.name ?? '')}
+            </span>
+            <span className="ml-2 text-regular">
               {maskPhone(user?.user_metadata?.phone ?? '')}
             </span>
           </div>

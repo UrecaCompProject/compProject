@@ -86,26 +86,6 @@ export default function ChatMenuBar({
             <button
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() => setOpenSheet('mypage')}
-              aria-label="마이페이지 열기"
-            >
-              <IconBadge icon={UserRound} size={52} radius={16} />
-              <div>마이페이지</div>
-            </button>
-
-            <button
-              type="button"
-              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() => setOpenSheet('plan')}
-              aria-label="요금제 메뉴 열기"
-            >
-              <IconBadge icon={CreditCard} size={52} radius={16} />
-              <div>요금제</div>
-            </button>
-
-            <button
-              type="button"
-              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
               onClick={() => setOpenSheet('reward')}
               aria-label="혜택/이벤트 메뉴 열기"
             >
@@ -121,6 +101,26 @@ export default function ChatMenuBar({
             >
               <IconBadge icon={FileSpreadsheet} size={52} radius={16} />
               <div>상담 리포트</div>
+            </button>
+
+            <button
+              type="button"
+              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
+              onClick={() => setOpenSheet('plan')}
+              aria-label="요금제 메뉴 열기"
+            >
+              <IconBadge icon={CreditCard} size={52} radius={16} />
+              <div>요금제</div>
+            </button>
+
+            <button
+              type="button"
+              className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
+              onClick={() => setOpenSheet('mypage')}
+              aria-label="마이페이지 열기"
+            >
+              <IconBadge icon={UserRound} size={52} radius={16} />
+              <div>마이페이지</div>
             </button>
           </div>
         </div>
