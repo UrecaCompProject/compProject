@@ -25,7 +25,7 @@ const noticeSystemPrompt =
   '당신은 통신 요금제 안내 문구 작성 AI입니다. 제공된 조건과 추천 후보를 바탕으로 1-2문장의 안내 문구를 JSON 형식으로 작성하세요.';
 
 // JSON 문자열을 안전하게 파싱. LLM이 마크다운 코드 블록으로 감싸 출력하거나 불완전한 JSON을 내놓을 경우를 대비.
-function safeJsonParse<T>(text: string): T | undefined {
+export function safeJsonParse<T>(text: string): T | undefined {
   const cleaned = text
     .replace(/^```json\s*/, '')
     .replace(/```\s*$/, '')
@@ -102,20 +102,22 @@ function buildInfoRequest(input: ConsultInput): string | undefined {
 }
 
 // 누락된 추천 조건을 form으로 입력받을 수 있도록 구성합니다.
+// 이미 파악된 값(대화에서 추출된 나이/예산/우선순위/OTT 등)도 폼에서 숨기지 않고
+// value로 내려보내 "미리 선택된 상태"로 노출한다 — 사용자가 확인·수정할 수 있도록.
+// (사용자가 폼에서 "무관/미확인"을 골라 skippedFields에 담긴 항목만 제외한다.)
 function buildInfoForm(input: ConsultInput): ConsultForm {
   const skipped = input.skippedFields ?? [];
   const fields: ConsultForm['fields'] = [];
 
-  if (
-    (!input.ageGroup || input.ageGroup === '미제공') &&
-    !skipped.includes('ageGroup')
-  ) {
+  const ageKnown = !!input.ageGroup && input.ageGroup !== '미제공';
+  if (!skipped.includes('ageGroup')) {
     fields.push({
       name: 'ageGroup',
       label: '나이',
       type: 'select',
       options: ['청소년', '20대', '30대', '40대', '50대 이상'],
-      required: true,
+      required: !ageKnown,
+      value: ageKnown ? input.ageGroup : undefined,
     });
   }
 
@@ -128,12 +130,13 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     });
   }
 
-  if (input.budget === undefined && !skipped.includes('budget')) {
+  if (!skipped.includes('budget')) {
     fields.push({
       name: 'budget',
       label: '예산 (원)',
       type: 'number',
-      required: true,
+      required: input.budget === undefined,
+      value: input.budget,
     });
   }
 
@@ -143,6 +146,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     type: 'select',
     options: ['budget', 'data', 'max_data'],
     required: false,
+    value: input.priority,
   });
 
   const ottOptions = ['넷플릭스', '디즈니+티빙'];
@@ -152,6 +156,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     type: 'multi-select',
     options: ottOptions,
     required: false,
+    value: input.ott && input.ott.length > 0 ? input.ott : undefined,
   });
 
   return { title: '추천을 위해 필요한 정보', fields };
@@ -520,7 +525,9 @@ function isTelecomRelated(text: string): boolean {
 }
 
 // 사용자 메시지와 이전 모드에서 다음 단계 모드를 결정합니다.
-function resolveNextMode(input: ConsultInput): ChatMode {
+// intentHint: LLM 분석(analyzeInput)이 추정한 의도 — 정규식이 명확히 매칭되지
+// 않을 때만 폴백으로 사용한다. 정규식이 매칭되면 정규식이 우선.
+function resolveNextMode(input: ConsultInput, intentHint?: ChatMode): ChatMode {
   const t = (input.userMessage || '').trim();
   const current = input.mode ?? 'menu';
 
@@ -534,7 +541,13 @@ function resolveNextMode(input: ConsultInput): ChatMode {
   if (/출석|출첵|출석\s*체크/.test(t)) return 'attendance';
   if (/레포트|리포트|레포트\s*생성|리포트\s*생성/.test(t)) return 'report';
 
-  // 메뉴 상태에서 통신과 무관한 입력은 상담 외 주제로 분기
+  // 정규식이 아무것도 잡지 못한 경우 — LLM 분석 의도를 우선 신뢰한다.
+  if (intentHint) {
+    // report/menu 전환은 위 정규식·명시 조건에서만 허용 (오탐 시 대화 흐름이 크게 튐)
+    if (intentHint !== 'menu' && intentHint !== 'report') return intentHint;
+  }
+
+  // 메뉴 상태에서 통신과 무관한 입력은 상담 외 주제로 분기 (LLM 미응답 시 키워드 폴백)
   if (current === 'menu' && t.length > 0 && !isTelecomRelated(t)) {
     return 'out_of_scope';
   }
@@ -815,7 +828,7 @@ function buildReportResponse(): RecommendOutput {
   };
 }
 
-function fillTemplate(
+export function fillTemplate(
   template: string,
   values: Record<string, string>,
 ): string {
@@ -853,10 +866,13 @@ async function buildChangedPlanInfo(
 }
 
 // 상위 3개 요금제 추천 및 사유, 절감액 산출.
+// intentHint: LLM 분석(analyzeInput)이 추정한 의도. 슬롯 병합은 호출부(index.ts)에서
+// 이미 input에 반영되어 넘어온다.
 export async function recommendPlan(
   input: ConsultInput,
+  intentHint?: ChatMode,
 ): Promise<RecommendOutput> {
-  const mode = resolveNextMode(input);
+  const mode = resolveNextMode(input, intentHint);
   if (mode === 'menu') return buildMenuResponse(input.isLoggedIn ?? false);
   if (mode === 'compare') {
     // 비교할 두 요금제가 명시적으로 지정된 경우 실제 비교 수행

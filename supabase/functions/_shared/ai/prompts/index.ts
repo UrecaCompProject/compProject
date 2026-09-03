@@ -1,4 +1,5 @@
 export { systemPromptText } from './systemPrompt.ts';
+export { extractPromptText } from './extractPrompt.ts';
 export { recommendPromptText } from './recommendPrompt.ts';
 export { noticePromptText } from './noticePrompt.ts';
 export { usageAnalysisPromptText } from './usageAnalysisPrompt.ts';

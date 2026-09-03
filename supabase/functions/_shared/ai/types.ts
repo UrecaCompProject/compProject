@@ -10,6 +10,12 @@ export type ChatMode =
   | 'report'
   | 'out_of_scope';
 
+// 최근 대화 맥락 한 턴. 슬롯 추출/의도 분류 시 LLM에 함께 전달한다.
+export interface ConversationTurn {
+  role: 'user' | 'ai';
+  text: string;
+}
+
 export interface ConsultInput {
   currentPlan?: string;
   dataUsage?: number;
@@ -33,6 +39,9 @@ export interface ConsultInput {
   // (ageGroup/dataUsage/budget). 값이 비어있어도 buildInfoRequest/buildInfoForm이
   // 다시 물어보지 않도록 참고한다.
   skippedFields?: string[];
+  // 최근 대화 맥락 (오래된 순, 최대 8턴). LLM 슬롯 추출/의도 분류에만 사용하며
+  // 프로필로 누적 저장하지 않는다.
+  history?: ConversationTurn[];
 }
 
 export interface RecommendedPlan {
@@ -59,6 +68,8 @@ export interface ConsultFormField {
   type: 'select' | 'number' | 'text' | 'multi-select';
   options?: string[];
   required?: boolean;
+  // 대화에서 이미 파악된 초기값 — 폼을 미리 선택된 상태로 렌더링하기 위함
+  value?: string | number | string[];
 }
 
 export interface ConsultForm {

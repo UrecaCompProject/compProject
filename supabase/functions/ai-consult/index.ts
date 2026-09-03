@@ -7,6 +7,7 @@ import {
   generateReport,
   recommendPlan,
 } from '../_shared/ai/recommend.ts';
+import { analyzeInput, resolveConditions } from '../_shared/ai/analyze.ts';
 import type { ConsultRequest } from './types.ts';
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -31,12 +32,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const result = await recommendPlan(body);
-    const quickReplies = await generateQuickReplies(body, result);
+    // 자연어 조건/의도를 LLM으로 보강한다. 실패하면 undefined → 기존 정규식 경로로 폴백.
+    const analyzed = await analyzeInput(body);
+    const resolution = analyzed ? resolveConditions(body, analyzed) : undefined;
+    const resolvedInput = resolution?.input ?? body;
 
-    return new Response(JSON.stringify({ ...result, quickReplies }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const result = await recommendPlan(resolvedInput, analyzed?.intent);
+    const quickReplies = await generateQuickReplies(resolvedInput, result);
+
+    return new Response(
+      JSON.stringify({
+        ...result,
+        quickReplies,
+        // 분석으로 확정/해제/초기화한 조건을 클라이언트 프로필에 반영할 수 있도록 반환
+        resolvedSlots: resolution?.slots,
+        resetConditions: resolution?.resetConditions ?? false,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[ai-consult] Edge Function error:', error);
