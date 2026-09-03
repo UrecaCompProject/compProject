@@ -42,9 +42,9 @@ export async function postCheckIn(): Promise<CheckInResult> {
 
   if (attendanceError) {
     if (attendanceError.code === '23505') {
-      throw new Error('오늘 이미 출석 체크를 완료했습니다.');
+      throw new Error('오늘 이미 출석체크를 완료했습니다.');
     }
-    throw new Error(`출석 체크 실패: ${attendanceError.message}`);
+    throw new Error(`출석체크 실패: ${attendanceError.message}`);
   }
 
   const { data: streak, error: streakError } = await supabase

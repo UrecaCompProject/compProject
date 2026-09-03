@@ -69,7 +69,7 @@ export default function CheckIn() {
           disabled={isCheckedToday}
           className="inline-flex items-center text-regular-12-130 text-fg-tertiary disabled:text-fg-disabled"
         >
-          {isCheckedToday ? '출석 완료' : '출석 체크'}
+          {isCheckedToday ? '출석 완료' : '출석체크'}
           {!isCheckedToday && <ChevronRight size={12} />}
         </button>
       </div>
