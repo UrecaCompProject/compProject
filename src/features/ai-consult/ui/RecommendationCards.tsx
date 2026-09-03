@@ -23,7 +23,7 @@ interface RecommendationCardsProps {
     error: string | null;
   }>;
   PlanDetailFooter: ComponentType<{
-    onSubscribe: () => void;
+    onSubscribe?: () => void;
     onCompare?: () => void;
   }>;
 }

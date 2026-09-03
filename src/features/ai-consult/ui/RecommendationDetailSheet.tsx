@@ -23,7 +23,7 @@ interface RecommendationDetailSheetProps {
   onCompare?: (plan: RecommendedPlan) => void;
   PlanDetailContent: ComponentType<PlanDetailContentProps>;
   PlanDetailFooter: ComponentType<{
-    onSubscribe: () => void;
+    onSubscribe?: () => void;
     onCompare?: () => void;
   }>;
 }
@@ -45,6 +45,8 @@ export default function RecommendationDetailSheet({
 
   if (!plan) return null;
 
+  const isCurrent = !!currentPlan && plan.planId === currentPlan.planId;
+
   return (
     <BottomSheet
       open={open}
@@ -53,17 +55,19 @@ export default function RecommendationDetailSheet({
       bg="bg-surface-page"
       bodyClassName="px-4"
       footer={
-        <PlanDetailFooter
-          onSubscribe={() => onSubscribe(plan)}
-          onCompare={onCompare ? () => onCompare(plan) : undefined}
-        />
+        isCurrent ? undefined : (
+          <PlanDetailFooter
+            onSubscribe={() => onSubscribe(plan)}
+            onCompare={onCompare ? () => onCompare(plan) : undefined}
+          />
+        )
       }
     >
       <PlanDetailContent
         plan={toPlanDetailItem(plan)}
         isLoading={false}
         error={null}
-        isCurrent={!!currentPlan && plan.planId === currentPlan.planId}
+        isCurrent={isCurrent}
       />
     </BottomSheet>
   );

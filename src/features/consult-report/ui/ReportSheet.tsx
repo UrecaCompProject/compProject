@@ -29,7 +29,7 @@ interface ReportSheetSlots {
     onComplete?: () => void;
   }>;
   PlanDetailContent: ComponentType<PlanDetailContentProps>;
-  PlanDetailFooter: ComponentType<{ onSubscribe: () => void }>;
+  PlanDetailFooter: ComponentType<{ onSubscribe?: () => void }>;
 }
 
 type ReportSheetProps = {
@@ -118,6 +118,9 @@ export default function ReportSheet({
         ? (selectedReport?.summary_title ?? '상담 리포트')
         : '상담 리포트';
 
+  const isActivePlanCurrent =
+    !!activePlan && !!currentPlan && activePlan.planId === currentPlan.planId;
+
   return (
     <>
       <BottomSheet
@@ -135,7 +138,7 @@ export default function ReportSheet({
         size="full"
         bodyClassName="p-0"
         footer={
-          activeView === 'plan' && activePlan ? (
+          activeView === 'plan' && activePlan && !isActivePlanCurrent ? (
             <PlanDetailFooter
               onSubscribe={() => handleSubscribeFromPlanDetail(activePlan)}
             />
@@ -190,9 +193,7 @@ export default function ReportSheet({
                 plan={toPlanDetailItem(activePlan)}
                 isLoading={false}
                 error={null}
-                isCurrent={
-                  !!currentPlan && activePlan.planId === currentPlan.planId
-                }
+                isCurrent={isActivePlanCurrent}
               />
             )}
           </div>

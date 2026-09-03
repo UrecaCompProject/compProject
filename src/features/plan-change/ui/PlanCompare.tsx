@@ -18,6 +18,9 @@ export interface PlanCompareProps {
   data: PlanCompareData;
   /** 'compact' = 챗봇 인라인 요약 카드, 'full' = 상세 바텀시트 */
   variant?: 'compact' | 'full';
+  /** 'fix'면 두 컬럼 모두 '선택한 요금제' 스타일로 고정 표시하고, planOptions를
+   *  넘겨도 드롭다운 없이 텍스트로만 보여줘 값을 바꿀 수 없게 한다. */
+  type?: 'default' | 'fix';
   /** 기본 '이용중인 요금제'. 상세요금제 화면의 '비교하기'로 들어온 경우처럼
    *  왼쪽 컬럼이 실사용 요금제가 아닐 때 '선택한 요금제' 등으로 바꿔서 사용. */
   currentLabel?: string;
@@ -80,6 +83,7 @@ function CollapsibleRow({
 export default function PlanCompare({
   data,
   variant = 'full',
+  type = 'default',
   currentLabel = '이용중인 요금제',
   selectedLabel = '선택한 요금제',
   planOptions,
@@ -97,10 +101,14 @@ export default function PlanCompare({
   className,
 }: PlanCompareProps) {
   const isCompact = variant === 'compact';
+  const isFixed = type === 'fix';
+  // 'fix'면 왼쪽 컬럼도 오른쪽과 같은 '선택한 요금제' 스타일로 고정한다.
+  const effectiveCurrentHighlighted = isFixed || currentHighlighted;
   const [showDiffOnly, setShowDiffOnly] = useState(false);
 
   // 요금제 드롭다운 — 헤더 라벨과 요금제명 행이 같은 드롭다운을 연다.
-  const hasOptions = (planOptions?.length ?? 0) > 0;
+  // 'fix'면 planOptions를 넘겨받아도 드롭다운을 아예 열지 않는다.
+  const hasOptions = !isFixed && (planOptions?.length ?? 0) > 0;
   const [openColumn, setOpenColumn] = useState<'current' | 'selected' | null>(
     null,
   );
@@ -193,12 +201,12 @@ export default function PlanCompare({
 
   // 왼쪽 컬럼을 드롭다운으로 내 요금제가 아닌 다른 요금제로 바꾸면
   // 타이틀은 '선택한 요금제'로, 색은 오른쪽과 같은 남색으로 바뀐다.
-  const leftLabel = currentHighlighted ? selectedLabel : currentLabel;
-  const leftColorClass = currentHighlighted
+  const leftLabel = effectiveCurrentHighlighted ? selectedLabel : currentLabel;
+  const leftColorClass = effectiveCurrentHighlighted
     ? 'text-compare-selected-strong'
     : 'text-fg-primary';
 
-  const currentValueColor = currentHighlighted
+  const currentValueColor = effectiveCurrentHighlighted
     ? 'text-compare-selected-strong'
     : 'text-fg-tertiary';
 
@@ -289,7 +297,7 @@ export default function PlanCompare({
               label={row.label}
               current={row.current}
               selected={row.selected}
-              currentHighlighted={currentHighlighted}
+              currentHighlighted={effectiveCurrentHighlighted}
             />
           ))}
 
@@ -297,7 +305,7 @@ export default function PlanCompare({
             label="대표 혜택"
             current={currentBenefits}
             selected={selectedBenefits}
-            currentHighlighted={currentHighlighted}
+            currentHighlighted={effectiveCurrentHighlighted}
           />
 
           {rowsAfter.map((row) => (
@@ -306,7 +314,7 @@ export default function PlanCompare({
               label={row.label}
               current={row.current}
               selected={row.selected}
-              currentHighlighted={currentHighlighted}
+              currentHighlighted={effectiveCurrentHighlighted}
             />
           ))}
 
@@ -391,7 +399,7 @@ export default function PlanCompare({
             label={row.label}
             current={row.current}
             selected={row.selected}
-            currentHighlighted={currentHighlighted}
+            currentHighlighted={effectiveCurrentHighlighted}
           />
         </CollapsibleRow>
       ))}
@@ -401,7 +409,7 @@ export default function PlanCompare({
           label="대표 혜택"
           current={currentBenefits}
           selected={selectedBenefits}
-          currentHighlighted={currentHighlighted}
+          currentHighlighted={effectiveCurrentHighlighted}
         />
       </CollapsibleRow>
 
@@ -413,7 +421,7 @@ export default function PlanCompare({
             selectedSummary={row.selectedSummary}
             selectedSubtext={row.selectedSubtext}
             selectedOptions={row.selectedOptions}
-            currentHighlighted={currentHighlighted}
+            currentHighlighted={effectiveCurrentHighlighted}
           />
         </CollapsibleRow>
       ))}

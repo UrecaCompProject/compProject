@@ -124,6 +124,8 @@ export default function PlanQuickSheet({
   };
 
   const backToList = () => setSelectedPlan(null);
+  const isSelectedPlanCurrent =
+    !!selectedPlan && !!currentPlan && selectedPlan.id === currentPlan.planId;
   const subscribing = isSubscribeOpen && !!selectedPlan;
   // 비교 화면 — 별도 바텀시트를 띄우지 않고 이 시트의 내용만 갈아끼운다.
   const comparing = compareOpen && !!selectedPlan && !subscribing;
@@ -190,7 +192,7 @@ export default function PlanQuickSheet({
           footer={
             subscribing ? (
               shell.footer
-            ) : comparing ? null : selectedPlan ? (
+            ) : comparing ? null : selectedPlan && !isSelectedPlanCurrent ? (
               <PlanDetailFooter
                 onCompare={() => setCompareOpen(true)}
                 compareDisabled={!currentPlan}
@@ -218,9 +220,7 @@ export default function PlanQuickSheet({
                 plan={selectedPlan}
                 isLoading={false}
                 error={null}
-                isCurrent={
-                  !!currentPlan && selectedPlan.id === currentPlan.planId
-                }
+                isCurrent={isSelectedPlanCurrent}
               />
             </div>
           ) : (
