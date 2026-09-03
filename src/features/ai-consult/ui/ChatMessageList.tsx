@@ -92,7 +92,7 @@ interface ChatMessageListProps {
 }
 
 // 이 값(px) 이내로 스크롤이 바닥에 가까우면 스크롤 방향과 무관하게 항상 노출
-const REPORT_BUTTON_BOTTOM_THRESHOLD = 24;
+const REPORT_BUTTON_BOTTOM_THRESHOLD = 200;
 
 export default function ChatMessageList({
   messages,
@@ -122,6 +122,7 @@ export default function ChatMessageList({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const lastMessageRef = useRef<HTMLDivElement | null>(null);
+  // 레포트 생성 버튼 표시 방향(위/아래) 판단용 — 스크롤 이벤트마다 갱신
   const lastScrollTopRef = useRef(0);
   // 스크롤 이벤트에서 계속 갱신 — 퀵 리플라이·ChatMenuBar가 펼쳐져 container
   // 크기가 바뀌는 시점에 "그 직전에 바닥 근처였는지"를 판단하는 데 쓰인다.
@@ -132,6 +133,10 @@ export default function ChatMessageList({
   // 덮어써 화면이 맨 아래로 튕기지 않도록 막는다. 사용자가 직접 스크롤(휠·터치)
   // 하면 해제되어 이후 뷰포트 변화에는 다시 바닥 고정이 동작한다.
   const contentOwnsScrollRef = useRef(false);
+  // scrollToLastMessageTop·stickToBottomIfWasNearBottom이 호출하는 scrollTo도
+  // 'scroll' 이벤트를 발생시킨다. 이 동안의 스크롤 방향은 사용자가 스크롤한 게
+  // 아니므로 레포트 버튼의 방향 기반 표시/숨김 판단에서 제외한다.
+  const programmaticScrollRef = useRef(false);
   // 리포트 생성 완료 말풍선의 "리포트 보기" 버튼 — 가장 최근 리포트 상세로
   // 바로 진입하는 상담 리포트 바텀시트를 연다.
   const [latestReportSheetOpen, setLatestReportSheetOpen] = useState(false);
@@ -160,22 +165,48 @@ export default function ChatMessageList({
     // 시작 지점이 화면 위쪽에 오도록 스크롤해 처음부터 읽을 수 있게 한다.
     // scrollIntoView는 overflow-hidden인 상위 Layout까지 스크롤시켜 레이아웃이 깨지므로
     // 스크롤 컨테이너에만 직접 scrollTo를 호출한다.
+    let releaseOwnershipTimeout: ReturnType<typeof setTimeout> | undefined;
     const scrollToLastMessageTop = () => {
       const target = lastMessageRef.current;
       if (!target || isInputFocused()) return;
 
-      const offset =
+      const topOffset =
         target.getBoundingClientRect().top -
         container.getBoundingClientRect().top +
         container.scrollTop;
+      // 리포트 생성 버튼이 스크롤과 무관하게 컨테이너 뷰포트의 바닥 쪽에 항상
+      // 떠 있으므로(pb-17로 비워둔 자리를 덮는 구조), 그 자리가 실제로
+      // 화면에 들어오려면 진짜 바닥(maxScroll)까지 스크롤돼 있어야 한다.
+      // 메시지가 뷰포트보다 짧으면(=흔한 경우) "맨 위 맞추기" 대신 바로 진짜
+      // 바닥으로 스크롤한다 — 짧은 메시지는 그래도 전부 보이고, 버튼 뒤에
+      // 가려지지 않는다. 메시지가 뷰포트보다 길면 시작 지점부터 읽도록 기존대로
+      // 맨 위에 맞춘다.
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      const messageFitsInViewport =
+        target.getBoundingClientRect().height <= container.clientHeight;
+      const offset = messageFitsInViewport
+        ? maxScroll
+        : Math.min(topOffset, maxScroll);
       contentOwnsScrollRef.current = true;
+      programmaticScrollRef.current = true;
       container.scrollTo({ top: offset, behavior: 'smooth' });
+
+      // 스무스 스크롤이 끝난 뒤에는 소유권을 자동으로 놓아준다. 사용자가 그
+      // 사이 휠·터치를 안 했다는 이유만으로 계속 true로 남으면, 이후(예: 퀵
+      // 리플라이 재확장) container 크기 변화의 바닥 고정 보정까지 막혀버린다.
+      clearTimeout(releaseOwnershipTimeout);
+      releaseOwnershipTimeout = setTimeout(() => {
+        contentOwnsScrollRef.current = false;
+        programmaticScrollRef.current = false;
+      }, 600);
     };
 
-    // 사용자가 직접 스크롤하면 "새 메시지 상단 정렬" 소유권을 놓는다.
+    // 사용자가 직접 스크롤하면 "새 메시지 상단 정렬" 소유권을 즉시 놓는다.
     // (프로그램적 scrollTo는 wheel·touch 이벤트를 만들지 않으므로 구분된다.)
     const releaseContentScrollOwnership = () => {
+      clearTimeout(releaseOwnershipTimeout);
       contentOwnsScrollRef.current = false;
+      programmaticScrollRef.current = false;
     };
     container.addEventListener('wheel', releaseContentScrollOwnership, {
       passive: true,
@@ -206,6 +237,7 @@ export default function ChatMessageList({
         ) {
           return;
         }
+        programmaticScrollRef.current = true;
         container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
       }, 450);
     };
@@ -221,6 +253,7 @@ export default function ChatMessageList({
     return () => {
       observer.disconnect();
       clearTimeout(stickToBottomTimeout);
+      clearTimeout(releaseOwnershipTimeout);
       container.removeEventListener('wheel', releaseContentScrollOwnership);
       container.removeEventListener(
         'touchstart',
@@ -229,23 +262,37 @@ export default function ChatMessageList({
     };
   }, []);
 
-  // 레포트 생성 버튼: 위로 스크롤할 때는 그대로 유지, 아래로 스크롤하면
-  // 사라지고, 바닥 근처로 돌아오면 방향과 상관없이 다시 노출한다.
-  // wasNearBottomRef도 여기서 함께 갱신한다.
+  // 레포트 생성 버튼: 위로 스크롤하면 보이고, 아래로 스크롤하면 숨긴다.
+  // 단, 전체 스크롤 범위의 마지막 10% 안(바닥 근처)에서는 방향과 상관없이 보인다.
+  // wasNearBottomRef(바닥 근처 여부)도 여기서 함께 갱신한다 — 다른 effect의
+  // "바닥 근처였으면 리사이즈 후에도 바닥에 붙인다" 로직이 이 값을 쓴다.
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom =
+      wasNearBottomRef.current =
         scrollHeight - scrollTop - clientHeight <
         REPORT_BUTTON_BOTTOM_THRESHOLD;
-      const isScrollingUp = scrollTop < lastScrollTopRef.current;
-      lastScrollTopRef.current = scrollTop;
-      wasNearBottomRef.current = isNearBottom;
 
-      onReportButtonVisibleChange?.(isNearBottom || isScrollingUp);
+      const maxScroll = scrollHeight - clientHeight;
+      const isInLastTenPercent =
+        maxScroll > 0 && (maxScroll - scrollTop) / maxScroll <= 0.1;
+
+      const isScrollingUp = scrollTop < lastScrollTopRef.current;
+      const isScrollingDown = scrollTop > lastScrollTopRef.current;
+      lastScrollTopRef.current = scrollTop;
+
+      if (isInLastTenPercent) {
+        onReportButtonVisibleChange?.(true);
+      } else if (!programmaticScrollRef.current) {
+        // 새 메시지 자동 스크롤 등 우리 코드가 만든 이동은 방향 판단에서 뺀다 —
+        // 그때의 scrollTop 증가를 "사용자가 아래로 스크롤함"으로 오인해
+        // 응답이 막 끝난 시점에 버튼이 숨어버리는 문제가 있었다.
+        if (isScrollingUp) onReportButtonVisibleChange?.(true);
+        else if (isScrollingDown) onReportButtonVisibleChange?.(false);
+      }
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
@@ -262,8 +309,8 @@ export default function ChatMessageList({
   return (
     <div
       ref={scrollContainerRef}
-      className={`min-h-0 flex-1 overflow-y-auto pt-4
-        ${canShowReportButton && !isLoading ? 'pb-17' : 'pb-4'}
+      className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4
+        ${canShowReportButton ? 'pb-17' : 'pb-4'}
       `}
     >
       <div ref={contentRef} className="flex flex-col gap-4 ">
