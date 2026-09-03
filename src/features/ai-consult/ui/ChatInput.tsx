@@ -66,7 +66,9 @@ export default function ChatInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSend();
+            // 한글 입력 조합 중(IME)의 Enter는 조합 확정용이므로 전송하지 않는다.
+            // 조합 확정 Enter까지 전송으로 처리하면 같은 입력이 두 번 전송된다.
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleSend();
           }}
           onFocus={(e) => {
             if (!isLoggedIn) {

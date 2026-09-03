@@ -1,11 +1,16 @@
 import type { ComponentType } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { UserRound, CreditCard, Gift, FileSpreadsheet } from 'lucide-react';
 
 import { IconBadge, useClickOutside } from '@/shared';
 import type { GameInfrastructure } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
+
+import {
+  useChatMenuSheetStore,
+  type ChatMenuSheet,
+} from '../model/useChatMenuSheetStore';
 
 export interface ChatMenuBarSlots {
   MyPageSheet: ComponentType<{
@@ -52,16 +57,20 @@ export default function ChatMenuBar({
   slots,
 }: ChatMenuBarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [myPageOpen, setMyPageOpen] = useState(false);
-  const [planOpen, setPlanOpen] = useState(false);
-  const [rewardOpen, setRewardOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
+  // 시트 열림 상태는 스토어에 둔다 — 메뉴 아이콘 클릭뿐 아니라 "마이페이지
+  // 보여줘"처럼 채팅으로 요청했을 때(quickReplyRouter)도 열 수 있어야 하기 때문.
+  const openSheet = useChatMenuSheetStore((s) => s.openSheet);
+  const setOpenSheet = useChatMenuSheetStore((s) => s.setOpenSheet);
+  const sheetHandlers = (sheet: ChatMenuSheet) => ({
+    open: openSheet === sheet,
+    onOpenChange: (next: boolean) => setOpenSheet(next ? sheet : null),
+  });
 
-  useClickOutside(
-    containerRef,
-    isMenuOpen && !myPageOpen && !planOpen && !rewardOpen && !reportOpen,
-    onMenuClose,
-  );
+  useClickOutside(containerRef, isMenuOpen && openSheet === null, onMenuClose);
+
+  // 채팅 화면을 벗어나면 열려 있던 시트 상태를 초기화한다(스토어가 모듈 전역이라
+  // 다시 들어왔을 때 시트가 저절로 열리는 것을 막음).
+  useEffect(() => () => setOpenSheet(null), [setOpenSheet]);
 
   return (
     <div className="relative" ref={containerRef}>
@@ -77,7 +86,7 @@ export default function ChatMenuBar({
             <button
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() => setMyPageOpen(true)}
+              onClick={() => setOpenSheet('mypage')}
               aria-label="마이페이지 열기"
             >
               <IconBadge icon={UserRound} size={52} radius={16} />
@@ -87,7 +96,7 @@ export default function ChatMenuBar({
             <button
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() => setPlanOpen(true)}
+              onClick={() => setOpenSheet('plan')}
               aria-label="요금제 메뉴 열기"
             >
               <IconBadge icon={CreditCard} size={52} radius={16} />
@@ -97,7 +106,7 @@ export default function ChatMenuBar({
             <button
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() => setRewardOpen(true)}
+              onClick={() => setOpenSheet('reward')}
               aria-label="혜택/이벤트 메뉴 열기"
             >
               <IconBadge icon={Gift} size={52} radius={16} />
@@ -107,7 +116,7 @@ export default function ChatMenuBar({
             <button
               type="button"
               className="flex flex-col gap-2.5 w-15 items-center justify-center cursor-pointer"
-              onClick={() => setReportOpen(true)}
+              onClick={() => setOpenSheet('report')}
               aria-label="상담 리포트 메뉴 열기"
             >
               <IconBadge icon={FileSpreadsheet} size={52} radius={16} />
@@ -118,25 +127,23 @@ export default function ChatMenuBar({
       </div>
 
       <slots.MyPageSheet
-        open={myPageOpen}
-        onOpenChange={setMyPageOpen}
+        {...sheetHandlers('mypage')}
         onRequestPlanRecommend={() => {
-          setMyPageOpen(false);
+          setOpenSheet(null);
           onSend?.('요금제 추천받기');
         }}
       />
 
-      <slots.PlanQuickSheet open={planOpen} onOpenChange={setPlanOpen} />
+      <slots.PlanQuickSheet {...sheetHandlers('plan')} />
 
       <slots.RewardSheet
         game={game}
-        open={rewardOpen}
-        onOpenChange={setRewardOpen}
+        {...sheetHandlers('reward')}
         onStartQuiz={onStartQuiz}
         onStartScratch={onStartScratch}
       />
 
-      <slots.ReportSheet open={reportOpen} onOpenChange={setReportOpen} />
+      <slots.ReportSheet {...sheetHandlers('report')} />
     </div>
   );
 }
