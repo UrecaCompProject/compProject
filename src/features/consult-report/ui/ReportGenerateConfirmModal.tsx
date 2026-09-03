@@ -20,9 +20,9 @@ export default function ReportGenerateConfirmModal({
         레포트를 생성하면 지금까지의 대화 내용이 초기화되고 레포트 요약만 채팅에
         남아요.
       </div>
-      <br />
-      <br />
-      레포트를 생성하시겠어요?
+      <span className="text-[16px] text-brand-promo-primary">
+        레포트를 생성하시겠어요?
+      </span>
       <Button onClick={handleConfirm} className="mt-2">
         레포트 생성
       </Button>

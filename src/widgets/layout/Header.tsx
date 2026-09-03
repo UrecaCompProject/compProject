@@ -46,7 +46,7 @@ export default function Header() {
           className="shrink-0"
           onClick={() =>
             open({
-              title: '회원관리',
+              title: '로그인',
               content: <SigninModal />,
             })
           }
