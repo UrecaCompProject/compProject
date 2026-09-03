@@ -3,7 +3,6 @@ import type { ComponentType } from 'react';
 import type {
   ConsultInput,
   RecommendedPlan,
-  ReportOutput,
   CompareResult,
 } from '@/shared/lib/aiConsult';
 import type { PlanDetailItem } from '@/shared/types/plan';
@@ -13,9 +12,10 @@ import RecommendationForm from './RecommendationForm';
 
 import type { ChatMessage } from '../types';
 
-// AI 메시지의 말풍선 이외 부가 콘텐츠(추천 카드, 레포트, 비교 결과, 요금제 선택기, 폼)를 렌더링
+// AI 메시지의 말풍선 이외 부가 콘텐츠(추천 카드, 비교 결과, 요금제 선택기, 폼)를 렌더링.
+// 레포트는 말풍선의 '레포트 보기' 버튼이 ReportSheet를 직접 여는 방식으로 대체돼
+// 여기서는 더 이상 다루지 않는다.
 interface AIChatExtrasSlots {
-  ReportCard: ComponentType<{ report: ReportOutput }>;
   CompareResultSheet: ComponentType<{
     result?: CompareResult;
     onSubscribe?: (plan: RecommendedPlan) => void;
@@ -67,8 +67,6 @@ export default function AIChatExtras({
           PlanDetailContent={slots.PlanDetailContent}
         />
       )}
-
-      {message.report && <slots.ReportCard report={message.report} />}
 
       {message.compareResult && (
         <slots.CompareResultSheet
