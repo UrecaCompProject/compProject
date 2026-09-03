@@ -247,7 +247,7 @@ export default function RecommendationForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-5 bg-surface-page rounded-2xl p-4 border border-border mx-4"
+      className="flex flex-col gap-5 bg-white/70 rounded-2xl p-4 border border-border mx-4"
     >
       {form.title && (
         <h4 className="text-body-lg font-semibold text-fg-primary">
