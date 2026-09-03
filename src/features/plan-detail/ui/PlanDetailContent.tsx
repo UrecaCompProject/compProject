@@ -22,12 +22,15 @@ interface PlanDetailContentProps {
   plan: PlanDetailItem | null;
   isLoading: boolean;
   error: string | null;
+  // 지금 조회 중인 요금제가 사용자가 실제 가입 중인 요금제일 때 "현재 요금제" 태그를 표시한다.
+  isCurrent?: boolean;
 }
 
 export default function PlanDetailContent({
   plan,
   isLoading,
   error,
+  isCurrent = false,
 }: PlanDetailContentProps) {
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -55,10 +58,11 @@ export default function PlanDetailContent({
   }
 
   return (
-    <div ref={rootRef} className="flex flex-col gap-4 pt-5">
+    <div ref={rootRef} className="flex flex-col gap-4">
       {/* 상단 요금제 섹션: 태그 / 타이틀+가격+쿠폰 */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
+          {isCurrent && <PlanTag label="현재 요금제" />}
           {[plan.category, plan.dataTier, ageChipLabel(plan.targetAge)]
             .filter(Boolean)
             .map((label) => (

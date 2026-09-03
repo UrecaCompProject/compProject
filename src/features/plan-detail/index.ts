@@ -8,5 +8,6 @@ export { default as PlanInfoSection } from './ui/PlanInfoSection';
 export { default as PlanTag } from './ui/PlanTag';
 export { default as PlanCatalogList } from './ui/PlanCatalogList';
 export { default as PlanDetailContent } from './ui/PlanDetailContent';
+export { default as PlanDetailFooter } from './ui/PlanDetailFooter';
 export { default as PlanQuickSheet } from './ui/PlanQuickSheet';
 export * from './types';

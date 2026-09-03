@@ -59,6 +59,10 @@ interface ChatMessageListSlots {
     isLoading: boolean;
     error: string | null;
   }>;
+  PlanDetailFooter: ComponentType<{
+    onSubscribe?: () => void;
+    onCompare?: () => void;
+  }>;
 }
 
 interface ChatMessageListProps {
@@ -273,7 +277,7 @@ export default function ChatMessageList({
                 <AIChat
                   sentence={
                     message.report ? (
-                      <div className="flex flex-col items-start gap-2.5">
+                      <div className="flex flex-col items-start gap-2.5 pb-1.5 pt-1">
                         <span>{message.sentence}</span>
                         <Button
                           onClick={() => setLatestReportSheetOpen(true)}
@@ -312,6 +316,7 @@ export default function ChatMessageList({
                   slots={{
                     CompareResultSheet: slots.CompareResultSheet,
                     PlanDetailContent: slots.PlanDetailContent,
+                    PlanDetailFooter: slots.PlanDetailFooter,
                   }}
                 />
               </>

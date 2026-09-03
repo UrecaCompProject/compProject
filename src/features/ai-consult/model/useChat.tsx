@@ -113,11 +113,25 @@ export function useChat({
   const wasLoggedInRef = useRef(isLoggedIn);
   const { resetChat, setMessages } = state;
 
+  // 비로그인 상태로 5회 이상 대화하면 로그인 모달을 한 번 자동으로 띄워 가입을 유도한다.
+  const hasPromptedLoginRef = useRef(false);
+
   useEffect(() => {
-    if (wasLoggedInRef.current && !isLoggedIn) {
+    const wasLoggedIn = wasLoggedInRef.current;
+    wasLoggedInRef.current = isLoggedIn;
+
+    if (wasLoggedIn && !isLoggedIn) {
+      // 로그아웃 직후 — 채팅을 리셋한다. 이 시점의 state.aiResponseCount는
+      // 아직 리셋이 반영되기 전(방금 끝난 로그인 세션 값)이라 신뢰할 수 없으므로,
+      // 여기서 바로 return해 아래 5회 체크가 그 값을 보고 즉시 재발동하지 않게 한다.
       resetChat();
-    } else if (!wasLoggedInRef.current && isLoggedIn) {
+      hasPromptedLoginRef.current = false;
+      return;
+    }
+
+    if (!wasLoggedIn && isLoggedIn) {
       // 채팅 도중 로그인하면 웰컴 메시지의 퀵 리플라이를 로그인 기준으로 갱신합니다.
+      hasPromptedLoginRef.current = false;
       setMessages((prev) => {
         if (prev.length === 0 || prev[0].type !== 'ai') return prev;
         return [
@@ -125,9 +139,18 @@ export function useChat({
           ...prev.slice(1),
         ];
       });
+      return;
     }
-    wasLoggedInRef.current = isLoggedIn;
-  }, [isLoggedIn, resetChat, setMessages]);
+
+    if (
+      !isLoggedIn &&
+      state.aiResponseCount >= 5 &&
+      !hasPromptedLoginRef.current
+    ) {
+      hasPromptedLoginRef.current = true;
+      requireLogin();
+    }
+  }, [isLoggedIn, resetChat, setMessages, state.aiResponseCount, requireLogin]);
 
   const compare = useChatCompare({
     profile: state.profile,
@@ -177,19 +200,6 @@ export function useChat({
     playedTodayGameIds: mission.playedTodayGameIds,
     aiResponseCount: state.aiResponseCount,
   });
-
-  // 비로그인 상태로 5회 이상 대화하면 로그인 모달을 한 번 자동으로 띄워 가입을 유도한다.
-  const hasPromptedLoginRef = useRef(false);
-  useEffect(() => {
-    if (isLoggedIn) {
-      hasPromptedLoginRef.current = false;
-      return;
-    }
-    if (state.aiResponseCount >= 5 && !hasPromptedLoginRef.current) {
-      hasPromptedLoginRef.current = true;
-      requireLogin();
-    }
-  }, [isLoggedIn, state.aiResponseCount, requireLogin]);
 
   return {
     messages: state.messages,
