@@ -92,6 +92,25 @@ interface RecommendationFormProps {
   disabled?: boolean;
 }
 
+function hasRequiredValue(
+  type: ConsultForm['fields'][number]['type'],
+  value: string | number | string[] | undefined,
+): boolean {
+  if (type === 'number') {
+    return (
+      value !== '' &&
+      value !== undefined &&
+      !(typeof value === 'number' && (isNaN(value) || value <= 0))
+    );
+  }
+
+  if (type === 'multi-select') {
+    return Array.isArray(value) && value.length > 0;
+  }
+
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 export default function RecommendationForm({
   form,
   onSubmit,
@@ -118,6 +137,9 @@ export default function RecommendationForm({
     return initial;
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const areRequiredFieldsComplete = form.fields
+    .filter((field) => field.required)
+    .every((field) => hasRequiredValue(field.type, values[field.name]));
 
   const handleText = (name: string, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -144,23 +166,19 @@ export default function RecommendationForm({
     for (const field of form.fields) {
       if (!field.required) continue;
       const value = values[field.name];
+      if (hasRequiredValue(field.type, value)) continue;
+
       if (field.type === 'number') {
-        if (
-          value === '' ||
-          value === undefined ||
-          (typeof value === 'number' && isNaN(value))
-        ) {
+        if (value === '' || value === undefined || Number.isNaN(value)) {
           newErrors[field.name] = `${josa(field.label, '을/를')} 입력해주세요`;
-        } else if (typeof value === 'number' && value <= 0) {
+        } else {
           newErrors[field.name] =
             `${josa(field.label, '은/는')} 0보다 커야 합니다`;
         }
       } else if (field.type === 'multi-select') {
-        // multi-select는 required가 아닌 필드이므로 검증 생략
+        newErrors[field.name] = `${josa(field.label, '을/를')} 선택해주세요`;
       } else {
-        if (!value || (typeof value === 'string' && !value.trim())) {
-          newErrors[field.name] = `${josa(field.label, '을/를')} 선택해주세요`;
-        }
+        newErrors[field.name] = `${josa(field.label, '을/를')} 선택해주세요`;
       }
     }
     setErrors(newErrors);
@@ -327,7 +345,12 @@ export default function RecommendationForm({
           </div>
         );
       })}
-      <Button type="submit" disabled={disabled} size="md" className="w-full">
+      <Button
+        type="submit"
+        disabled={disabled || !areRequiredFieldsComplete}
+        size="md"
+        className="w-full"
+      >
         추천 받기
       </Button>
     </form>

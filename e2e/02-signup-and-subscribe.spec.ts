@@ -14,10 +14,10 @@ test('signup -> recommend -> subscribe golden path', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '회원 가입하기' }).click();
 
-  await page.getByPlaceholder('이름').fill('QA테스터');
-  await page.getByPlaceholder('생년월일 6자리 (YYMMDD)').fill('990101');
-  await page.getByPlaceholder('전화번호').fill('01099998888');
-  await page.getByRole('button', { name: '다음 >' }).click();
+  await page.getByRole('textbox', { name: '이름' }).fill('QA테스터');
+  await page.getByRole('textbox', { name: '생년월일' }).fill('990101');
+  await page.getByRole('textbox', { name: '전화번호' }).fill('01099998888');
+  await page.getByRole('button', { name: '다음' }).click();
 
   // OTP는 코드상 mock 처리되어 있어(sendSignupOtp/verifySignupOtp) 어떤 값을 넣어도 통과한다.
   await page.getByPlaceholder('인증번호').fill('123456');
@@ -45,13 +45,14 @@ test('signup -> recommend -> subscribe golden path', async ({ page }) => {
 
   // AI 추천 요청 -> 폼 제출 -> 추천 결과
   await page.getByRole('button', { name: '요금제 추천받기' }).click();
-  await expect(page.getByRole('button', { name: '추천 받기' })).toBeVisible({
-    timeout: 20000,
-  });
+  const recommendButton = page.getByRole('button', { name: '추천 받기' });
+  await expect(recommendButton).toBeVisible({ timeout: 20000 });
+  await expect(recommendButton).toBeDisabled();
   await page.getByRole('button', { name: '20대' }).click();
   await page.getByRole('button', { name: '5GB 이하' }).click();
   await page.getByRole('button', { name: '5만원 이하' }).click();
-  await page.getByRole('button', { name: '추천 받기' }).click();
+  await expect(recommendButton).toBeEnabled();
+  await recommendButton.click();
 
   const subscribeButton = page
     .getByRole('button', { name: '가입 하기' })
