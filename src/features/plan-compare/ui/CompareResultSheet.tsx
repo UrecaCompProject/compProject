@@ -30,6 +30,7 @@ interface CompareResultSheetSlots {
     isLoading: boolean;
     error: string | null;
   }>;
+  PlanDetailFooter: ComponentType<{ onSubscribe: () => void }>;
 }
 
 interface CompareResultSheetProps {
@@ -77,7 +78,7 @@ function toColumnData(
 export default function CompareResultSheet({
   result,
   onSubscribe,
-  slots: { PlanCompare, PlanDetailContent },
+  slots: { PlanCompare, PlanDetailContent, PlanDetailFooter },
 }: CompareResultSheetProps) {
   const [open, setOpen] = useState(false);
   const [detailView, setDetailView] = useState<null | 'current' | 'selected'>(
@@ -142,6 +143,8 @@ export default function CompareResultSheet({
 
   const detailId = detailView === 'current' ? currentId : selectedId;
   const detailPlan = detailPlans.find((plan) => plan.id === detailId) ?? null;
+  const detailSubscribeTarget =
+    detailView === 'current' ? currentPlan : selectedPlan;
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
@@ -166,15 +169,24 @@ export default function CompareResultSheet({
         title={detailView ? '요금제 상세' : '요금제 비교'}
         description={detailView ? undefined : result?.summary}
         size="full"
-        bodyClassName={detailView ? 'px-0 bg-surface-page' : 'px-5'}
+        bodyClassName={detailView ? 'px-4 bg-surface-page' : 'px-5'}
         scrollResetKey={detailView ?? 'compare'}
+        footer={
+          detailView && detailSubscribeTarget ? (
+            <PlanDetailFooter
+              onSubscribe={() => onSubscribe?.(detailSubscribeTarget)}
+            />
+          ) : undefined
+        }
       >
         {detailView ? (
-          <PlanDetailContent
-            plan={detailPlan}
-            isLoading={detailLoading}
-            error={detailError ? '요금제 정보를 불러오지 못했습니다.' : null}
-          />
+          <div className="pt-4">
+            <PlanDetailContent
+              plan={detailPlan}
+              isLoading={detailLoading}
+              error={detailError ? '요금제 정보를 불러오지 못했습니다.' : null}
+            />
+          </div>
         ) : (
           <PlanCompare
             {...sharedProps}

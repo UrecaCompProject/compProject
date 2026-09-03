@@ -128,8 +128,9 @@ export default function BottomSheet({
                 <button
                   type="button"
                   aria-label="바텀시트 닫기"
-                  onClick={() => onOpenChange(false)}
-                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-primary transition-colors hover:bg-surface-page"
+                  onClick={() => dismissible && onOpenChange(false)}
+                  disabled={!dismissible}
+                  className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-fg-primary transition-colors hover:bg-surface-page disabled:pointer-events-none disabled:opacity-40"
                 >
                   <X size={22} />
                 </button>
@@ -153,8 +154,8 @@ export default function BottomSheet({
               <footer
                 className="
                   shrink-0 border-t border-border
-                  px-5 pt-4
-                  pb-[calc(20px+env(safe-area-inset-bottom))]
+                  px-4 pt-4
+                  pb-[calc(16px+env(safe-area-inset-bottom))]
                 "
               >
                 {footer}

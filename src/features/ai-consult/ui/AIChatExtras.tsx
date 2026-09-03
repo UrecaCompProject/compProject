@@ -26,6 +26,10 @@ interface AIChatExtrasSlots {
     isLoading: boolean;
     error: string | null;
   }>;
+  PlanDetailFooter: ComponentType<{
+    onSubscribe: () => void;
+    onCompare?: () => void;
+  }>;
 }
 
 interface AIChatExtrasProps {
@@ -65,6 +69,7 @@ export default function AIChatExtras({
           onPlanSubscribe={onPlanSubscribe}
           onPlanCompare={onPlanCompare}
           PlanDetailContent={slots.PlanDetailContent}
+          PlanDetailFooter={slots.PlanDetailFooter}
         />
       )}
 

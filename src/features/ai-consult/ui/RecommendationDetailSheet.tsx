@@ -1,13 +1,17 @@
 import type { ComponentType } from 'react';
 
-import { BottomSheet, Button } from '@/shared';
+import { useCurrentPlan } from '@/entities/plan';
+import { useIsLoggedIn } from '@/entities/user';
+import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import { toPlanDetailItem } from '@/shared/lib/planDetail';
 import type { PlanDetailItem } from '@/shared/types/plan';
 
 interface PlanDetailContentProps {
   plan: PlanDetailItem | null;
   isLoading: boolean;
   error: string | null;
+  isCurrent?: boolean;
 }
 
 interface RecommendationDetailSheetProps {
@@ -18,36 +22,15 @@ interface RecommendationDetailSheetProps {
   // 비교 대상이 없는 화면(예: 레포트 상세)에서는 "비교하기" 버튼 자체를 숨긴다.
   onCompare?: (plan: RecommendedPlan) => void;
   PlanDetailContent: ComponentType<PlanDetailContentProps>;
+  PlanDetailFooter: ComponentType<{
+    onSubscribe: () => void;
+    onCompare?: () => void;
+  }>;
 }
 
-// 추천 응답용 RecommendedPlan을 plan-detail의 PlanDetailItem으로 변환한다.
-// AI 추천 데이터에는 dataTier/ottBenefits/addOns/couponText 등이 없으므로 기본값을 채운다.
-function toPlanDetailItem(plan: RecommendedPlan): PlanDetailItem {
-  return {
-    id: plan.planId,
-    name: plan.planName,
-    category: plan.category ?? '',
-    targetAge: plan.targetAge ?? '',
-    dataTier: '',
-    monthlyFee: plan.monthlyFee ?? 0,
-    data: plan.data ?? '-',
-    dataSpeedAfter: plan.dataSpeedAfter ?? '',
-    voice: plan.voice ?? '',
-    callAmountMin: plan.callAmountMin ?? null,
-    message: plan.message ?? '',
-    smsAmount: plan.smsAmount ?? null,
-    shareData: plan.shareData ?? '-',
-    tethering: plan.tethering ?? '-',
-    notes: plan.notes ?? '',
-    benefits: plan.benefits ?? [],
-    ottBenefits: [],
-    addOns: [],
-    contractPeriodMonths: null,
-    couponText: null,
-  };
-}
-
-// 추천 요금제 카드 클릭 시 표시되는 상세 정보 BottomSheet
+// 추천 요금제 카드 클릭 시 표시되는 상세 정보 BottomSheet — PlanQuickSheet와
+// 마찬가지로 이 시트 하나만 뜨고(중첩 없음), 본문/footer는 plan-detail의
+// 공용 컴포넌트(PlanDetailContent/PlanDetailFooter)를 그대로 재사용한다.
 export default function RecommendationDetailSheet({
   plan,
   open,
@@ -55,7 +38,11 @@ export default function RecommendationDetailSheet({
   onSubscribe,
   onCompare,
   PlanDetailContent,
+  PlanDetailFooter,
 }: RecommendationDetailSheetProps) {
+  const isLoggedIn = useIsLoggedIn();
+  const { data: currentPlan } = useCurrentPlan(isLoggedIn);
+
   if (!plan) return null;
 
   return (
@@ -64,33 +51,19 @@ export default function RecommendationDetailSheet({
       onOpenChange={onOpenChange}
       title="요금제 조회"
       bg="bg-surface-page"
+      bodyClassName="px-4"
       footer={
-        <div className="flex gap-2 w-full">
-          {onCompare && (
-            <Button
-              variant="outline"
-              size="md"
-              className="flex-1"
-              onClick={() => onCompare(plan)}
-            >
-              비교 하기
-            </Button>
-          )}
-          <Button
-            variant="primary"
-            size="md"
-            className="flex-1"
-            onClick={() => onSubscribe(plan)}
-          >
-            신청 하기
-          </Button>
-        </div>
+        <PlanDetailFooter
+          onSubscribe={() => onSubscribe(plan)}
+          onCompare={onCompare ? () => onCompare(plan) : undefined}
+        />
       }
     >
       <PlanDetailContent
         plan={toPlanDetailItem(plan)}
         isLoading={false}
         error={null}
+        isCurrent={!!currentPlan && plan.planId === currentPlan.planId}
       />
     </BottomSheet>
   );

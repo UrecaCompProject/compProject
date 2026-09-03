@@ -1,8 +1,11 @@
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 
+import { useCurrentPlan } from '@/entities/plan';
+import { useIsLoggedIn } from '@/entities/user';
 import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import { toPlanDetailItem } from '@/shared/lib/planDetail';
 import type { PlanDetailItem } from '@/shared/types/plan';
 
 import { useReports } from '../model/useReports';
@@ -14,6 +17,7 @@ interface PlanDetailContentProps {
   plan: PlanDetailItem | null;
   isLoading: boolean;
   error: string | null;
+  isCurrent?: boolean;
 }
 
 interface ReportSheetSlots {
@@ -25,13 +29,7 @@ interface ReportSheetSlots {
     onComplete?: () => void;
   }>;
   PlanDetailContent: ComponentType<PlanDetailContentProps>;
-  PlanDetailSheet: ComponentType<{
-    plan: RecommendedPlan | null;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onSubscribe: (plan: RecommendedPlan) => void;
-    PlanDetailContent: ComponentType<PlanDetailContentProps>;
-  }>;
+  PlanDetailFooter: ComponentType<{ onSubscribe: () => void }>;
 }
 
 type ReportSheetProps = {
@@ -42,20 +40,26 @@ type ReportSheetProps = {
   slots: ReportSheetSlots;
 };
 
-type ReportView = 'list' | 'detail';
+// 'plan'은 레포트 상세에서 요금제 행을 눌렀을 때 보여주는 요금제 조회 화면 —
+// 새 BottomSheet를 덧띄우지 않고 이 시트 안에서 list/detail과 같은 방식으로
+// translate-x 슬라이딩만으로 전환한다.
+type ReportView = 'list' | 'detail' | 'plan';
 
 export default function ReportSheet({
   open,
   onOpenChange,
-  slots: { PlanSubscriptionSheet, PlanDetailContent, PlanDetailSheet },
+  slots: { PlanSubscriptionSheet, PlanDetailContent, PlanDetailFooter },
   openLatest = false,
 }: ReportSheetProps) {
   const { data: reports = [], isLoading } = useReports(open);
+  const isLoggedIn = useIsLoggedIn();
+  const { data: currentPlan } = useCurrentPlan(isLoggedIn);
   // 사용자가 목록/상세를 직접 오가면 값이 채워지고, null이면 openLatest 여부로
   // "기본 뷰"를 렌더링 중에 계산한다 — 비동기로 도착하는 reports를 기다렸다가
   // 이펙트에서 setState하는 대신, 데이터가 준비된 순간 바로 파생시킨다.
   const [manualView, setManualView] = useState<ReportView | null>(null);
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
+  const [activePlan, setActivePlan] = useState<RecommendedPlan | null>(null);
   const [subscriptionOpen, setSubscriptionOpen] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] =
     useState<RecommendedPlan | null>(null);
@@ -76,6 +80,7 @@ export default function ReportSheet({
       // 다음에 열릴 때 openLatest 기준으로 기본 뷰를 다시 계산하도록 초기화
       setManualView(null);
       setManualSelectedId(null);
+      setActivePlan(null);
     }
 
     onOpenChange(nextOpen);
@@ -90,16 +95,28 @@ export default function ReportSheet({
     setManualView('detail');
   };
 
-  const handleSelectPlan = (plan: RecommendedPlan) => {
+  // 레포트 상세에서 요금제 행을 누르면 요금제 조회 화면으로 슬라이딩 전환한다.
+  const handleOpenPlanDetail = (plan: RecommendedPlan) => {
+    setActivePlan(plan);
+    setManualView('plan');
+  };
+
+  const handleBackFromPlan = () => {
+    setManualView('detail');
+  };
+
+  const handleSubscribeFromPlanDetail = (plan: RecommendedPlan) => {
     handleOpenChange(false);
     setSubscriptionPlan(plan);
     setSubscriptionOpen(true);
   };
 
   const title =
-    activeView === 'detail'
-      ? (selectedReport?.summary_title ?? '상담 리포트')
-      : '상담 리포트';
+    activeView === 'plan'
+      ? '요금제 조회'
+      : activeView === 'detail'
+        ? (selectedReport?.summary_title ?? '상담 리포트')
+        : '상담 리포트';
 
   return (
     <>
@@ -108,9 +125,22 @@ export default function ReportSheet({
         className="bg-surface-page"
         onOpenChange={handleOpenChange}
         title={title}
-        onBack={activeView === 'detail' ? handleBack : undefined}
+        onBack={
+          activeView === 'plan'
+            ? handleBackFromPlan
+            : activeView === 'detail'
+              ? handleBack
+              : undefined
+        }
         size="full"
         bodyClassName="p-0"
+        footer={
+          activeView === 'plan' && activePlan ? (
+            <PlanDetailFooter
+              onSubscribe={() => handleSubscribeFromPlanDetail(activePlan)}
+            />
+          ) : undefined
+        }
       >
         <div className="relative h-full overflow-hidden">
           <div className="h-full overflow-y-auto px-5 pb-6">
@@ -138,16 +168,33 @@ export default function ReportSheet({
 
           <div
             className={`absolute inset-0 h-full overflow-y-auto  bg-surface-card transition-transform duration-300 ease-out ${
-              activeView === 'detail' ? 'translate-x-0' : 'translate-x-full'
+              activeView === 'detail' || activeView === 'plan'
+                ? 'translate-x-0'
+                : 'translate-x-full'
             }`}
           >
             <ReportDetail
               key={selectedReportId ?? 'empty'}
               report={selectedReport}
-              onSelectPlan={handleSelectPlan}
-              PlanDetailContent={PlanDetailContent}
-              PlanDetailSheet={PlanDetailSheet}
+              onPlanClick={handleOpenPlanDetail}
             />
+          </div>
+
+          <div
+            className={`absolute inset-0 h-full overflow-y-auto bg-surface-page px-4 transition-transform duration-300 ease-out ${
+              activeView === 'plan' ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            {activePlan && (
+              <PlanDetailContent
+                plan={toPlanDetailItem(activePlan)}
+                isLoading={false}
+                error={null}
+                isCurrent={
+                  !!currentPlan && activePlan.planId === currentPlan.planId
+                }
+              />
+            )}
           </div>
         </div>
       </BottomSheet>

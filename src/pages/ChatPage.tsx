@@ -8,7 +8,6 @@ import {
 } from '@/features/ai-consult';
 import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { useChat } from '@/features/ai-consult/model/useChat';
-import RecommendationDetailSheet from '@/features/ai-consult/ui/RecommendationDetailSheet';
 import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
 import { SigninModal, SignupChat } from '@/features/auth';
 import { ChatQuizMessage } from '@/features/chat-quiz';
@@ -27,6 +26,7 @@ import PlanCompare from '@/features/plan-change/ui/PlanCompare';
 import { CompareResultSheet } from '@/features/plan-compare';
 import { PlanQuickSheet } from '@/features/plan-detail';
 import PlanDetailContent from '@/features/plan-detail/ui/PlanDetailContent';
+import PlanDetailFooter from '@/features/plan-detail/ui/PlanDetailFooter';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import {
   GetBadgeModal,
@@ -120,7 +120,7 @@ export default function ChatPage() {
         return (
           <CompareResultSheet
             {...props}
-            slots={{ PlanCompare, PlanDetailContent }}
+            slots={{ PlanCompare, PlanDetailContent, PlanDetailFooter }}
           />
         );
       },
@@ -156,7 +156,7 @@ export default function ChatPage() {
             slots={{
               PlanSubscriptionSheet,
               PlanDetailContent,
-              PlanDetailSheet: RecommendationDetailSheet,
+              PlanDetailFooter,
             }}
           />
         );
@@ -173,6 +173,7 @@ export default function ChatPage() {
       PlanSubscriptionSheet,
       ScratchGame,
       PlanDetailContent,
+      PlanDetailFooter,
     }),
     [WrappedReportSheet, WrappedCompareResultSheet],
   );

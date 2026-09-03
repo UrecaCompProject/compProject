@@ -22,6 +22,10 @@ interface RecommendationCardsProps {
     isLoading: boolean;
     error: string | null;
   }>;
+  PlanDetailFooter: ComponentType<{
+    onSubscribe: () => void;
+    onCompare?: () => void;
+  }>;
 }
 
 export default function RecommendationCards({
@@ -29,6 +33,7 @@ export default function RecommendationCards({
   onPlanSubscribe,
   onPlanCompare,
   PlanDetailContent,
+  PlanDetailFooter,
 }: RecommendationCardsProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
@@ -90,6 +95,7 @@ export default function RecommendationCards({
         onSubscribe={handleSubscribe}
         onCompare={handleCompare}
         PlanDetailContent={PlanDetailContent}
+        PlanDetailFooter={PlanDetailFooter}
       />
     </div>
   );

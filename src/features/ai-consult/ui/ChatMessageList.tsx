@@ -57,6 +57,10 @@ interface ChatMessageListSlots {
     isLoading: boolean;
     error: string | null;
   }>;
+  PlanDetailFooter: ComponentType<{
+    onSubscribe: () => void;
+    onCompare?: () => void;
+  }>;
 }
 
 interface ChatMessageListProps {
@@ -272,6 +276,7 @@ export default function ChatMessageList({
                   slots={{
                     CompareResultSheet: slots.CompareResultSheet,
                     PlanDetailContent: slots.PlanDetailContent,
+                    PlanDetailFooter: slots.PlanDetailFooter,
                   }}
                 />
               </>
