@@ -16,7 +16,7 @@ export default function OxChoices({
   onSelect,
 }: OxChoicesProps) {
   return (
-    <ul className="grid w-full max-w-[344px] grid-cols-2 gap-2">
+    <ul className="grid w-full grid-cols-2 gap-2">
       {options.map((option) => {
         const isO = option.id === 'o';
         const isSelected = option.id === selectedId;
@@ -30,18 +30,22 @@ export default function OxChoices({
               size="md"
               active={isSelected}
               onClick={() => onSelect(option.id)}
-              className={`relative h-[132px] w-full overflow-hidden rounded-[20px] px-0 py-0 ${
-                isO ? '!bg-brand-soft' : '!bg-accent-soft'
+              className={`relative border-2 h-37.5! w-full overflow-hidden rounded-lg px-0 py-0 ${
+                isO
+                  ? 'bg-brand-soft! hover:border-brand-promo-primary'
+                  : 'bg-accent-soft! hover:border-red-400!'
               }`}
             >
-              <span className="absolute left-0 right-0 top-4 z-10 text-[24px] font-semibold text-fg-primary">
+              <span
+                className={`absolute left-0 right-0 top-6 z-10 text-[24px] font-semibold ${isO ? 'text-brand-promo-primary' : 'text-red-400'}`}
+              >
                 {option.label}
               </span>
 
               <img
                 src={imageSource}
                 alt=""
-                className="absolute bottom-0 left-1/2 h-[92px] w-[92px] -translate-x-1/2 object-contain"
+                className="absolute -translate-x-1/2 -bottom-2.25 left-1/2 h-23 w-23 object-contain"
               />
             </Button>
           </li>

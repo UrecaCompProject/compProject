@@ -346,6 +346,7 @@ export default function ChatPage() {
         onBack={activeGameMeta?.onBack}
         size="full"
         bodyClassName="px-0"
+        className="min-w-[320px]"
       >
         <GameLayer />
       </BottomSheet>

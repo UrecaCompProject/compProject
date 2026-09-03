@@ -29,17 +29,18 @@ export default function MultipleChoices({
         const isSelected = option.id === selectedId;
 
         return (
-          <li key={option.id} className="w-full min-w-0 max-w-[344px]">
+          <li key={option.id} className="w-full min-w-0 ">
             <Button
               type="button"
-              variant="chip"
+              // variant="primary"
               size="lg"
+
               active={isSelected}
               onClick={() => onSelect(option.id)}
-              className="group min-h-[58px] w-full max-w-full justify-start gap-3 text-left"
+              className={`group w-full max-w-full justify-start gap-3 text-left h-fit px-3! py-3! border! border-border! text-[14px]! ${isSelected ? 'bg-surface-page! text-brand-promo-primary! font-medium' : 'bg-white! text-fg-tertiary!'}`}
             >
               <ChoiceMark>{optionMarks[index] ?? index + 1}</ChoiceMark>
-              <span className="min-w-0 flex-1 truncate text-regular-12-130">
+              <span className="min-w-0 flex-1 text-regular">
                 {option.label}
               </span>
             </Button>
