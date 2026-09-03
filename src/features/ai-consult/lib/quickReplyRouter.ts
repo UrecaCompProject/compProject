@@ -46,6 +46,8 @@ export interface QuickReplyContext {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  // "출석체크" 퀵리플라이 — 오늘 출석을 바로 처리하고 결과 메시지까지 추가
+  checkInAttendance: () => Promise<void>;
   playedTodayGameIds: Set<string>;
   // AbortController signal — 비동기 requestConsult 호출 취소에 사용
   signal?: AbortSignal;
@@ -75,6 +77,7 @@ export async function routeQuickReply(
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     signal,
     retryLastInput,
@@ -128,18 +131,10 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // "출석체크" 퀵 리플라이 — 출석 룰렛 바텀시트 게임으로 바로 연결
+  // "출석체크" 퀵 리플라이 — 룰렛으로 보내지 않고 오늘 출석을 바로 처리한 뒤
+  // 완료/배지 적립 결과를 채팅 메시지로 안내
   if (text === '출석체크') {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: 'user',
-        sentence: '출석체크',
-        category: 'attendance',
-      },
-    ]);
-    openSheetGame('attendance');
+    await checkInAttendance();
     return 'handled';
   }
 
