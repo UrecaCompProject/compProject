@@ -129,7 +129,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                 value={info.phone}
                 onChange={handleChange('phone')}
                 maxLength={11}
-                placeholder="010-0000-0000"
+                placeholder="01012345678"
                 type="tel"
                 error={errors.phone}
               />
@@ -313,7 +313,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                     disabled={!agreedToPrivacy || isCompletingSignup}
                     className="flex-1"
                   >
-                    {isCompletingSignup ? '처리 중...' : '가입 완료하기'}
+                    {isCompletingSignup ? '처리 중...' : '가입 완료'}
                   </Button>
                 </div>
               </div>

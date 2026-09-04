@@ -270,7 +270,10 @@ export async function routeQuickReply(
         ['메뉴로 돌아가기'],
       ),
     ]);
-    openSubscription(findLastRecommendedPlan(messages) ?? null);
+    // 사용자가 특정 요금제를 직접 고른 게 아니라 "가입하기" 자체를 선택한
+    // 흐름이므로, 이전에 추천됐던 요금제를 임의로 끌어오지 않고 요금제 선택
+    // 단계(step1)부터 보여준다. (위 안내 문구도 "선택해 가입을 진행해 주세요")
+    openSubscription(null);
     return 'handled';
   }
 

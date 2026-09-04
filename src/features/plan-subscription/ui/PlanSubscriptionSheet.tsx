@@ -12,14 +12,21 @@ import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
 import { usePlanCatalog, useCurrentPlan } from '@/entities/plan';
 import { useAuth, useIsLoggedIn } from '@/entities/user';
-import { BottomSheet, Button, Input } from '@/shared';
+import { BottomSheet, Button /* , Input */ } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import { useSubmitSubscription } from '../model/useSubmitSubscription';
 
 import type { SubscriptionForm } from '../types';
 
-type SubscriptionStep = 'planSelect' | 'delivery' | 'agreement' | 'complete';
+// 배송/유심 선택 단계 비활성화 — 필요해지면 'delivery'를 다시 넣고
+// 아래 관련 코드(STEP_TITLES, STEPS, order 배열, canProceed, body)의
+// 주석을 함께 풀어야 한다.
+type SubscriptionStep =
+  | 'planSelect'
+  // | 'delivery'
+  | 'agreement'
+  | 'complete';
 
 const initialForm: SubscriptionForm = {
   type: 'new',
@@ -79,11 +86,11 @@ const STEP_TITLES: Record<
     label: '요금',
     desc: '가입할 요금제를 선택해주세요',
   },
-  delivery: {
-    title: '배송/유심',
-    label: '배송',
-    desc: 'USIM 유형을 선택해주세요',
-  },
+  // delivery: {
+  //   title: '배송/유심',
+  //   label: '배송',
+  //   desc: 'USIM 유형을 선택해주세요',
+  // },
   agreement: {
     title: '약관 동의',
     label: '약관',
@@ -94,7 +101,7 @@ const STEP_TITLES: Record<
 
 const STEPS: SubscriptionStep[] = [
   'planSelect',
-  'delivery',
+  // 'delivery',
   'agreement',
   'complete',
 ];
@@ -241,10 +248,10 @@ export default function PlanSubscriptionSheet({
   renderShell,
 }: PlanSubscriptionSheetProps) {
   // 요금제를 미리 정하고 들어온 경우(요금제 상세 "신청하기" 등)는 요금제 선택을
-  // 다시 보여줄 필요가 없으므로 배송 단계부터 시작하고, 뒤로가기로도 선택
-  // 단계에 다시 진입할 수 없게 한다. plan이 없을 때만(예: 채팅에서 추천받은
-  // 요금제가 없는 채로 "요금제 가입하기") 선택 단계부터 시작한다.
-  const initialFirstStep: SubscriptionStep = plan ? 'delivery' : 'planSelect';
+  // 다시 보여줄 필요가 없으므로 약관 동의 단계부터 시작하고(배송 단계는 비활성화
+  // 상태), 뒤로가기로도 선택 단계에 다시 진입할 수 없게 한다. plan이 없을 때만
+  // (예: 채팅에서 추천받은 요금제가 없는 채로 "요금제 가입하기") 선택 단계부터 시작한다.
+  const initialFirstStep: SubscriptionStep = plan ? 'agreement' : 'planSelect';
   const [firstStep, setFirstStep] =
     useState<SubscriptionStep>(initialFirstStep);
   const firstStepIndex = STEPS.indexOf(firstStep);
@@ -261,7 +268,7 @@ export default function PlanSubscriptionSheet({
   const prevActiveRef = useRef(active);
   useEffect(() => {
     if (active && !prevActiveRef.current) {
-      const nextFirstStep: SubscriptionStep = plan ? 'delivery' : 'planSelect';
+      const nextFirstStep: SubscriptionStep = plan ? 'agreement' : 'planSelect';
       setFirstStep(nextFirstStep);
       setStep(nextFirstStep);
       setSelectedPlan(plan);
@@ -342,24 +349,25 @@ export default function PlanSubscriptionSheet({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const fieldErrors = useMemo(
-    () => ({
-      address: form.address.length > 0 && form.address.trim().length < 5,
-    }),
-    [form],
-  );
+  // 배송 단계 비활성화로 현재 미사용 — 다시 켜면 delivery 섹션에서 사용
+  // const fieldErrors = useMemo(
+  //   () => ({
+  //     address: form.address.length > 0 && form.address.trim().length < 5,
+  //   }),
+  //   [form],
+  // );
 
   const canProceed = useMemo(() => {
     switch (step) {
       case 'planSelect':
         return selectedPlan !== null;
-      case 'delivery':
-        if (form.simType === '') return false;
-        // USIM은 물리 배송이 필요하므로 주소 필수, eSIM은 주소 불필요
-        if (form.simType === 'usim') {
-          return form.address.trim().length >= 5;
-        }
-        return true;
+      // case 'delivery':
+      //   if (form.simType === '') return false;
+      //   // USIM은 물리 배송이 필요하므로 주소 필수, eSIM은 주소 불필요
+      //   if (form.simType === 'usim') {
+      //     return form.address.trim().length >= 5;
+      //   }
+      //   return true;
       case 'agreement':
         return form.agreedPrivacy && form.agreedService;
       default:
@@ -380,7 +388,7 @@ export default function PlanSubscriptionSheet({
       default:
         return '';
     }
-  }, [step, form.simType]);
+  }, [step]);
 
   const showHelper = !canProceed && step !== 'complete';
 
@@ -402,13 +410,13 @@ export default function PlanSubscriptionSheet({
       return;
     }
 
-    const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
+    const order: SubscriptionStep[] = ['planSelect', 'agreement'];
     const index = order.indexOf(step);
     setStep(order[index + 1] ?? 'complete');
   };
 
   const handlePrev = () => {
-    const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
+    const order: SubscriptionStep[] = ['planSelect', 'agreement'];
     const index = order.indexOf(step);
     setStep(order[Math.max(firstStepIndex, index - 1)]);
   };
@@ -554,9 +562,10 @@ export default function PlanSubscriptionSheet({
         </section>
       )}
 
+      {/* 배송/유심 선택 단계 비활성화
+      USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시
       {step === 'delivery' && (
         <section className="space-y-4">
-          {/* USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시 */}
           <div>
             <label className="text-caption text-fg-secondary mb-1.5 block">
               USIM 유형
@@ -628,6 +637,7 @@ export default function PlanSubscriptionSheet({
           )}
         </section>
       )}
+      */}
 
       {step === 'agreement' && (
         <section className="space-y-4">
@@ -738,6 +748,7 @@ export default function PlanSubscriptionSheet({
             <InfoRow label="이름" value={userInfo.name || '-'} />
             <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
             <InfoRow label="이메일" value={userInfo.email || '-'} />
+            {/* 배송/유심 선택 단계 비활성화
             {form.simType === 'usim' && (
               <InfoRow
                 label="주소"
@@ -747,11 +758,12 @@ export default function PlanSubscriptionSheet({
                 }
               />
             )}
+            */}
             <InfoRow
               label="가입 유형"
               value={hasCurrentPlan ? '요금제 변경' : '신규 가입'}
             />
-            <InfoRow label="USIM" value={form.simType.toUpperCase()} />
+            {/* <InfoRow label="USIM" value={form.simType.toUpperCase()} /> */}
           </div>
         </section>
       )}

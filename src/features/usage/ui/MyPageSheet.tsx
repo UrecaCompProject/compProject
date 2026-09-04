@@ -51,14 +51,14 @@ export default function MyPageSheet({
       <div className="bg-surface-page">
         {/* 모바일 전화번호 정보 section */}
         <div className="flex flex-col px-4 py-3">
-          <div className="leading-[170%] text-fg-tertiary text-[14px] ">
+          <div className="leading-[170%] text-fg-tertiary text-[14px] flex">
             <p className="text-medium">개인 정보</p>
-            <span className="ml-3 text-regular">
+            <p className="ml-3 text-semibold">
               {maskPhone(user?.user_metadata?.name ?? '')}
-            </span>
-            <span className="ml-2 text-regular">
+            </p>
+            <p className="ml-2 text-semibold">
               {maskPhone(user?.user_metadata?.phone ?? '')}
-            </span>
+            </p>
           </div>
         </div>
 
