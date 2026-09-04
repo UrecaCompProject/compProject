@@ -3,20 +3,25 @@ import type { ConsultInput } from '@/shared/lib/aiConsult';
 // OTT 키워드 정규화 맵: 사용자가 입력한 별칭을 canonical 키워드로 변환
 const OTT_ALIASES: Record<string, string> = {
   넷플릭스: '넷플릭스',
-  넷플: '넷플릭스',
-  '유튜브 프리미엄': '유튜브 프리미엄',
-  유튜브: '유튜브 프리미엄',
-  '디즈니+': '디즈니+',
-  디즈니: '디즈니+',
-  왓챠: '왓챠',
-  웨이브: '웨이브',
-  쿠팡플레이: '쿠팡플레이',
-  쿠팡: '쿠팡플레이',
-  '애플 뮤직': '애플 뮤직',
-  애플: '애플 뮤직',
-  멜론: '멜론',
-  스포티파이: '스포티파이',
+  '디즈니+티빙': '디즈니+티빙',
 };
+
+// const OTT_ALIASES: Record<string, string> = {
+//   넷플릭스: '넷플릭스',
+//   넷플: '넷플릭스',
+//   '유튜브 프리미엄': '유튜브 프리미엄',
+//   유튜브: '유튜브 프리미엄',
+//   '디즈니+': '디즈니+',
+//   디즈니: '디즈니+',
+//   왓챠: '왓챠',
+//   웨이브: '웨이브',
+//   쿠팡플레이: '쿠팡플레이',
+//   쿠팡: '쿠팡플레이',
+//   '애플 뮤직': '애플 뮤직',
+//   애플: '애플 뮤직',
+//   멜론: '멜론',
+//   스포티파이: '스포티파이',
+// };
 
 // 사용자 메시지에서 상담 조건(연령/데이터/예산/OTT 등)을 추출해 ConsultInput으로 누적합니다.
 export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
@@ -63,7 +68,11 @@ export function parseUserInput(text: string, prev: ConsultInput): ConsultInput {
   ) {
     next.dataUsage = (next.dataUsage ?? 0) + 5;
     next.priority = 'data';
-  } else if (/무제한|완전\s*무제한|데이터\s*많이/.test(t)) {
+  } else if (
+    /무제한|완전\s*무제한|데이터\s*많이/.test(t) &&
+    // "예산 무제한 / 가격 무제한 / 요금 무제한"은 데이터가 아니라 예산 제한 해제이므로 제외
+    !/(예산|가격|요금)\s*(?:은|는|이|가)?\s*무제한/.test(t)
+  ) {
     next.dataUsage = 100;
     next.priority = 'max_data';
   }

@@ -30,9 +30,9 @@ describe('classifyError', () => {
     expect(result.userMessage).toContain('일시적인 오류');
   });
 
-  it('레포트 생성 실패를 server로 분류', () => {
+  it('리포트 생성 실패를 server로 분류', () => {
     const result = classifyError(
-      new Error('레포트 생성 실패: 502 Bad Gateway'),
+      new Error('리포트 생성 실패: 502 Bad Gateway'),
     );
     expect(result.type).toBe('server');
   });

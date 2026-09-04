@@ -29,7 +29,9 @@ interface CompareResultSheetSlots {
     plan: PlanDetailItem | null;
     isLoading: boolean;
     error: string | null;
+    isCurrent?: boolean;
   }>;
+  PlanDetailFooter: ComponentType<{ onSubscribe?: () => void }>;
 }
 
 interface CompareResultSheetProps {
@@ -77,7 +79,7 @@ function toColumnData(
 export default function CompareResultSheet({
   result,
   onSubscribe,
-  slots: { PlanCompare, PlanDetailContent },
+  slots: { PlanCompare, PlanDetailContent, PlanDetailFooter },
 }: CompareResultSheetProps) {
   const [open, setOpen] = useState(false);
   const [detailView, setDetailView] = useState<null | 'current' | 'selected'>(
@@ -142,10 +144,22 @@ export default function CompareResultSheet({
 
   const detailId = detailView === 'current' ? currentId : selectedId;
   const detailPlan = detailPlans.find((plan) => plan.id === detailId) ?? null;
+  const detailSubscribeTarget =
+    detailView === 'current' ? currentPlan : selectedPlan;
+  // "current"/"selected"는 비교 화면의 좌/우 컬럼 구분일 뿐, 실제로 내가
+  // 가입 중인 요금제인지는 myPlan과 별도로 비교해야 한다.
+  const isDetailCurrentPlan = !!myPlan && detailPlan?.id === myPlan.planId;
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (!next) setDetailView(null);
+  };
+
+  // 신청/변경 흐름으로 넘어갈 때는 이 시트를 열어둔 채로 새 신청 시트를
+  // 위에 띄우지 않고, 이 시트부터 닫아서 신청이 끝났을 때 남는 시트가 없게 한다.
+  const handleSubscribeClick = (targetPlan: RecommendedPlan) => {
+    handleOpenChange(false);
+    onSubscribe?.(targetPlan);
   };
 
   return (
@@ -166,22 +180,34 @@ export default function CompareResultSheet({
         title={detailView ? '요금제 상세' : '요금제 비교'}
         description={detailView ? undefined : result?.summary}
         size="full"
-        bodyClassName={detailView ? 'px-0 bg-surface-page' : 'px-5'}
+        bodyClassName={detailView ? 'px-4 bg-surface-page' : 'px-5'}
         scrollResetKey={detailView ?? 'compare'}
+        footer={
+          detailView && detailSubscribeTarget && !isDetailCurrentPlan ? (
+            <PlanDetailFooter
+              onSubscribe={() => handleSubscribeClick(detailSubscribeTarget)}
+            />
+          ) : undefined
+        }
       >
         {detailView ? (
-          <PlanDetailContent
-            plan={detailPlan}
-            isLoading={detailLoading}
-            error={detailError ? '요금제 정보를 불러오지 못했습니다.' : null}
-          />
+          <div className="pt-4">
+            <PlanDetailContent
+              plan={detailPlan}
+              isLoading={detailLoading}
+              error={detailError ? '요금제 정보를 불러오지 못했습니다.' : null}
+              isCurrent={isDetailCurrentPlan}
+            />
+          </div>
         ) : (
           <PlanCompare
             {...sharedProps}
             variant="full"
             className="w-full"
             onChangePlan={
-              selectedPlan ? () => onSubscribe?.(selectedPlan) : undefined
+              selectedPlan
+                ? () => handleSubscribeClick(selectedPlan)
+                : undefined
             }
             onDetailCurrent={
               currentPlan ? () => setDetailView('current') : undefined

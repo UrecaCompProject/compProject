@@ -10,6 +10,12 @@ export type ChatMode =
   | 'report'
   | 'out_of_scope';
 
+// 최근 대화 맥락 한 턴. 슬롯 추출/의도 분류 시 LLM에 함께 전달한다.
+export interface ConversationTurn {
+  role: 'user' | 'ai';
+  text: string;
+}
+
 export interface ConsultInput {
   currentPlan?: string;
   dataUsage?: number;
@@ -33,6 +39,9 @@ export interface ConsultInput {
   // (ageGroup/dataUsage/budget). 값이 비어있어도 buildInfoRequest/buildInfoForm이
   // 다시 물어보지 않도록 참고한다.
   skippedFields?: string[];
+  // 최근 대화 맥락 (오래된 순, 최대 8턴). LLM 슬롯 추출/의도 분류에만 사용하며
+  // 프로필로 누적 저장하지 않는다.
+  history?: ConversationTurn[];
 }
 
 export interface RecommendedPlan {
@@ -59,6 +68,8 @@ export interface ConsultFormField {
   type: 'select' | 'number' | 'text' | 'multi-select';
   options?: string[];
   required?: boolean;
+  // 대화에서 이미 파악된 초기값 — 폼을 미리 선택된 상태로 렌더링하기 위함
+  value?: string | number | string[];
 }
 
 export interface ConsultForm {
@@ -107,11 +118,13 @@ export interface CompareResult extends CompareOutput {
 
 export interface ReportInput {
   conversation: string;
-  currentPlan: string;
-  recommendationResult: string;
   reportKind?: 'plan' | 'general';
   // 상담에서 확정된 사용자 조건 요약
   userProfile?: string;
+  // 가입 당시 현재(기존) 요금제 이름 — changedPlanAdvantage 생성에 사용
+  currentPlan?: string;
+  // 상담 중 실제로 가입/변경된 요금제 — 있으면 기존 요금제 대비 좋은 점을 생성한다
+  changedPlan?: RecommendedPlan | null;
 }
 
 export interface ReportQAPair {
@@ -119,13 +132,15 @@ export interface ReportQAPair {
   answer: string;
 }
 
+// 추천/비교/가입 요금제는 클라이언트가 이미 구조화된 데이터로 갖고 있으므로,
+// 이 Edge Function은 대화 요약(자유 서술 부분)만 생성한다.
 export interface ReportOutput {
+  // 레포트 목록에 쓰는 한 줄 요약 제목
+  title: string;
   summary: string;
   usageType: string;
-  currentPlan: string;
-  recommendedPlans: string[];
-  recommendationReason: string;
-  monthlySavingAmount: number;
   importantConditions: string[];
   qaPairs: ReportQAPair[];
+  // changedPlan이 있을 때만 생성되는, 기존 요금제 대비 좋은 점(200자 이내). 없으면 빈 문자열.
+  changedPlanAdvantage: string;
 }

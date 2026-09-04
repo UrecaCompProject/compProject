@@ -18,7 +18,7 @@ const LOGIN_ONLY_REPLIES = [
   '온라인 가입',
   '요금제 가입하기',
   '게임 하기',
-  '출석 체크',
+  '출석체크',
 ];
 const GUEST_ONLY_REPLIES = ['회원 가입하기'];
 
@@ -61,26 +61,22 @@ export default function QuickReplies({
       </div>
 
       <div
-        className={`grid transition-all duration-300 ease-out ${
-          collapsed
-            ? 'grid-rows-[0fr] opacity-0'
-            : 'grid-rows-[1fr] opacity-100'
+        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+          collapsed ? 'max-h-0 opacity-0' : 'max-h-[200px] opacity-100'
         }`}
       >
-        <div className="overflow-hidden">
-          <div className="flex flex-wrap gap-2 px-4 mb-3">
-            {processed.map((reply) => (
-              <Button
-                key={reply}
-                variant="chip"
-                size="chip"
-                onClick={() => onReply(reply)}
-                disabled={disabled}
-              >
-                {reply}
-              </Button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-2 px-4 mb-3">
+          {processed.map((reply) => (
+            <Button
+              key={reply}
+              variant="chip"
+              size="chip"
+              onClick={() => onReply(reply)}
+              disabled={disabled}
+            >
+              {reply}
+            </Button>
+          ))}
         </div>
       </div>
     </div>

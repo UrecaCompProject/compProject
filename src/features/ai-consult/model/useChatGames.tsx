@@ -69,9 +69,16 @@ export function useChatGames({
   const onScratchWin = useCallback(
     (score: number) => {
       if (!scratchMissionUuid) return;
-      recordPlay({ gameId: scratchMissionUuid, score });
+      recordPlay(
+        { gameId: scratchMissionUuid, score },
+        {
+          onSuccess: () => {
+            openModal({ content: <GetBadgeModal badgeCount={score} /> });
+          },
+        },
+      );
     },
-    [recordPlay, scratchMissionUuid],
+    [recordPlay, scratchMissionUuid, openModal, GetBadgeModal],
   );
 
   const openSheetGame = useCallback(

@@ -50,12 +50,12 @@ export const missions: Mission[] = [
     actionLabel: '시작',
     icon: 'telecom',
   },
-  {
-    id: 'friend-share',
-    uuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f107',
-    title: '친구 공유',
-    reward: 1,
-    actionLabel: '공유',
-    icon: 'share',
-  },
+  // {
+  //   id: 'friend-share',
+  //   uuid: '8f2a1c10-6c9d-4e0d-9f2f-9c4e9db6f107',
+  //   title: '친구 공유',
+  //   reward: 1,
+  //   actionLabel: '공유',
+  //   icon: 'share',
+  // },
 ];

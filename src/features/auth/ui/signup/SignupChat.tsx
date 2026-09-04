@@ -129,14 +129,14 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                 value={info.phone}
                 onChange={handleChange('phone')}
                 maxLength={11}
-                placeholder="010-0000-0000"
+                placeholder="01012345678"
                 type="tel"
                 error={errors.phone}
               />
               <Button
                 onClick={handleSubmitBasicInfo}
                 disabled={isSendingOtp}
-                className="w-full mb-1.5"
+                className="w-full mb-1.5 mt-2"
               >
                 {isSendingOtp ? '인증번호 발송 중...' : '다음'}
               </Button>
@@ -175,7 +175,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
               <div className="flex flex-col gap-2 w-full">
                 <SignupField
                   label={
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between text-[14px] font-semibold mb-1 h-[22.5px]">
                       <span>인증번호</span>
                       <span className="text-semantic-error">
                         {formatTime(remainingSeconds)}
@@ -193,7 +193,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                 <Button
                   onClick={handleVerifyCode}
                   disabled={code.trim().length === 0 || isVerifyingCode}
-                  className="mt-2 w-full"
+                  className="mb-1.5 mt-2 w-full"
                 >
                   {isVerifyingCode ? '확인 중...' : '확인'}
                 </Button>
@@ -215,7 +215,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
             sentence={
               <div className="flex flex-col gap-2.5 w-full">
                 <div className="text-[16px] font-medium text-fg-tertiary pt-2">
-                  기본 정보
+                  계정 정보
                 </div>
                 <div className="flex flex-col gap-2.5 w-full">
                   <SignupField
@@ -247,7 +247,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   />
                   <Button
                     onClick={handleSubmitCredentials}
-                    className="mt-2 w-full"
+                    className="mt-2 mb-2 w-full"
                   >
                     다음
                   </Button>
@@ -299,7 +299,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                   </span>
                 </label>
                 {completeError && <FieldError>{completeError}</FieldError>}
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-1.5 mb-2">
                   <Button
                     variant="secondary"
                     onClick={handleBackToCredentials}
@@ -313,7 +313,7 @@ export default function SignupChat({ onFinish }: SignupChatProps) {
                     disabled={!agreedToPrivacy || isCompletingSignup}
                     className="flex-1"
                   >
-                    {isCompletingSignup ? '처리 중...' : '가입 완료하기'}
+                    {isCompletingSignup ? '처리 중...' : '가입 완료'}
                   </Button>
                 </div>
               </div>

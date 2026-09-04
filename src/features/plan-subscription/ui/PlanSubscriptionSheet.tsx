@@ -12,14 +12,21 @@ import { Check, CheckCircle2, ChevronDown } from 'lucide-react';
 
 import { usePlanCatalog, useCurrentPlan } from '@/entities/plan';
 import { useAuth, useIsLoggedIn } from '@/entities/user';
-import { BottomSheet, Button, Input } from '@/shared';
+import { BottomSheet, Button /* , Input */ } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 
 import { useSubmitSubscription } from '../model/useSubmitSubscription';
 
 import type { SubscriptionForm } from '../types';
 
-type SubscriptionStep = 'planSelect' | 'delivery' | 'agreement' | 'complete';
+// 배송/유심 선택 단계 비활성화 — 필요해지면 'delivery'를 다시 넣고
+// 아래 관련 코드(STEP_TITLES, STEPS, order 배열, canProceed, body)의
+// 주석을 함께 풀어야 한다.
+type SubscriptionStep =
+  | 'planSelect'
+  // | 'delivery'
+  | 'agreement'
+  | 'complete';
 
 const initialForm: SubscriptionForm = {
   type: 'new',
@@ -42,6 +49,9 @@ export interface SubscriptionShell {
   onBack?: () => void;
   size: 'content' | 'large';
   children: ReactNode;
+  // 약관 동의 후 가입 신청 요청이 진행 중일 때 false — 호출부는 자신의
+  // BottomSheet에 그대로 전달해 스와이프/배경 클릭/닫기 버튼으로 닫히지 않게 한다.
+  dismissible: boolean;
 }
 
 interface PlanSubscriptionSheetProps {
@@ -76,11 +86,11 @@ const STEP_TITLES: Record<
     label: '요금',
     desc: '가입할 요금제를 선택해주세요',
   },
-  delivery: {
-    title: '배송/유심',
-    label: '배송',
-    desc: 'USIM 유형을 선택해주세요',
-  },
+  // delivery: {
+  //   title: '배송/유심',
+  //   label: '배송',
+  //   desc: 'USIM 유형을 선택해주세요',
+  // },
   agreement: {
     title: '약관 동의',
     label: '약관',
@@ -91,7 +101,7 @@ const STEP_TITLES: Record<
 
 const STEPS: SubscriptionStep[] = [
   'planSelect',
-  'delivery',
+  // 'delivery',
   'agreement',
   'complete',
 ];
@@ -200,14 +210,14 @@ function PlanSelectItem({
           : 'border-border bg-white hover:bg-surface-page'
       }`}
     >
+      {isCurrent && (
+        <div className="rounded-full w-fit bg-brand-promo-primary/10 px-2 py-0.5 text-[12px] font-medium mb-2 text-brand-promo-primary">
+          현재 요금제
+        </div>
+      )}
       <div className="flex items-baseline justify-between">
         <span className="flex items-center gap-1.5 text-body font-semibold text-fg-primary">
           {plan.planName}
-          {isCurrent && (
-            <span className="rounded-full bg-brand-promo-primary/10 px-2 py-0.5 text-caption font-semibold text-brand-promo-primary">
-              현재 요금제
-            </span>
-          )}
         </span>
         <span className="text-body font-bold text-brand-promo-secondary">
           월 {plan.monthlyFee?.toLocaleString()}원
@@ -237,10 +247,16 @@ export default function PlanSubscriptionSheet({
   onExit,
   renderShell,
 }: PlanSubscriptionSheetProps) {
-  const firstStep: SubscriptionStep = 'planSelect';
-  const firstStepIndex = 0;
+  // 요금제를 미리 정하고 들어온 경우(요금제 상세 "신청하기" 등)는 요금제 선택을
+  // 다시 보여줄 필요가 없으므로 약관 동의 단계부터 시작하고(배송 단계는 비활성화
+  // 상태), 뒤로가기로도 선택 단계에 다시 진입할 수 없게 한다. plan이 없을 때만
+  // (예: 채팅에서 추천받은 요금제가 없는 채로 "요금제 가입하기") 선택 단계부터 시작한다.
+  const initialFirstStep: SubscriptionStep = plan ? 'agreement' : 'planSelect';
+  const [firstStep, setFirstStep] =
+    useState<SubscriptionStep>(initialFirstStep);
+  const firstStepIndex = STEPS.indexOf(firstStep);
 
-  const [step, setStep] = useState<SubscriptionStep>(firstStep);
+  const [step, setStep] = useState<SubscriptionStep>(initialFirstStep);
   const [selectedPlan, setSelectedPlan] = useState<RecommendedPlan | null>(
     plan,
   );
@@ -252,7 +268,9 @@ export default function PlanSubscriptionSheet({
   const prevActiveRef = useRef(active);
   useEffect(() => {
     if (active && !prevActiveRef.current) {
-      setStep('planSelect');
+      const nextFirstStep: SubscriptionStep = plan ? 'agreement' : 'planSelect';
+      setFirstStep(nextFirstStep);
+      setStep(nextFirstStep);
       setSelectedPlan(plan);
       setForm(initialForm);
       setExpandedTerm(null);
@@ -331,24 +349,25 @@ export default function PlanSubscriptionSheet({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const fieldErrors = useMemo(
-    () => ({
-      address: form.address.length > 0 && form.address.trim().length < 5,
-    }),
-    [form],
-  );
+  // 배송 단계 비활성화로 현재 미사용 — 다시 켜면 delivery 섹션에서 사용
+  // const fieldErrors = useMemo(
+  //   () => ({
+  //     address: form.address.length > 0 && form.address.trim().length < 5,
+  //   }),
+  //   [form],
+  // );
 
   const canProceed = useMemo(() => {
     switch (step) {
       case 'planSelect':
         return selectedPlan !== null;
-      case 'delivery':
-        if (form.simType === '') return false;
-        // USIM은 물리 배송이 필요하므로 주소 필수, eSIM은 주소 불필요
-        if (form.simType === 'usim') {
-          return form.address.trim().length >= 5;
-        }
-        return true;
+      // case 'delivery':
+      //   if (form.simType === '') return false;
+      //   // USIM은 물리 배송이 필요하므로 주소 필수, eSIM은 주소 불필요
+      //   if (form.simType === 'usim') {
+      //     return form.address.trim().length >= 5;
+      //   }
+      //   return true;
       case 'agreement':
         return form.agreedPrivacy && form.agreedService;
       default:
@@ -360,16 +379,16 @@ export default function PlanSubscriptionSheet({
     switch (step) {
       case 'planSelect':
         return '가입할 요금제를 선택해주세요';
-      case 'delivery':
-        return form.simType === 'usim'
-          ? '배송 주소를 입력해주세요'
-          : 'USIM 유형을 선택해주세요';
+      // case 'delivery':
+      //   return form.simType === 'usim'
+      //     ? '배송 주소를 입력해주세요'
+      //     : 'USIM 유형을 선택해주세요';
       case 'agreement':
         return '필수 약관에 모두 동의해주세요';
       default:
         return '';
     }
-  }, [step, form.simType]);
+  }, [step]);
 
   const showHelper = !canProceed && step !== 'complete';
 
@@ -391,15 +410,15 @@ export default function PlanSubscriptionSheet({
       return;
     }
 
-    const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
+    const order: SubscriptionStep[] = ['planSelect', 'agreement'];
     const index = order.indexOf(step);
     setStep(order[index + 1] ?? 'complete');
   };
 
   const handlePrev = () => {
-    const order: SubscriptionStep[] = ['planSelect', 'delivery', 'agreement'];
+    const order: SubscriptionStep[] = ['planSelect', 'agreement'];
     const index = order.indexOf(step);
-    setStep(order[Math.max(0, index - 1)]);
+    setStep(order[Math.max(firstStepIndex, index - 1)]);
   };
 
   const allAgreed =
@@ -416,18 +435,20 @@ export default function PlanSubscriptionSheet({
   }, [step]);
 
   const footer = (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-3 w-full">
       {/* 단계 전환 시 높이가 흔들리지 않도록 안내 문구 영역을 항상 한 줄 확보 */}
-      <p
-        className={`text-center text-caption text-error ${showHelper ? '' : 'invisible'}`}
-      >
-        {showHelper ? helperText : '\u00A0'}
-      </p>
+      {showHelper && (
+        <p
+          className={`text-center text-caption text-error ${showHelper ? '' : 'invisible'}`}
+        >
+          {showHelper ? helperText : '\u00A0'}
+        </p>
+      )}
       {submitError && (
         <p className="text-center text-caption text-error">{submitError}</p>
       )}
       <div className="flex gap-2 w-full">
-        {step !== 'complete' && step !== 'planSelect' && (
+        {step !== 'complete' && step !== firstStep && (
           <Button
             key={`nav-prev-${step}`}
             variant="outline"
@@ -489,7 +510,7 @@ export default function PlanSubscriptionSheet({
   const size: SubscriptionShell['size'] = 'large';
 
   const body = (
-    <div className="space-y-5 pb-2">
+    <div className="space-y-5 pb-4">
       <StepIndicator
         current={step}
         onChange={setStep}
@@ -541,9 +562,10 @@ export default function PlanSubscriptionSheet({
         </section>
       )}
 
+      {/* 배송/유심 선택 단계 비활성화
+      USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시
       {step === 'delivery' && (
         <section className="space-y-4">
-          {/* USIM 유형을 먼저 선택하고, 유심(USIM) 선택 시에만 배송 주소 표시 */}
           <div>
             <label className="text-caption text-fg-secondary mb-1.5 block">
               USIM 유형
@@ -615,6 +637,7 @@ export default function PlanSubscriptionSheet({
           )}
         </section>
       )}
+      */}
 
       {step === 'agreement' && (
         <section className="space-y-4">
@@ -725,6 +748,7 @@ export default function PlanSubscriptionSheet({
             <InfoRow label="이름" value={userInfo.name || '-'} />
             <InfoRow label="휴대폰" value={userInfo.phone || '-'} />
             <InfoRow label="이메일" value={userInfo.email || '-'} />
+            {/* 배송/유심 선택 단계 비활성화
             {form.simType === 'usim' && (
               <InfoRow
                 label="주소"
@@ -734,11 +758,12 @@ export default function PlanSubscriptionSheet({
                 }
               />
             )}
+            */}
             <InfoRow
               label="가입 유형"
               value={hasCurrentPlan ? '요금제 변경' : '신규 가입'}
             />
-            <InfoRow label="USIM" value={form.simType.toUpperCase()} />
+            {/* <InfoRow label="USIM" value={form.simType.toUpperCase()} /> */}
           </div>
         </section>
       )}
@@ -752,6 +777,7 @@ export default function PlanSubscriptionSheet({
     onBack,
     size,
     children: body,
+    dismissible: !isSubmitting,
   };
 
   if (renderShell) return <>{renderShell(shell, scrollContainerRef)}</>;
@@ -765,6 +791,7 @@ export default function PlanSubscriptionSheet({
       footer={footer}
       onBack={onBack}
       size={size}
+      dismissible={!isSubmitting}
       bodyRef={scrollContainerRef}
     >
       {body}

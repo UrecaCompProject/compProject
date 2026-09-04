@@ -5,16 +5,52 @@ import type {
   RecommendedPlan,
   ConsultInput,
   ConsultResponse,
+  ConversationTurn,
 } from '@/shared/lib/aiConsult';
 import type { GameId } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
-import { buildErrorMessage } from '../lib/chatHelpers';
+import { buildErrorMessage, findLastRecommendedPlan } from '../lib/chatHelpers';
 
 import { useChatConsult } from './useChatConsult';
 import { useChatRouter } from './useChatRouter';
 
 import type { ChatMessage, MessageCategory } from '../types';
+
+// 최근 대화 맥락을 Edge Function 슬롯 추출/의도 분류용으로 추린다.
+// 사용자/AI 발화만, 오래된 순, 최대 8턴. (게임/퀴즈/가입 등 비텍스트 메시지 제외)
+// AI 추천 메시지는 말풍선 문구만으로는 "방금 추천한 거"를 참조할 수 없으므로,
+// 추천된 요금제 이름·데이터 제공량을 함께 담아 상대적 재질의를 해석할 수 있게 한다.
+function buildChatHistory(messages: ChatMessage[]): ConversationTurn[] {
+  return messages
+    .filter(
+      (m): m is Extract<ChatMessage, { type: 'ai' | 'user' }> =>
+        (m.type === 'ai' || m.type === 'user') &&
+        typeof (m as { sentence?: string }).sentence === 'string' &&
+        !!(m as { sentence?: string }).sentence,
+    )
+    .slice(-8)
+    .map((m) => {
+      if (m.type !== 'ai') {
+        return { role: 'user' as const, text: m.sentence };
+      }
+      // AI 추천 턴은 말풍선 문구(안내 문구 포함)에 더해 추천된 요금제 목록을
+      // 명시해, "방금 추천한 거보다", "예산 늘려서" 같은 상대적 재질의를
+      // 서버가 해석할 수 있게 한다.
+      if (m.recommendations && m.recommendations.length > 0) {
+        const summary = m.recommendations
+          .map(
+            (r) => `${r.planName}(${r.data ?? '?'}, ${r.monthlyFee ?? '?'}원)`,
+          )
+          .join(', ');
+        return {
+          role: 'ai' as const,
+          text: `${m.sentence}\n추천한 요금제: ${summary}`,
+        };
+      }
+      return { role: 'ai' as const, text: m.sentence };
+    });
+}
 
 // AI 응답 모드를 리포트 대화 로그 분류용 category로 변환
 function modeToCategory(
@@ -76,6 +112,7 @@ export interface UseChatActionsDeps {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  checkInAttendance: () => Promise<void>;
   playedTodayGameIds: Set<string>;
   aiResponseCount: number;
 }
@@ -113,6 +150,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     aiResponseCount,
   } = deps;
@@ -153,11 +191,17 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     retryLastInput,
   });
 
-  const consult = useChatConsult({ addAIResponse });
+  const consult = useChatConsult({
+    addAIResponse,
+    // 서버가 LLM 의도 분류로 가입(subscribe)이라 판단한 경우에도 바로 가입 시트를 연다.
+    onSubscribeMode: () =>
+      openSubscription(findLastRecommendedPlan(messages) ?? null),
+  });
 
   const handleSend = useCallback(
     async (text: string, options?: { skipUserMessage?: boolean }) => {
@@ -171,11 +215,17 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
         return;
       }
 
-      // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료
+      // quick reply 라우터 — 매칭되는 분기가 있으면 처리 완료.
+      // 라우터가 처리하는 경우에도 입력창은 비워야 하므로(직접 타이핑한 질문이
+      // 라우터에서 처리될 수 있음) 라우터 호출 전에 입력창을 먼저 비운다.
+      setInput('');
       const signal = startRequest();
       const result = await router.handleQuickReply(text, signal);
 
       if (result === 'handled') return;
+
+      // 일반 상담 요청 전에 현재까지의 대화 맥락을 스냅샷 (이번 발화는 아직 미포함)
+      const history = buildChatHistory(messages);
 
       // fall-through: 일반 상담 요청
       // 재생성 시에는 사용자 메시지가 이미 있으므로 추가하지 않음
@@ -190,7 +240,6 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
           },
         ]);
       }
-      setInput('');
 
       // 재시도를 위해 마지막 사용자 입력 보관
       lastUserInputRef.current = trimmed;
@@ -198,7 +247,12 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
       setIsLoading(true);
 
       try {
-        await consult.sendQuestion(trimmed, { ...profile, isLoggedIn }, signal);
+        await consult.sendQuestion(
+          trimmed,
+          { ...profile, isLoggedIn },
+          signal,
+          history,
+        );
       } catch (error) {
         handleConsultError(setMessages, error);
       } finally {
@@ -213,6 +267,7 @@ export function useChatActions(deps: UseChatActionsDeps): ChatActions {
       requireLogin,
       startRequest,
       router,
+      messages,
       setMessages,
       setInput,
       profile,

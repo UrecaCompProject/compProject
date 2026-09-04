@@ -45,7 +45,7 @@ type Story = StoryObj<typeof meta>;
 
 function SampleContent() {
   return (
-    <div className="flex w-[358px] flex-col gap-2">
+    <div className="flex w-89.5 flex-col gap-2">
       <p className="text-[14px] font-semibold text-fg-primary">
         요금 걱정없는 5G 27GB
       </p>

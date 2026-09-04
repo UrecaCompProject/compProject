@@ -8,6 +8,7 @@ import type { GameId } from '@/shared/types/games';
 import type { QuizKind } from '@/shared/types/quiz';
 
 import { GAME_LIST } from '../constants/gameList';
+import { useChatMenuSheetStore } from '../model/useChatMenuSheetStore';
 
 import {
   buildAIMessage,
@@ -17,6 +18,8 @@ import {
   getQuizIntent,
 } from './chatHelpers';
 import { handleGameSelect } from './gameRouter';
+import { detectMenuSheet, menuSheetOpenMessage } from './menuSheetQuery';
+import { buildMyInfoAnswer, detectMyInfoIntent } from './myInfoQuery';
 
 import type { ChatGameId, SheetGameId } from '../constants/gameList';
 import type { ChatMessage } from '../types';
@@ -34,6 +37,9 @@ export interface QuickReplyContext {
   profile: ConsultInput;
   isLoggedIn: boolean;
   effectiveCurrentPlan: string | undefined;
+  // "내 요금제 뭐야 / 배지 몇 개야" 류 본인 정보 조회 답변에 사용
+  currentPlan: RecommendedPlan | null | undefined;
+  badgeBalance: number;
   setMessages: SetMessages;
   setProfile: (p: ConsultInput) => void;
   setIsLoading: (v: boolean) => void;
@@ -46,6 +52,8 @@ export interface QuickReplyContext {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  // "출석체크" 퀵리플라이 — 오늘 출석을 바로 처리하고 결과 메시지까지 추가
+  checkInAttendance: () => Promise<void>;
   playedTodayGameIds: Set<string>;
   // AbortController signal — 비동기 requestConsult 호출 취소에 사용
   signal?: AbortSignal;
@@ -66,6 +74,8 @@ export async function routeQuickReply(
     profile,
     isLoggedIn,
     effectiveCurrentPlan,
+    currentPlan,
+    badgeBalance,
     setMessages,
     setProfile,
     setIsLoading,
@@ -75,6 +85,7 @@ export async function routeQuickReply(
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     signal,
     retryLastInput,
@@ -83,6 +94,45 @@ export async function routeQuickReply(
   // "다시 시도" 퀵리플라이 — 마지막 사용자 입력을 재전송
   if (text === '다시 시도') {
     retryLastInput();
+    return 'handled';
+  }
+
+  // "내 요금제 뭐야", "배지 몇 개야" 등 본인 정보 조회 — API로 확인 가능한
+  // 본인의 요금제/배지만 바로 답하고, 타인 정보·민감정보는 거절한다.
+  const myInfoIntent = detectMyInfoIntent(text);
+  if (myInfoIntent) {
+    const { sentence, quickReplies, content } = buildMyInfoAnswer(
+      myInfoIntent,
+      {
+        isLoggedIn,
+        currentPlan,
+        badgeBalance,
+      },
+    );
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text },
+      {
+        id: Date.now() + 1,
+        type: 'ai',
+        sentence,
+        quickReplies,
+        myInfo: content,
+      },
+    ]);
+    return 'handled';
+  }
+
+  // "마이페이지 보여줘", "전체 요금제 알려줘", "이벤트 페이지", "리포트 보여줘"
+  // — 메뉴 이름을 채팅으로 말하면 해당 바텀시트를 연다.
+  const menuSheet = detectMenuSheet(text);
+  if (menuSheet) {
+    useChatMenuSheetStore.getState().setOpenSheet(menuSheet);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text },
+      buildAIMessage(menuSheetOpenMessage(menuSheet)),
+    ]);
     return 'handled';
   }
 
@@ -128,25 +178,56 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // "출석체크" 퀵 리플라이 — 출석 룰렛 바텀시트 게임으로 바로 연결
+  // "출석체크" 퀵 리플라이 — 룰렛으로 보내지 않고 오늘 출석을 바로 처리한 뒤
+  // 완료/배지 적립 결과를 채팅 메시지로 안내
   if (text === '출석체크') {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        type: 'user',
-        sentence: '출석체크',
-        category: 'attendance',
-      },
-    ]);
-    openSheetGame('attendance');
+    await checkInAttendance();
     return 'handled';
   }
 
-  // 퀴즈 의도 감지 — "OX 퀴즈 하자", "통신 상식 퀴즈" 등
+  // 퀴즈 의도 감지 — "OX 퀴즈 하자", "통신 상식 퀴즈" 등.
+  // 퀵 리플라이로 게임을 고를 때처럼 사용자가 입력한 문장도 한 번 남긴다.
   const quizIntent = getQuizIntent(text);
   if (quizIntent) {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text, category: 'game' },
+    ]);
     startQuiz(quizIntent, { includeUserMessage: false });
+    return 'handled';
+  }
+
+  // "기타 상담" — 만든이 / 고객센터 안내로 분기하는 퀵리플라이를 띄운다.
+  if (text === '기타 상담') {
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: '기타 상담' },
+      buildAIMessage('무엇을 도와드릴까요?', [
+        '만든 이',
+        '고객센터',
+        '메뉴로 돌아가기',
+      ]),
+    ]);
+    return 'handled';
+  }
+
+  // "만든이" / "고객센터" — 채팅 인라인 안내 (ChatMessageList가 etcConsult로 렌더)
+  if (text === '만든 이' || text === '고객센터') {
+    const kind = text === '만든 이' ? 'makers' : 'customerCenter';
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), type: 'user', sentence: text },
+      {
+        id: Date.now() + 1,
+        type: 'ai',
+        sentence: '',
+        etcConsult: kind,
+        quickReplies: [
+          kind === 'makers' ? '고객센터' : '만든 이',
+          '메뉴로 돌아가기',
+        ],
+      },
+    ]);
     return 'handled';
   }
 
@@ -156,8 +237,21 @@ export async function routeQuickReply(
     return 'handled';
   }
 
-  // 요금제 가입 흐름
-  if (text === '온라인 가입' || text === '요금제 가입하기') {
+  // 요금제 가입/신청 흐름 — 퀵리플라이("요금제 가입하기")든 자유 입력("요금제 신청할래")이든
+  // 온라인/영업점 경로 선택 단계 없이 바로 가입 시트를 연다.
+  const isSubscribeIntent =
+    text === '온라인 가입' ||
+    text === '요금제 가입하기' ||
+    /요금제\s*가입|가입\s*하기|가입\s*할래|신청/.test(text);
+  if (isSubscribeIntent) {
+    // 자유 입력이면 사용자 발화를 한 번 남긴다 (정형 퀵리플라이 문구는 그대로 두지 않음)
+    if (text !== '온라인 가입' && text !== '요금제 가입하기') {
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now(), type: 'user', sentence: text, category: 'plan' },
+      ]);
+    }
+
     if (!isLoggedIn) {
       setMessages((prev) => [
         ...prev,
@@ -169,8 +263,17 @@ export async function routeQuickReply(
       return 'handled';
     }
 
-    const lastPlan = findLastRecommendedPlan(messages);
-    openSubscription(lastPlan ?? null);
+    setMessages((prev) => [
+      ...prev,
+      buildAIMessage(
+        '요금제 가입 화면을 열었어요. 원하는 요금제를 선택해 가입을 진행해 주세요.',
+        ['메뉴로 돌아가기'],
+      ),
+    ]);
+    // 사용자가 특정 요금제를 직접 고른 게 아니라 "가입하기" 자체를 선택한
+    // 흐름이므로, 이전에 추천됐던 요금제를 임의로 끌어오지 않고 요금제 선택
+    // 단계(step1)부터 보여준다. (위 안내 문구도 "선택해 가입을 진행해 주세요")
+    openSubscription(null);
     return 'handled';
   }
 

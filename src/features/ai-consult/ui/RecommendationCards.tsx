@@ -22,6 +22,10 @@ interface RecommendationCardsProps {
     isLoading: boolean;
     error: string | null;
   }>;
+  PlanDetailFooter: ComponentType<{
+    onSubscribe?: () => void;
+    onCompare?: () => void;
+  }>;
 }
 
 export default function RecommendationCards({
@@ -29,6 +33,7 @@ export default function RecommendationCards({
   onPlanSubscribe,
   onPlanCompare,
   PlanDetailContent,
+  PlanDetailFooter,
 }: RecommendationCardsProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<RecommendedPlan | null>(null);
@@ -74,7 +79,8 @@ export default function RecommendationCards({
                 benefits={toPlanBenefits(plan)}
                 context="chat"
                 reason={plan.reason}
-                className="h-full"
+                // 좁은 화면에선 85vw, 넓은 화면에선 카드가 무한정 늘어나지 않도록 상한
+                className="h-full max-w-90"
                 onDetail={() => handleOpen(plan)}
                 onSelect={() => handleSubscribe(plan)}
               />
@@ -90,6 +96,7 @@ export default function RecommendationCards({
         onSubscribe={handleSubscribe}
         onCompare={handleCompare}
         PlanDetailContent={PlanDetailContent}
+        PlanDetailFooter={PlanDetailFooter}
       />
     </div>
   );

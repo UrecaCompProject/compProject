@@ -6,16 +6,12 @@ import {
   QuickReplies,
   RefreshCheckModal,
 } from '@/features/ai-consult';
-import {
-  findLastRecommendations,
-  getWelcomeQuickReplies,
-} from '@/features/ai-consult/lib/chatHelpers';
+import { getWelcomeQuickReplies } from '@/features/ai-consult/lib/chatHelpers';
 import { useChat } from '@/features/ai-consult/model/useChat';
 import ReportGenerateButton from '@/features/ai-consult/ui/ReportGenerateButton';
 import { SigninModal, SignupChat } from '@/features/auth';
 import { ChatQuizMessage } from '@/features/chat-quiz';
 import {
-  ReportCard,
   ReportGenerateConfirmModal,
   ReportSheet,
 } from '@/features/consult-report';
@@ -30,11 +26,13 @@ import PlanCompare from '@/features/plan-change/ui/PlanCompare';
 import { CompareResultSheet } from '@/features/plan-compare';
 import { PlanQuickSheet } from '@/features/plan-detail';
 import PlanDetailContent from '@/features/plan-detail/ui/PlanDetailContent';
+import PlanDetailFooter from '@/features/plan-detail/ui/PlanDetailFooter';
 import { PlanSubscriptionSheet } from '@/features/plan-subscription';
 import {
   GetBadgeModal,
   missions,
   RewardSheet,
+  useAttendance,
   useMissionCompletion,
 } from '@/features/reward';
 import { MyPageSheet } from '@/features/usage';
@@ -47,6 +45,7 @@ export default function ChatPage() {
     useState(true);
 
   const { recordPlay, playedTodayGameIds } = useMissionCompletion();
+  const { checkIn, weekChecks, todayIndex } = useAttendance();
   const openGame = useGameStore((state) => state.openGame);
   const closeGame = useGameStore((state) => state.closeGame);
   const activeGameMeta = useActiveGameMeta();
@@ -93,6 +92,7 @@ export default function ChatPage() {
     mission: { recordPlay, playedTodayGameIds },
     game: { openGame, closeGame },
     reward: { GetBadgeModal, scratchMissionUuid, quizMissionUuids },
+    attendance: { checkIn, isCheckedInToday: weekChecks[todayIndex] },
   });
 
   const openModal = useModalStore((state) => state.open);
@@ -123,7 +123,7 @@ export default function ChatPage() {
         return (
           <CompareResultSheet
             {...props}
-            slots={{ PlanCompare, PlanDetailContent }}
+            slots={{ PlanCompare, PlanDetailContent, PlanDetailFooter }}
           />
         );
       },
@@ -151,23 +151,34 @@ export default function ChatPage() {
       function WrappedReportSheet(props: {
         open: boolean;
         onOpenChange: (open: boolean) => void;
+        openLatest?: boolean;
       }) {
-        return <ReportSheet {...props} slots={{ PlanSubscriptionSheet }} />;
+        return (
+          <ReportSheet
+            {...props}
+            slots={{
+              PlanSubscriptionSheet,
+              PlanDetailContent,
+              PlanDetailFooter,
+            }}
+          />
+        );
       },
     [],
   );
 
   const messageSlots = useMemo(
     () => ({
-      ReportCard,
+      ReportSheet: WrappedReportSheet,
       CompareResultSheet: WrappedCompareResultSheet,
       SignupChat,
       ChatQuizMessage,
       PlanSubscriptionSheet,
       ScratchGame,
       PlanDetailContent,
+      PlanDetailFooter,
     }),
-    [WrappedCompareResultSheet],
+    [WrappedReportSheet, WrappedCompareResultSheet],
   );
   const menuSlots = useMemo(
     () => ({
@@ -232,10 +243,10 @@ export default function ChatPage() {
   };
 
   // 레포트 생성이 끝나면 퀵 리플라이가 접혀 있던 상태라도 강제로 펼친다.
-  // 이전에 추천받은 요금제가 있으면 함께 넘겨서, 무조건 일반 상담 리포트로
-  // 처리돼 요금제 정보가 빠지는 일이 없게 한다.
+  // 추천 요금제는 handleGenerateReport 내부에서 대화 전체를 훑어 모으므로
+  // (여러 번 추천받았으면 그만큼 여러 라운드) 여기서 따로 넘길 값은 없다.
   const handleGenerateReportAndExpand = async () => {
-    await handleGenerateReport(findLastRecommendations(messages));
+    await handleGenerateReport();
     setIsQuickRepliesCollapsed(false);
   };
 
@@ -335,6 +346,7 @@ export default function ChatPage() {
         onBack={activeGameMeta?.onBack}
         size="full"
         bodyClassName="px-0"
+        className="min-w-[320px]"
       >
         <GameLayer />
       </BottomSheet>

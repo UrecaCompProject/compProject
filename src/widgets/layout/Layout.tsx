@@ -6,7 +6,7 @@ import Header from './Header';
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex h-screen flex-col overflow-clip bg-surface-pressed">
+    <div className="relative flex h-screen flex-col overflow-clip bg-surface-page">
       <Header />
 
       {children}

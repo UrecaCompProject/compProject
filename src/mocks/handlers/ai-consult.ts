@@ -4,7 +4,7 @@ import type {
   ConsultInput,
   ConsultResponse,
   ReportInput,
-  ReportOutput,
+  ReportNotes,
 } from '@/shared/lib/aiConsult';
 
 import { plans, mockSession } from '../db';
@@ -53,7 +53,7 @@ function buildRecommendResponse(input: ConsultInput): ConsultResponse {
   return {
     recommendations,
     notice: '고객님의 사용 패턴을 분석한 결과, 다음 요금제를 추천드립니다.',
-    quickReplies: ['요금제 비교하기', '레포트 받기', '다른 요금제 보기'],
+    quickReplies: ['요금제 비교하기', '리포트 받기', '다른 요금제 보기'],
     mode: 'recommend',
   };
 }
@@ -100,25 +100,21 @@ function buildCompareResponse(input: ConsultInput): ConsultResponse {
   };
 }
 
-// 레포트 생성 mock 응답
-function buildReportResponse(input: ReportInput): {
-  report: ReportOutput;
+// 레포트 생성 mock 응답 — 추천/비교/가입 요금제는 클라이언트가 이미 구조화된
+// 데이터로 갖고 있어 edge function은 자유 서술 요약(otherNotes)만 반환한다.
+function buildReportResponse(): {
+  report: ReportNotes;
   mode: 'report';
 } {
   return {
     mode: 'report',
     report: {
-      summary: '상담 내용을 바탕으로 요금제 추천 레포트를 생성했습니다.',
+      title: '데이터 중심 요금제 상담',
+      summary: '상담 내용을 바탕으로 요금제 추천 리포트를 생성했습니다.',
       usageType: '일반 사용자',
-      currentPlan: input.currentPlan || '미확인',
-      recommendedPlans: input.recommendationResult
-        ? input.recommendationResult.split(',').map((s: string) => s.trim())
-        : ['데이터플랜5GB', '데이터플랜9GB'],
-      recommendationReason:
-        '현재 사용 패턴을 기준으로 더 나은 가성비의 요금제를 추천드립니다.',
-      monthlySavingAmount: 9000,
       importantConditions: ['데이터 용량', '월 정액', '속도 제한'],
       qaPairs: [],
+      changedPlanAdvantage: '',
     },
   };
 }
@@ -142,14 +138,7 @@ export const aiConsultHandlers = [
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (body.mode === 'report') {
-      const reportInput: ReportInput = {
-        conversation: body.conversation ?? '',
-        currentPlan: body.currentPlan ?? '',
-        recommendationResult: body.recommendationResult ?? '',
-        reportKind: body.reportKind,
-        userProfile: body.userProfile,
-      };
-      return HttpResponse.json(buildReportResponse(reportInput));
+      return HttpResponse.json(buildReportResponse());
     }
 
     if (body.mode === 'compare' || (body.comparePlanA && body.comparePlanB)) {

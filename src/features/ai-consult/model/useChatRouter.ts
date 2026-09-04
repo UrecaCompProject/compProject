@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
+import { useCurrentPlan } from '@/entities/plan';
+import { useBadgeBalance } from '@/features/reward';
 import type {
   RecommendedPlan,
   ConsultInput,
@@ -37,6 +39,7 @@ export interface UseChatRouterDeps {
     opts?: { includeUserMessage?: boolean; includeIntroMessage?: boolean },
   ) => void;
   openSheetGame: (gameId: GameId, reward?: number) => void;
+  checkInAttendance: () => Promise<void>;
   playedTodayGameIds: Set<string>;
   retryLastInput: () => void;
 }
@@ -63,9 +66,14 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
     fetchCompare,
     startQuiz,
     openSheetGame,
+    checkInAttendance,
     playedTodayGameIds,
     retryLastInput,
   } = deps;
+
+  // 본인 정보 조회 답변용 — 로그인 상태에서만 실제 요청이 나간다.
+  const { data: currentPlan } = useCurrentPlan(isLoggedIn);
+  const badgeBalance = useBadgeBalance();
 
   const handleQuickReply = useCallback(
     async (text: string, signal: AbortSignal) => {
@@ -78,6 +86,8 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
         profile,
         isLoggedIn,
         effectiveCurrentPlan,
+        currentPlan,
+        badgeBalance,
         setMessages,
         setProfile,
         setIsLoading,
@@ -87,6 +97,7 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
         fetchCompare,
         startQuiz,
         openSheetGame,
+        checkInAttendance,
         playedTodayGameIds,
         signal,
         retryLastInput,
@@ -97,6 +108,8 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
       profile,
       isLoggedIn,
       effectiveCurrentPlan,
+      currentPlan,
+      badgeBalance,
       setMessages,
       setProfile,
       setIsLoading,
@@ -106,6 +119,7 @@ export function useChatRouter(deps: UseChatRouterDeps): ChatRouter {
       fetchCompare,
       startQuiz,
       openSheetGame,
+      checkInAttendance,
       playedTodayGameIds,
       retryLastInput,
     ],

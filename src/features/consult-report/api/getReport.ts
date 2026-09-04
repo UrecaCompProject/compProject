@@ -1,5 +1,9 @@
 import { toRecommendedPlan } from '@/entities/plan';
 import type { PlanRow, RecommendedPlan } from '@/entities/plan';
+import type {
+  CompareResult,
+  RecommendedPlanGroup,
+} from '@/shared/lib/aiConsult';
 import { supabase, supabaseAnon } from '@/shared/lib/supabaseClient';
 
 export type ReportQAPair = {
@@ -12,9 +16,12 @@ export type ReportAnalysisInput = {
   currentPlan: string;
   recommendedPlans: string[];
   importantConditions: string[];
-  monthlySavingAmount: number;
-  recommendationReason: string;
   qaPairs: ReportQAPair[];
+  comparedPlan: CompareResult | null;
+  changedPlan: RecommendedPlan | null;
+  // 라운드(target/detail) 구분이 보존된 원본 — 이 필드가 없는 옛 레포트는
+  // recommendedPlanDetails(관계형 조인, 라운드 구분 없음)로만 표시한다.
+  recommendedPlanGroups?: RecommendedPlanGroup[];
 };
 
 export type ReportRow = {
@@ -73,7 +80,7 @@ export async function getReport(userId: string): Promise<ReportRow[]> {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) throw new Error(`레포트 조회 실패: ${error.message}`);
+  if (error) throw new Error(`리포트 조회 실패: ${error.message}`);
 
   const reports = (data ?? []) as ReportRowBase[];
   if (reports.length === 0) return [];

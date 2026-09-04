@@ -1,35 +1,24 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
-
-import { PlanCard, toPlanBenefits } from '@/entities/plan';
-import { Card } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+
+import ComparedPlanCard from './ComparedPlanCard';
+import RecommendedPlansCard from './RecommendedPlansCard';
+import ReportSummaryCard from './ReportSummaryCard';
 
 import type { ReportRow } from '../api/getReport';
 
 interface ReportDetailProps {
   report: ReportRow | null;
-  onSelectPlan?: (plan: RecommendedPlan) => void;
+  // 요금제 행 클릭 — 요금제 조회 화면(ReportSheet의 슬라이딩 패널)을 연다.
+  onPlanClick?: (plan: RecommendedPlan) => void;
 }
 
 export default function ReportDetail({
   report,
-  onSelectPlan,
+  onPlanClick,
 }: ReportDetailProps) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [hasOverflow, setHasOverflow] = useState(false);
-
-  // ReportSheet가 report.id를 key로 넘겨 report가 바뀔 때마다 이 컴포넌트를
-  // 새로 마운트시키므로, isExpanded/hasOverflow는 report별로 자연히 초기화된다.
-  useLayoutEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-
-    setHasOverflow(card.scrollHeight > card.clientHeight);
-  }, []);
 
   // ReportSheet은 리스트/상세 화면을 언마운트하지 않고 translate-x로만
   // 넘겨서, 상세 화면을 나갔다 다시 들어와도 스크롤 위치가 그대로 남아있다.
@@ -61,110 +50,27 @@ export default function ReportDetail({
   if (!report) return null;
 
   const analysis = report.analysis_input;
+  const groups = analysis.recommendedPlanGroups ?? [];
 
   return (
     <div
       ref={rootRef}
-      className="px-4 pt-4 pb-10 gap-5 flex flex-col bg-surface-page min-h-full"
+      className="pb-10 gap-5 flex flex-col bg-surface-page min-h-full"
     >
-      <div>
-        <div className="text-semibold-16-130 text-fg-tertiary ml-1">
-          상담 요약
-        </div>
-        <div className="relative mt-2">
-          <Card
-            ref={cardRef}
-            gap="12"
-            className={`overflow-y-auto transition-[max-height,padding-bottom] duration-300 ${
-              !hasOverflow
-                ? 'max-h-45 pb-4'
-                : isExpanded
-                  ? 'max-h-150 pb-8'
-                  : 'max-h-45 pb-14'
-            }`}
-          >
-            <p className="text-regular-14-130 text-fg-secondary">
-              {report.summary}
-            </p>
+      <ReportSummaryCard
+        summary={report.summary}
+        usageType={analysis.usageType}
+        importantConditions={analysis.importantConditions}
+        changedPlan={analysis.changedPlan}
+      />
 
-            {analysis.qaPairs && analysis.qaPairs.length > 0 && (
-              <div className="space-y-3 pt-2">
-                {analysis.qaPairs.map((pair, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <p className="text-regular-14-130 font-medium text-fg-primary">
-                      Q{idx + 1}. {pair.question}
-                    </p>
-                    <p className="text-regular-14-130 text-fg-secondary">
-                      A{idx + 1}. {pair.answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+      {groups.length > 0 && (
+        <RecommendedPlansCard groups={groups} onPlanClick={onPlanClick} />
+      )}
 
-            {analysis.importantConditions &&
-              analysis.importantConditions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {analysis.importantConditions.map((condition) => (
-                    <span
-                      key={condition}
-                      className="inline-flex items-center rounded-full bg-surface-page px-3 py-1.5 text-caption text-fg-secondary"
-                    >
-                      {condition}
-                    </span>
-                  ))}
-                </div>
-              )}
-          </Card>
-
-          {hasOverflow && (
-            <button
-              type="button"
-              onClick={() => setIsExpanded((prev) => !prev)}
-              className={`absolute inset-x-0 -bottom-px rounded-b-2xl flex items-center justify-center gap-0.5 pb-2 text-[14px] text-fg-tertiary ${
-                isExpanded
-                  ? 'pt-2 bg-white'
-                  : 'bg-linear-to-t from-white from-60% to-transparent pt-8'
-              }`}
-            >
-              {isExpanded ? '접기' : '펼치기'}
-              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {report.recommendedPlanDetails &&
-        report.recommendedPlanDetails.length > 0 && (
-          <div className="flex flex-col gap-3">
-            <div className="text-semibold-16-130 text-fg-tertiary ml-1">
-              추천 요금제
-            </div>
-            {report.recommendedPlanDetails.map((plan) => (
-              <PlanCard
-                key={plan.planId}
-                className="w-full"
-                title={plan.planName}
-                price={plan.monthlyFee ?? 0}
-                benefits={toPlanBenefits(plan)}
-                reason={analysis.recommendationReason}
-                onSelect={() =>
-                  onSelectPlan?.({
-                    ...plan,
-                    reason: analysis.recommendationReason,
-                    savingAmount: analysis.monthlySavingAmount,
-                  })
-                }
-              />
-            ))}
-          </div>
-        )}
-      {/* <div className="w-full flex gap-2">
-        <Button className="w-full" variant="outline">
-          비교 하기
-        </Button>
-        <Button className="w-full">비교 하기</Button>
-      </div> */}
+      {analysis.comparedPlan && (
+        <ComparedPlanCard comparedPlan={analysis.comparedPlan} />
+      )}
     </div>
   );
 }

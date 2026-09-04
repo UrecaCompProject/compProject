@@ -5,8 +5,6 @@ import type { Plan } from './data.ts';
 import {
   comparePromptText,
   generalReportPromptText,
-  noticePromptText,
-  reasonPromptText,
   reportPromptText,
 } from './prompts/index.ts';
 import { chatOpenAI } from './openai.ts';
@@ -21,11 +19,8 @@ import type {
   ReportOutput,
 } from './types.ts';
 
-const noticeSystemPrompt =
-  '당신은 통신 요금제 안내 문구 작성 AI입니다. 제공된 조건과 추천 후보를 바탕으로 1-2문장의 안내 문구를 JSON 형식으로 작성하세요.';
-
 // JSON 문자열을 안전하게 파싱. LLM이 마크다운 코드 블록으로 감싸 출력하거나 불완전한 JSON을 내놓을 경우를 대비.
-function safeJsonParse<T>(text: string): T | undefined {
+export function safeJsonParse<T>(text: string): T | undefined {
   const cleaned = text
     .replace(/^```json\s*/, '')
     .replace(/```\s*$/, '')
@@ -75,19 +70,21 @@ function hasOttMatch(
 // 추천 전 반드시 필요한 정보가 누락되었는지 확인.
 // skippedFields에 있는 필드는 사용자가 "무관/미확인"을 명시적으로 선택한 것이므로
 // 값이 비어있어도(undefined) 다시 묻지 않는다 — "아직 안 물어봄"과 구분하기 위한 용도.
+// 나이는 없으면 ageMatches가 "무관"으로 처리해 필터링에 지장이 없으므로,
+// 폼을 강제로 띄우는 필수 조건에서 제외한다 — 월 데이터 사용량만 필수로 남긴다.
 function buildInfoRequest(input: ConsultInput): string | undefined {
   const skipped = input.skippedFields ?? [];
   const critical: string[] = [];
-  if (
-    (!input.ageGroup || input.ageGroup === '미제공') &&
-    !skipped.includes('ageGroup')
-  )
-    critical.push('나이');
   if (input.dataUsage === undefined && !skipped.includes('dataUsage'))
     critical.push('월 데이터 사용량');
 
   if (critical.length === 0) return undefined;
 
+  if (
+    (!input.ageGroup || input.ageGroup === '미제공') &&
+    !skipped.includes('ageGroup')
+  )
+    critical.push('나이');
   if (input.budget === undefined && !skipped.includes('budget'))
     critical.push('예산');
   // 나열된 항목 각각에 조사를 붙이면 "나이를, 예산을"처럼 어색해지므로,
@@ -100,20 +97,22 @@ function buildInfoRequest(input: ConsultInput): string | undefined {
 }
 
 // 누락된 추천 조건을 form으로 입력받을 수 있도록 구성합니다.
+// 이미 파악된 값(대화에서 추출된 나이/예산/우선순위/OTT 등)도 폼에서 숨기지 않고
+// value로 내려보내 "미리 선택된 상태"로 노출한다 — 사용자가 확인·수정할 수 있도록.
+// (사용자가 폼에서 "무관/미확인"을 골라 skippedFields에 담긴 항목만 제외한다.)
 function buildInfoForm(input: ConsultInput): ConsultForm {
   const skipped = input.skippedFields ?? [];
   const fields: ConsultForm['fields'] = [];
 
-  if (
-    (!input.ageGroup || input.ageGroup === '미제공') &&
-    !skipped.includes('ageGroup')
-  ) {
+  const ageKnown = !!input.ageGroup && input.ageGroup !== '미제공';
+  if (!skipped.includes('ageGroup')) {
     fields.push({
       name: 'ageGroup',
       label: '나이',
       type: 'select',
       options: ['청소년', '20대', '30대', '40대', '50대 이상'],
-      required: true,
+      required: !ageKnown,
+      value: ageKnown ? input.ageGroup : undefined,
     });
   }
 
@@ -126,12 +125,13 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     });
   }
 
-  if (input.budget === undefined && !skipped.includes('budget')) {
+  if (!skipped.includes('budget')) {
     fields.push({
       name: 'budget',
       label: '예산 (원)',
       type: 'number',
-      required: true,
+      required: input.budget === undefined,
+      value: input.budget,
     });
   }
 
@@ -141,6 +141,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     type: 'select',
     options: ['budget', 'data', 'max_data'],
     required: false,
+    value: input.priority,
   });
 
   const ottOptions = ['넷플릭스', '디즈니+티빙'];
@@ -150,6 +151,7 @@ function buildInfoForm(input: ConsultInput): ConsultForm {
     type: 'multi-select',
     options: ottOptions,
     required: false,
+    value: input.ott && input.ott.length > 0 ? input.ott : undefined,
   });
 
   return { title: '추천을 위해 필요한 정보', fields };
@@ -178,7 +180,14 @@ function buildCandidateFilters(input: ConsultInput): PlanFilter[] {
     NonNullable<ConsultInput['priority']>,
     PlanFilter[]
   > = {
-    max_data: [(p) => ageOk(p) && p.monthly_fee <= budget, (p) => ageOk(p)],
+    max_data: [
+      // 요청한 데이터 하한을 지키면서 예산 내 → 하한만 지키면 → 예산만 지키면 → 연령만
+      (p) =>
+        ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
+      (p) => ageOk(p) && parseDataGB(p.data) >= dataUsage,
+      (p) => ageOk(p) && p.monthly_fee <= budget,
+      (p) => ageOk(p),
+    ],
     data: [
       (p) =>
         ageOk(p) && parseDataGB(p.data) >= dataUsage && p.monthly_fee <= budget,
@@ -293,13 +302,8 @@ function findCurrentPlanFee(
   return found?.monthly_fee ?? 0;
 }
 
-const reasonSystemPrompt = `
-당신은 통신 요금제 추천 사유 작성 AI입니다.
-제공된 사용자 조건과 요금제 데이터만 사용해 각 후보의 추천 사유를 JSON 형식으로 작성하세요.
-존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
-`;
-
-// 코드 기반 fallback 사유 생성.
+// 추천 사유 문구 생성. 카드에는 데이터·요금·절감액만 노출되므로 LLM 없이 코드로
+// 생성한다(별도 LLM 호출을 없애 추천 응답 지연을 ~0.7s 단축).
 function buildCodeReason(plan: Plan, saving: number): string {
   let reason = `데이터 ${plan.data}, 월 ${plan.monthly_fee.toLocaleString()}원이에요.`;
   if (saving > 0) {
@@ -308,12 +312,12 @@ function buildCodeReason(plan: Plan, saving: number): string {
   return reason;
 }
 
-// LLM 출력을 실제 데이터로 보정하고, 이유는 OpenAI로 생성하되 실패 시 코드 fallback.
-async function sanitizeRecommendations(
+// LLM 출력을 실제 요금제 데이터로 보정하고 사유·절감액을 채운다.
+function sanitizeRecommendations(
   output: RecommendOutput,
   plans: Plan[],
   input: ConsultInput,
-): Promise<RecommendOutput> {
+): RecommendOutput {
   const currentPlanFee = findCurrentPlanFee(plans, input.currentPlan);
 
   const valid = output.recommendations
@@ -340,37 +344,10 @@ async function sanitizeRecommendations(
       } => r !== null,
     );
 
-  const plansText = valid.slice(0, 3).map(formatPlanForPrompt).join('\n');
-  const filledPrompt = fillTemplate(reasonPromptText, {
-    ageGroup: input.ageGroup ?? '미제공',
-    dataUsage: String(input.dataUsage ?? 0),
-    budget: input.budget ? String(input.budget) : '제한 없음',
-    currentPlan: input.currentPlan ?? '미등록',
-    priority: input.priority ?? 'budget',
-    ott: input.ott?.join(', ') || '없음',
-    plans: plansText,
-  });
-
-  let reasonByPlanId: Record<string, string> | undefined;
-  try {
-    const raw = await chatOpenAI(reasonSystemPrompt, filledPrompt);
-    const parsed = safeJsonParse<{
-      reasons: { planId: string; reason: string }[];
-    }>(raw);
-    if (parsed?.reasons) {
-      reasonByPlanId = Object.fromEntries(
-        parsed.reasons.map((r) => [String(r.planId), r.reason]),
-      );
-    }
-  } catch {
-    reasonByPlanId = undefined;
-  }
-
   const recommendations: RecommendedPlan[] = valid.slice(0, 3).map((r) => ({
     planId: r.planId,
     planName: r.planName,
-    reason:
-      reasonByPlanId?.[r.planId] || buildCodeReason(r.plan, r.savingAmount),
+    reason: buildCodeReason(r.plan, r.savingAmount),
     savingAmount: r.savingAmount,
     monthlyFee: r.plan.monthly_fee,
     data: r.plan.data,
@@ -421,15 +398,13 @@ function buildNotice(plans: Plan[], input: ConsultInput): string | undefined {
   }
 
   if (input.priority === 'data') {
-    const hasExactAny = plans.some(
+    const qualifying = plans.filter(
       (p) =>
         ageMatches(ageGroup, p.target_age) && parseDataGB(p.data) >= dataUsage,
     );
-    if (hasExactAny) {
-      const overBudgetSuffix = !hasExactInBudget
-        ? ' (추천되는 요금제는 모두 예산을 초과할 수 있습니다.)'
-        : '';
-      return `예산 ${budget.toLocaleString()}원 내에서는 데이터 ${dataUsage}GB 이상인 요금제가 없어, 데이터를 충족하는 요금제 중 가장 저렴한 순으로 추천해드리겠습니다.${overBudgetSuffix}`;
+    if (qualifying.length > 0) {
+      const cheapest = Math.min(...qualifying.map((p) => p.monthly_fee));
+      return `예산 ${budget.toLocaleString()}원 내에는 데이터 ${dataUsage}GB 이상인 요금제가 없어요. 데이터를 충족하는 가장 저렴한 요금제는 ${cheapest.toLocaleString()}원부터예요. 예산을 ${cheapest.toLocaleString()}원으로 올리거나 데이터 용량을 줄이면 선택지가 늘어나요.`;
     }
     return `데이터 ${dataUsage}GB 이상 요금제가 없어 가장 비슷한 용량의 요금제부터 추천해드리겠습니다.`;
   }
@@ -518,7 +493,9 @@ function isTelecomRelated(text: string): boolean {
 }
 
 // 사용자 메시지와 이전 모드에서 다음 단계 모드를 결정합니다.
-function resolveNextMode(input: ConsultInput): ChatMode {
+// intentHint: LLM 분석(analyzeInput)이 추정한 의도 — 정규식이 명확히 매칭되지
+// 않을 때만 폴백으로 사용한다. 정규식이 매칭되면 정규식이 우선.
+function resolveNextMode(input: ConsultInput, intentHint?: ChatMode): ChatMode {
   const t = (input.userMessage || '').trim();
   const current = input.mode ?? 'menu';
 
@@ -529,10 +506,16 @@ function resolveNextMode(input: ConsultInput): ChatMode {
   if (/요금제\s*가입|가입\s*하기|신청/.test(t)) return 'subscribe';
   if (/상담|문의|질문|도움/.test(t)) return 'general';
   if (/게임|미니게임/.test(t)) return 'game';
-  if (/출석|출첵|출석체크/.test(t)) return 'attendance';
+  if (/출석|출첵|출석\s*체크/.test(t)) return 'attendance';
   if (/레포트|리포트|레포트\s*생성|리포트\s*생성/.test(t)) return 'report';
 
-  // 메뉴 상태에서 통신과 무관한 입력은 상담 외 주제로 분기
+  // 정규식이 아무것도 잡지 못한 경우 — LLM 분석 의도를 우선 신뢰한다.
+  if (intentHint) {
+    // report/menu 전환은 위 정규식·명시 조건에서만 허용 (오탐 시 대화 흐름이 크게 튐)
+    if (intentHint !== 'menu' && intentHint !== 'report') return intentHint;
+  }
+
+  // 메뉴 상태에서 통신과 무관한 입력은 상담 외 주제로 분기 (LLM 미응답 시 키워드 폴백)
   if (current === 'menu' && t.length > 0 && !isTelecomRelated(t)) {
     return 'out_of_scope';
   }
@@ -553,7 +536,7 @@ function buildMenuResponse(isLoggedIn: boolean): RecommendOutput {
           '요금제 비교하기',
           '요금제 가입하기',
           '게임 하기',
-          '출석체크',
+          '출석 체크',
           '기타 상담',
         ]
       : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
@@ -712,11 +695,11 @@ function buildSubscribeResponse(isLoggedIn: boolean): RecommendOutput {
   return {
     recommendations: [],
     notice: isLoggedIn
-      ? '가입하실 요금제나 가입 경로를 알려주세요. 온라인 가입과 영업점 방문 중 편한 방법을 안내해드릴게요.'
+      ? '요금제 가입 화면을 열었어요. 원하는 요금제를 선택해 가입을 진행해 주세요.'
       : '요금제 가입은 로그인 후에 가능해요. 회원가입을 먼저 진행해주세요.',
     quickReplies: isLoggedIn
-      ? ['온라인 가입', '영업점 방문', '메뉴로 돌아가기']
-      : ['회원 가입하기', '영업점 방문', '메뉴로 돌아가기'],
+      ? ['메뉴로 돌아가기']
+      : ['회원 가입하기', '메뉴로 돌아가기'],
     mode: 'subscribe',
   };
 }
@@ -728,9 +711,37 @@ function buildOutOfScopeResponse(isLoggedIn: boolean): RecommendOutput {
     notice:
       '죄송해요, 저는 통신 요금제 상담 도우미예요. 요금제 추천, 비교, 가입, 혜택 등 통신 관련 질문만 도와드릴 수 있어요. 아래 메뉴에서 원하는 항목을 선택해 주세요.',
     quickReplies: isLoggedIn
-      ? ['요금제 추천받기', '요금제 비교하기', '요금제 가입하기', '기타 상담']
+      ? [
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '요금제 가입하기',
+          '게임 하기',
+          '출석 체크',
+          '기타 상담',
+        ]
       : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
     mode: 'out_of_scope',
+  };
+}
+
+// 이미 진행 중이던 모드(예: 비교)에서 다음 입력을 해석하지 못했을 때의 응답 —
+// 직전 안내 문구를 그대로 반복하지 않고, 이해하지 못했음을 알리고 메뉴 선택을 유도한다.
+function buildNotUnderstoodResponse(isLoggedIn: boolean): RecommendOutput {
+  return {
+    recommendations: [],
+    notice:
+      '잘 이해하지 못했습니다. 아래 메뉴에서 원하는 항목을 선택해 주시겠어요?',
+    quickReplies: isLoggedIn
+      ? [
+          '요금제 추천받기',
+          '요금제 비교하기',
+          '요금제 가입하기',
+          '게임 하기',
+          '출석 체크',
+          '기타 상담',
+        ]
+      : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'],
+    mode: 'menu',
   };
 }
 
@@ -761,12 +772,12 @@ function buildGameResponse(): RecommendOutput {
   };
 }
 
-// 출석체크 기초 응답.
+// 출석 체크 기초 응답.
 function buildAttendanceResponse(): RecommendOutput {
   return {
     recommendations: [],
     notice:
-      '출석체크를 도와드릴게요. 오늘 출석을 등록하거나 누적 현황을 확인할 수 있어요.',
+      '출석 체크를 도와드릴게요. 오늘 출석을 등록하거나 누적 현황을 확인할 수 있어요.',
     quickReplies: ['오늘 출석 등록', '출석 현황 보기', '메뉴로 돌아가기'],
     mode: 'attendance',
   };
@@ -785,7 +796,7 @@ function buildReportResponse(): RecommendOutput {
   };
 }
 
-function fillTemplate(
+export function fillTemplate(
   template: string,
   values: Record<string, string>,
 ): string {
@@ -800,11 +811,36 @@ function formatPlanForPrompt(p: Plan): string {
   return `id: ${p.id}, name: ${p.name}, data: ${p.data}, fee: ${p.monthly_fee}, benefits: [${benefits}]`;
 }
 
+function formatRecommendedPlanForPrompt(p: RecommendedPlan): string {
+  const benefits = (p.benefits ?? []).join(', ');
+  return `name: ${p.planName}, data: ${p.data ?? '-'}, fee: ${p.monthlyFee ?? 0}, benefits: [${benefits}]`;
+}
+
+// changedPlan이 있을 때, 리포트 프롬프트에 넣을 "기존 요금제 vs 변경된 요금제" 텍스트를 만든다.
+// changedPlan이 없으면 changedPlanAdvantage를 생성하지 않도록 "없음"을 반환한다.
+async function buildChangedPlanInfo(
+  currentPlanName: string | undefined,
+  changedPlan: RecommendedPlan | null | undefined,
+): Promise<string> {
+  if (!changedPlan) return '없음';
+
+  const plans = await loadPlans();
+  const currentPlan = plans.find((p) => p.name === currentPlanName);
+  const currentText = currentPlan
+    ? formatPlanForPrompt(currentPlan)
+    : `name: ${currentPlanName ?? '미등록'}`;
+
+  return `기존 요금제 - ${currentText}\n변경된 요금제 - ${formatRecommendedPlanForPrompt(changedPlan)}`;
+}
+
 // 상위 3개 요금제 추천 및 사유, 절감액 산출.
+// intentHint: LLM 분석(analyzeInput)이 추정한 의도. 슬롯 병합은 호출부(index.ts)에서
+// 이미 input에 반영되어 넘어온다.
 export async function recommendPlan(
   input: ConsultInput,
+  intentHint?: ChatMode,
 ): Promise<RecommendOutput> {
-  const mode = resolveNextMode(input);
+  const mode = resolveNextMode(input, intentHint);
   if (mode === 'menu') return buildMenuResponse(input.isLoggedIn ?? false);
   if (mode === 'compare') {
     // 비교할 두 요금제가 명시적으로 지정된 경우 실제 비교 수행
@@ -817,6 +853,12 @@ export async function recommendPlan(
     const parsedNames = parseComparePlanNames(input.userMessage ?? '', plans);
     if (parsedNames) {
       return comparePlans(input, plans, parsedNames[0], parsedNames[1]);
+    }
+    // 이미 비교 모드에서 안내를 받은 상태(input.mode === 'compare')인데도 요금제 이름을
+    // 파싱하지 못했다면, 직전과 같은 안내 문구를 그대로 반복하는 대신 이해하지 못했다는
+    // 응답으로 메뉴 선택을 유도한다. 이제 막 비교 모드에 진입한 첫 안내는 그대로 유지.
+    if (input.mode === 'compare') {
+      return buildNotUnderstoodResponse(input.isLoggedIn ?? false);
     }
     // 비교할 요금제가 지정되지 않았으면 안내 메시지
     return buildCompareResponse(input.isLoggedIn ?? false);
@@ -845,6 +887,12 @@ export async function recommendPlan(
   const candidates = filterRecommendPlans(plans, input);
   const notice = buildNotice(plans, input);
 
+  if (candidates.length === 0) {
+    return notice
+      ? { recommendations: [], notice, mode: 'recommend' }
+      : { recommendations: [], mode: 'recommend' };
+  }
+
   const codeRecs: RecommendOutput = {
     recommendations: candidates.slice(0, 3).map(
       (p) =>
@@ -856,34 +904,12 @@ export async function recommendPlan(
         }) as RecommendedPlan,
     ),
   };
-  const sanitized = await sanitizeRecommendations(codeRecs, plans, input);
 
-  if (!notice) return { ...sanitized, mode: 'recommend' };
+  const sanitized = sanitizeRecommendations(codeRecs, plans, input);
 
-  if (candidates.length === 0) {
-    return { recommendations: [], notice, mode: 'recommend' };
-  }
-
-  const plansText = candidates.slice(0, 3).map(formatPlanForPrompt).join('\n');
-  const filledPrompt = fillTemplate(noticePromptText, {
-    currentPlan: input.currentPlan ?? '미등록',
-    dataUsage: String(input.dataUsage ?? 0),
-    budget: input.budget ? String(input.budget) : '제한 없음',
-    ageGroup: input.ageGroup ?? '미제공',
-    ott: input.ott?.join(', ') || '없음',
-    priority: input.priority ?? 'budget',
-    fallback: notice,
-    plans: plansText,
-  });
-
-  try {
-    const raw = await chatOpenAI(noticeSystemPrompt, filledPrompt);
-    const parsed = safeJsonParse<{ notice: string }>(raw);
-    const finalNotice = parsed?.notice?.trim() || notice;
-    return { ...sanitized, notice: finalNotice, mode: 'recommend' };
-  } catch {
-    return { ...sanitized, notice, mode: 'recommend' };
-  }
+  return notice
+    ? { ...sanitized, notice, mode: 'recommend' }
+    : { ...sanitized, mode: 'recommend' };
 }
 
 // 모드에 맞는 Quick Reply 목록을 생성합니다.
@@ -903,7 +929,7 @@ export async function generateQuickReplies(
           '요금제 비교하기',
           '요금제 가입하기',
           '게임 하기',
-          '출석체크',
+          '출석 체크',
           '기타 상담',
         ]
       : ['회원 가입하기', '요금제 추천받기', '요금제 비교하기', '기타 상담'];
@@ -914,7 +940,9 @@ export async function generateQuickReplies(
     return ['현재 요금제와 비교', '요금제 이름 직접 입력', '메뉴로 돌아가기'];
   }
   if (mode === 'subscribe') {
-    return ['온라인 가입', '영업점 방문', '메뉴로 돌아가기'];
+    return input.isLoggedIn
+      ? ['메뉴로 돌아가기']
+      : ['회원 가입하기', '메뉴로 돌아가기'];
   }
   if (mode === 'out_of_scope') {
     return input.isLoggedIn
@@ -1008,8 +1036,8 @@ export async function generateQuickReplies(
 }
 
 const reportSystemPrompt = `
-당신은 AI 통신 요금제 상담 내용을 요약하는 역할을 담당합니다.
-제공된 조건과 추천 결과만 사용해 JSON 형식으로 레포트를 작성하세요.
+당신은 AI 통신 요금제 상담 대화 내용을 요약하는 역할을 담당합니다.
+제공된 상담 대화 기록만 사용해 JSON 형식으로 요약을 작성하세요.
 존재하지 않는 가격, 데이터 용량, 혜택을 임의로 만들지 마세요.
 `;
 
@@ -1019,27 +1047,28 @@ const generalReportSystemPrompt = `
 존재하지 않는 정보를 임의로 만들지 마세요.
 `;
 
-// 상담 대화와 추천 결과를 바탕으로 요약 레포트를 생성합니다.
-// reportKind가 'general'이면 요금제 추천 없이 일반 대화만 요약합니다.
+// 상담 대화를 바탕으로 자유 서술 요약(ReportOutput)을 생성합니다.
+// 추천/비교/가입 요금제 등 구조화 데이터는 클라이언트가 이미 갖고 있으므로
+// 여기서는 요약/사용자유형/핵심조건/QA만 생성합니다.
+// reportKind가 'general'이면 요금제 관련 언급 없이 일반 대화만 요약합니다.
 export async function generateReport(
   input: ReportInput,
 ): Promise<ReportOutput> {
-  const {
-    conversation,
-    currentPlan,
-    recommendationResult,
-    reportKind,
-    userProfile,
-  } = input;
+  const { conversation, reportKind, userProfile, currentPlan, changedPlan } =
+    input;
   const isGeneral = reportKind === 'general';
+  const changedPlanInfo = await buildChangedPlanInfo(currentPlan, changedPlan);
 
   const filledPrompt = isGeneral
-    ? fillTemplate(generalReportPromptText, { conversation, userProfile })
+    ? fillTemplate(generalReportPromptText, {
+        conversation,
+        userProfile,
+        changedPlanInfo,
+      })
     : fillTemplate(reportPromptText, {
         conversation,
-        currentPlan: currentPlan || '미등록',
-        recommendationResult,
         userProfile,
+        changedPlanInfo,
       });
 
   const systemPrompt = isGeneral
@@ -1048,47 +1077,11 @@ export async function generateReport(
 
   const raw = await chatOpenAI(systemPrompt, filledPrompt, 1200, true);
   const parsed = safeJsonParse<ReportOutput>(raw);
-  if (parsed && parsed.summary) return parsed;
+  if (parsed && parsed.summary)
+    return {
+      ...parsed,
+      changedPlanAdvantage: parsed.changedPlanAdvantage ?? '',
+    };
   // 파싱은 됐으나 summary가 비어 있거나, JSON 파싱 실패 시 원문을 함께 던짐
   throw new Error(`report parse fail. raw=${raw}`);
-
-  // 일반 대화 요약 fallback — 요금제 필드는 빈값/미등록
-  if (isGeneral) {
-    return {
-      summary: '상담 내용을 요약한 레포트입니다.',
-      usageType: '',
-      currentPlan: '미등록',
-      recommendedPlans: [],
-      recommendationReason: '상담에서 안내된 내용을 확인해주세요.',
-      monthlySavingAmount: 0,
-      importantConditions: [],
-      qaPairs: [],
-    };
-  }
-
-  // 요금제 추천 fallback — 추천 결과 텍스트에서 최소한의 요금제 이름과 절감액을 추출
-  const fallbackPlans = recommendationResult
-    .split('\n')
-    .map((line) => {
-      const match = line.match(/^(.+?)\s*\(/);
-      return match ? match[1].trim() : line.trim();
-    })
-    .filter((line) => line.length > 0);
-
-  const savingMatch = recommendationResult.match(/절감액\s+([\d,]+)원/);
-  const fallbackSaving = savingMatch
-    ? parseInt(savingMatch[1].replace(/,/g, ''), 10)
-    : 0;
-
-  return {
-    summary: '요금제 추천 상담 내용을 요약한 레포트입니다.',
-    usageType: '',
-    currentPlan: currentPlan || '미등록',
-    recommendedPlans: fallbackPlans,
-    recommendationReason:
-      recommendationResult || '추천된 요금제를 확인해주세요.',
-    monthlySavingAmount: Number.isNaN(fallbackSaving) ? 0 : fallbackSaving,
-    importantConditions: [],
-    qaPairs: [],
-  };
 }

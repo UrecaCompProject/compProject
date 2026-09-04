@@ -153,3 +153,12 @@ export const PlanDetailCompareEntry: Story = {
     );
   },
 };
+
+// type="fix" — 요금제 변경 완료 안내처럼 결과가 이미 확정된 화면.
+// planOptions를 넘겨도 드롭다운이 열리지 않고, 양쪽 모두 '선택한 요금제' 스타일로 고정된다.
+export const Fixed: Story = {
+  args: {
+    type: 'fix',
+  },
+  render: (args) => <PlanCompare {...args} planOptions={samplePlanOptions} />,
+};

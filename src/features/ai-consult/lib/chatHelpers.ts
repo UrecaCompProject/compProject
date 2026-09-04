@@ -1,9 +1,30 @@
-import type { RecommendedPlan } from '@/shared/lib/aiConsult';
+import type {
+  CompareResult,
+  ConsultInput,
+  RecommendedPlan,
+  RecommendedPlanGroup,
+} from '@/shared/lib/aiConsult';
 import type { QuizKind } from '@/shared/types/quiz';
+
+import {
+  BUDGET_BUCKETS,
+  DATA_USAGE_BUCKETS,
+  findBucketLabel,
+} from '../constants/consultBuckets';
 
 import { classifyError } from './classifyError';
 
 import type { ChatMessage, MessageCategory } from '../types';
+
+// "(으)로" 조사 처리 — 받침 없음/ㄹ받침이면 "로", 그 외 받침 있으면 "으로".
+// 마지막 글자가 한글 음절이 아니면(영문/숫자 등) "으로"를 기본값으로 사용한다.
+export function josaRo(word: string): string {
+  const last = word[word.length - 1];
+  const code = last.charCodeAt(0) - 0xac00;
+  if (code < 0 || code > 11171) return '으로';
+  const jongseong = code % 28;
+  return jongseong === 0 || jongseong === 8 ? '로' : '으로';
+}
 
 export const WELCOME_MESSAGE =
   '안녕하세요! AI 요금제 도우미 해리에요.\n\n아래 메뉴에서 원하는 항목을 선택해 주세요.';
@@ -76,6 +97,65 @@ export function findLastRecommendations(
   return [];
 }
 
+// 상담 중 마지막으로 비교했던 요금제 결과 — 리포트의 "비교했던 요금제" 버킷에 사용
+export function findLastCompareResult(
+  messages: ChatMessage[],
+): CompareResult | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (message.type === 'ai' && message.compareResult) {
+      return message.compareResult;
+    }
+  }
+  return null;
+}
+
+// 그 시점의 확정 조건을 "20대 / 5GB ~ 10GB / 5만원 ~ 10만원 / 넷플릭스" 형태로 요약.
+// dataUsage/budget은 대표값(정수)이 아니라 사용자가 실제로 고른 구간 라벨을 되찾아
+// 쓴다. priority(정렬 기준)는 사용자에게 "조건"으로 보여줄 성격이 아니라서 제외한다
+// — 라운드 구분은 target 비교가 아니라 groupId로 한다.
+export function buildRecommendTarget(input: ConsultInput): string {
+  const parts: string[] = [];
+  if (input.ageGroup) parts.push(input.ageGroup);
+  if (input.dataUsage !== undefined) {
+    parts.push(
+      findBucketLabel(DATA_USAGE_BUCKETS, input.dataUsage) ??
+        `${input.dataUsage}GB`,
+    );
+  }
+  if (input.budget !== undefined) {
+    parts.push(
+      findBucketLabel(BUDGET_BUCKETS, input.budget) ??
+        `${input.budget.toLocaleString()}원`,
+    );
+  }
+  if (input.ott) parts.push(...input.ott);
+  return parts.join(' / ');
+}
+
+// 상담 중 "요금제 추천받기"가 요청될 때마다 생기는 라운드를 전부 모은다 —
+// 한 번만 추천받았으면 1개, 여러 번 추천받았으면 그만큼 여러 개가 순서대로 담긴다.
+export function findAllRecommendationGroups(
+  messages: ChatMessage[],
+): RecommendedPlanGroup[] {
+  const groups: RecommendedPlanGroup[] = [];
+  for (const message of messages) {
+    if (
+      message.type === 'ai' &&
+      message.recommendations &&
+      message.recommendations.length > 0
+    ) {
+      groups.push({
+        groupId: message.recommendGroupId ?? '',
+        target: message.recommendTarget ?? '',
+        detail: message.recommendDetail ?? '',
+        plans: message.recommendations,
+      });
+    }
+  }
+  return groups;
+}
+
 // 리포트 대화 로그에 포함할 메시지인지 확인 — 요금제(추천/비교/가입)와
 // 일반 상담(에피라 관련 문의)만 포함하고, 게임/출석/메뉴 이동 등 나머지는
 // (명시적으로 태그되지 않은 메시지 포함) 전부 제외하는 허용목록 방식.
@@ -93,17 +173,6 @@ export function buildConversationLog(messages: ChatMessage[]): string {
       const role = m.type === 'ai' ? 'AI' : '사용자';
       return `${role}: ${m.sentence}`;
     })
-    .join('\n');
-}
-
-export function buildRecommendationResult(
-  recommendations: RecommendedPlan[],
-): string {
-  return recommendations
-    .map(
-      (p) =>
-        `${p.planName} (월 ${p.monthlyFee?.toLocaleString() ?? '-'}원, ${p.reason}, 절감액 ${p.savingAmount.toLocaleString()}원)`,
-    )
     .join('\n');
 }
 

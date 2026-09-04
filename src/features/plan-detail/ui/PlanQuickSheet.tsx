@@ -3,12 +3,13 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useCurrentPlan } from '@/entities/plan';
 import { useIsLoggedIn } from '@/entities/user';
-import { BottomSheet, Button } from '@/shared';
+import { BottomSheet } from '@/shared';
 import type { RecommendedPlan } from '@/shared/lib/aiConsult';
 import type { PlanCompareData, PlanDetailItem } from '@/shared/types/plan';
 
 import PlanCatalogList from './PlanCatalogList';
 import PlanDetailContent from './PlanDetailContent';
+import PlanDetailFooter from './PlanDetailFooter';
 
 interface PlanQuickSheetSlots {
   PlanCompare: ComponentType<{
@@ -30,6 +31,7 @@ interface PlanQuickSheetSlots {
         footer: React.ReactNode;
         onBack?: () => void;
         children: React.ReactNode;
+        dismissible: boolean;
       },
       bodyRef: React.RefObject<HTMLDivElement | null>,
     ) => React.ReactNode;
@@ -122,6 +124,8 @@ export default function PlanQuickSheet({
   };
 
   const backToList = () => setSelectedPlan(null);
+  const isSelectedPlanCurrent =
+    !!selectedPlan && !!currentPlan && selectedPlan.id === currentPlan.planId;
   const subscribing = isSubscribeOpen && !!selectedPlan;
   // 비교 화면 — 별도 바텀시트를 띄우지 않고 이 시트의 내용만 갈아끼운다.
   const comparing = compareOpen && !!selectedPlan && !subscribing;
@@ -149,11 +153,12 @@ export default function PlanQuickSheet({
       plan={recommendedPlan}
       active={subscribing}
       onExit={() => setIsSubscribeOpen(false)}
-      onComplete={() => setIsSubscribeOpen(false)}
+      onComplete={() => handleOpenChange(false)}
       renderShell={(shell, bodyRef) => (
         <BottomSheet
           open={open}
           onOpenChange={handleOpenChange}
+          dismissible={subscribing ? shell.dismissible : true}
           bodyRef={bodyRef}
           onBack={
             subscribing
@@ -182,31 +187,17 @@ export default function PlanQuickSheet({
               : 'full'
           }
           bodyClassName={
-            subscribing ? 'px-5' : comparing ? 'px-5' : 'px-0 bg-surface-page'
+            subscribing ? 'px-5' : comparing ? 'px-5' : 'px-4 bg-surface-page'
           }
           footer={
             subscribing ? (
               shell.footer
-            ) : comparing ? null : selectedPlan ? (
-              <div className="flex w-full gap-2 p-4">
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="flex-1"
-                  onClick={() => setCompareOpen(true)}
-                  disabled={!currentPlan}
-                >
-                  비교 하기
-                </Button>
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="flex-1"
-                  onClick={() => setIsSubscribeOpen(true)}
-                >
-                  신청 하기
-                </Button>
-              </div>
+            ) : comparing ? null : selectedPlan && !isSelectedPlanCurrent ? (
+              <PlanDetailFooter
+                onCompare={() => setCompareOpen(true)}
+                compareDisabled={!currentPlan}
+                onSubscribe={() => setIsSubscribeOpen(true)}
+              />
             ) : null
           }
         >
@@ -224,13 +215,16 @@ export default function PlanQuickSheet({
               }}
             />
           ) : selectedPlan ? (
-            <PlanDetailContent
-              plan={selectedPlan}
-              isLoading={false}
-              error={null}
-            />
+            <div className="pt-4">
+              <PlanDetailContent
+                plan={selectedPlan}
+                isLoading={false}
+                error={null}
+                isCurrent={isSelectedPlanCurrent}
+              />
+            </div>
           ) : (
-            <div className="flex flex-col min-h-full gap-4 px-4 pt-8 pb-8">
+            <div className="flex flex-col min-h-full gap-4 pt-8 pb-8">
               <h2 className="text-[24px] font-extrabold leading-[150%] text-fg-primary">
                 <span className="text-brand-promo-primary">원하는 조건</span>
                 으로

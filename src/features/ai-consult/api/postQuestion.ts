@@ -3,6 +3,7 @@ import type {
   ChatMode,
   ConsultInput,
   ConsultResponse,
+  ConversationTurn,
 } from '@/shared/lib/aiConsult';
 
 import { TELECOM_KEYWORDS } from '../constants/telecomKeywords';
@@ -34,6 +35,7 @@ export async function postQuestion(
   text: string,
   prev: ConsultInput,
   signal?: AbortSignal,
+  history?: ConversationTurn[],
 ): Promise<{ input: ConsultInput; response: ConsultResponse }> {
   const input = parseUserInput(text, prev);
 
@@ -45,6 +47,7 @@ export async function postQuestion(
     };
   }
 
-  const response = await requestConsult(input, signal);
+  // history는 이번 요청의 분석에만 쓰이므로 반환하는 input(프로필 누적용)에는 넣지 않는다.
+  const response = await requestConsult({ ...input, history }, signal);
   return { input, response };
 }

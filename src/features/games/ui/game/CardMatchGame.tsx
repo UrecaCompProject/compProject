@@ -270,7 +270,7 @@ export default function CardMatchGame({
         />
       }
       playing={
-        <div className="mx-auto flex h-full w-full max-w-105 flex-col items-center px-4 pt-6 pb-6">
+        <div className="flex flex-col items-center w-full h-full px-4 pt-6 pb-6 mx-auto max-w-105">
           <div className="w-full p-4 rounded-lg bg-surface-page">
             {/* 남은 시간: 라벨 + 초 + 줄어드는 게이지바 */}
             <div className="flex items-baseline justify-between">
@@ -299,7 +299,7 @@ export default function CardMatchGame({
             </div>
 
             {/* 맞춘 짝: 쌍 수만큼 칸이 채워지는 카드 모양 표시 */}
-            <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center justify-between mt-4">
               <span className="text-[15px] font-semibold text-fg-secondary">
                 맞춘 짝
               </span>
@@ -325,7 +325,7 @@ export default function CardMatchGame({
             </div>
           </div>
 
-          <div className="flex flex-1 flex-col justify-center w-full gap-5 mt-8">
+          <div className="flex flex-col justify-center flex-1 w-full gap-5 mt-8">
             <div
               className="grid w-full gap-2.5"
               style={{
@@ -337,7 +337,7 @@ export default function CardMatchGame({
                   preview || flipped.includes(card.id) || card.matched;
 
                 return (
-                  <div key={card.id} className="[perspective:1000px]">
+                  <div key={card.id} className="perspective-[1000px]">
                     <button
                       type="button"
                       onClick={() => handleFlip(card.id)}
@@ -347,16 +347,13 @@ export default function CardMatchGame({
                           isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
                         }${card.matched ? ' scale(0.82)' : ''}`,
                       }}
-                      className="
-                        relative aspect-[3/4] w-full
-                        transition-transform duration-500 ease-out [transform-style:preserve-3d]
-                      "
+                      className="relative w-full transition-transform duration-500 ease-out  aspect-3/4 transform-3d"
                     >
-                      <div className="absolute inset-0 flex items-center justify-center rounded-xl [backface-visibility:hidden]">
+                      <div className="absolute inset-0 flex items-center justify-center rounded-xl backface-hidden">
                         <img
                           src={backImage}
                           alt=""
-                          className="h-full w-full object-contain drop-shadow-sm"
+                          className="object-contain w-full h-full drop-shadow-sm"
                         />
                       </div>
 
@@ -365,7 +362,7 @@ export default function CardMatchGame({
                           absolute inset-0 flex items-center justify-center
                           overflow-hidden rounded-xl border-[3px] drop-shadow-sm
                           transition-colors duration-500
-                          [backface-visibility:hidden] [transform:rotateY(180deg)]
+                          backface-hidden transform-[rotateY(180deg)]
                           ${
                             card.matched
                               ? 'border-border bg-surface-page'
@@ -397,7 +394,7 @@ export default function CardMatchGame({
             </div>
 
             <div className="flex items-center justify-center gap-1.5 text-caption font-medium text-fg-tertiary">
-              <img src={badgeImage} alt="" className="h-4 w-4" />
+              <img src={badgeImage} alt="" className="w-4 h-4" />
               모든 짝을 맞추면 배지 {reward}개를 받아요
             </div>
           </div>

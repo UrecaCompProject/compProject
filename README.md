@@ -121,7 +121,7 @@
 | 05  | **게임 시스템**    | 반응속도 게임 · OX 퀴즈 · 카드 뒤집기 · 랭킹                                  |
 | 06  | **상품 교환**      | 배지로 상품 조회 · 교환, 교환 내역 관리                                       |
 | 07  | **쿠폰 서비스**    | 쿠폰 조회 · 발급 · 사용, 바코드/QR 코드 생성, 쿠폰 알림                       |
-| 08  | **접근성 지원**    | 쉬운 모드 · 큰 글씨 모드 · 시니어 친화 UI                                     |
+| 08  | **접근성 지원**    | 쉬운 모드 · 큰 글씨 모드 · 시니어 친화 UI _(향후 구현 예정)_                  |
 | 09  | **요금제 가입**    | 가입 가능 여부 확인 · 본인 인증 · 가입 신청 · 처리 상태 조회 · 가입 완료      |
 
 <br/>
@@ -136,7 +136,7 @@
 
 - 카카오 로그인(OAuth), 회원가입 시 프로필 자동 생성 `P0`
 - 프로필 조회(닉네임, 연령대) `P1`
-- 접근성 모드 설정, 개인정보 암호화/마스킹, 회원 탈퇴 `P1`
+- 접근성 모드 설정 _(향후 구현)_ `P2`, 개인정보 암호화/마스킹, 회원 탈퇴 `P1`
 
 ### 02. 🤖 AI 상담
 
@@ -144,7 +144,7 @@
 - 데이터 · 통화 · 문자 · 예산 · OTT · 현재 요금제 기반 사용자 조건 분석 `P0`
 - 상위 3개 요금제 AI 추천 및 자연어 기반 추천 사유 제공 `P0`
 - 현재 요금제 대비 절감액 산출 `P0`
-- Quick Reply, 스트리밍 응답 상태 표시 `P1`
+- Quick Reply, 응답 대기·중단(AbortController)·실패 상태 UI 처리 `P1`
 - 상담 레포트 저장 `P0` 및 만족도 평가 `P2`
 
 ### 03. 📱 요금제
@@ -215,22 +215,22 @@
 
 ## 🛠️ 기술 스택
 
-| 구분         | 스택                                                        |
-| ------------ | ----------------------------------------------------------- |
-| 프론트엔드   | React 19, TypeScript, Vite 8, TailwindCSS 4, React Router 7 |
-| 상태 관리    | Zustand, TanStack Query                                     |
-| Build / Test | Vitest, Playwright, ESLint, Prettier, Husky                 |
-| BaaS         | Supabase (Auth, PostgreSQL + RLS, Storage, Edge Functions)  |
-| DB           | PostgreSQL (Supabase), 마이그레이션/시드 관리               |
-| 서버리스     | Supabase Edge Functions (Deno)                              |
-| AI           | OpenAI API                                                  |
-| 협업 / 배포  | Figma, GitHub, Notion, Jira, Vercel                         |
+| 구분         | 스택                                                       |
+| ------------ | ---------------------------------------------------------- |
+| 프론트엔드   | React 19, TypeScript, Vite 8, TailwindCSS 4                |
+| 상태 관리    | Zustand(클라이언트 전역), TanStack Query(서버 상태)        |
+| Build / Test | Storybook, Playwright E2E, MSW, ESLint, Prettier, Husky    |
+| BaaS         | Supabase (Auth, PostgreSQL + RLS, Storage, Edge Functions) |
+| DB           | PostgreSQL (Supabase), 마이그레이션/시드 관리              |
+| 서버리스     | Supabase Edge Functions (Deno)                             |
+| AI           | OpenAI API                                                 |
+| 협업 / 배포  | Figma, GitHub, Notion, Jira, Vercel                        |
 
 ---
 
 ## 🏗 시스템 구조
 
-- **모듈 기반 디렉터리 구조**: `features` / `layout` / `lib` / `router` 중심의 도메인 분리
+- **Feature-Sliced Design (FSD)**: `app` / `entities` / `features` / `widgets` / `shared` / `pages` 6계층으로 도메인 분리 — 기능별 응집과 계층 간 의존성 방향을 일관되게 유지
 - **BaaS 중심 아키텍처**
   - Supabase PostgREST — 요금제 · 사용자 · 리워드 등 대부분의 CRUD (자동 REST API)
   - Supabase Auth — 회원가입/로그인/세션, JWT 자동 발급
@@ -247,27 +247,35 @@
 
 ## 📂 프로젝트 구조
 
-> 기능별 관련 코드를 응집시켜 코드 탐색과 유지보수를 용이하게 하고, 서비스 기능 확장에 유연하게 대응하기 위해 Feature-based 파일 구조를 적용했습니다.
+> 9개 서비스 영역의 복잡도를 관리하기 위해 Feature-Sliced Design(FSD)을 적용했습니다. 각 계층은 명확한 책임을 가지며, 상위 계층이 하위 계층에만 의존하도록 방향을 제한합니다.
 
 ```
 compProject/
-├── public/                     # 정적 자산
-├── src/                         # 프론트엔드 소스
-│   ├── assets/                  # 이미지, 아이콘
-│   ├── features/                # 도메인별 기능 컴포넌트 (채팅, 요금제, 리워드 등)
-│   ├── layout/                  # Header, Footer, Layout
-│   ├── lib/                     # Supabase 클라이언트, AI/상담 유틸리티
-│   ├── router/                  # 라우팅 설정
+├── public/                      # 정적 자산
+├── src/                         # 프론트엔드 소스 (FSD 6계층)
+│   ├── app/                     # 앱 진입점, Provider 설정 (App, QueryProvider)
+│   ├── entities/                # 도메인 데이터 모델·API (plan, user, reward, usage, consult-report)
+│   ├── features/                # 도메인별 기능 (ai-consult, auth, games, reward, plan-* 등)
+│   ├── widgets/                 # 레이아웃 영역 (Header, Footer, Layout)
+│   ├── shared/                  # 공통 UI·유틸·스토어·타입 (디자인 시스템, Supabase 클라이언트)
+│   │   ├── ui/                   #  베이스 컴포넌트 (Button, Card, BottomSheet, Modal 등)
+│   │   ├── lib/                  #  Supabase 클라이언트, AI 상담 유틸리티
+│   │   ├── store/                #  Zustand 전역 스토어 (모달, 회원가입 의도)
+│   │   ├── hooks/                #  공용 커스텀 훅
+│   │   └── types/                #  공용 타입 정의
+│   ├── pages/                   # 페이지 컴포넌트 (ChatPage)
+│   ├── mocks/                   # MSW mock 핸들러
 │   ├── App.tsx
 │   └── main.tsx
 ├── supabase/                    # Supabase 설정
 │   ├── functions/                # Edge Functions (Deno)
-│   │   ├── ai-consult/
-│   │   └── _shared/              # 공유 AI/데이터 모듈
+│   │   ├── ai-consult/            #  AI 요금제 상담 Edge Function
+│   │   └── _shared/               #  공유 AI/데이터 모듈 (프롬프트, OpenAI 유틸)
 │   ├── migrations/               # DB 스키마 마이그레이션
 │   ├── seed.sql                  # 초기/샘플 데이터
 │   └── config.toml               # Supabase CLI 설정
-├── docs/                         # 기술/데이터 모델 문서
+├── e2e/                         # Playwright E2E 테스트
+├── docs/                        # 기술/데이터 모델 문서
 ├── .env.example
 ├── package.json
 └── vite.config.ts
@@ -285,12 +293,19 @@ compProject/
 
 ## 🧩 기술적 핵심 구현 사항
 
-- **OpenAI API 연동**: Supabase Edge Function(`ai-consult`)에서 OpenAI `/v1/chat/completions`를 호출해 요금제 추천·비교·상담 레포트를 생성
+- **Feature-Sliced Design 아키텍처**: `app` / `entities` / `features` / `widgets` / `shared` / `pages` 6계층으로 도메인을 분리해 9개 서비스 영역의 복잡도를 관리. 상위 계층이 하위 계층에만 의존하도록 방향 제한
+- **상태 관리 이원화**: 서버 상태(요금제·출석·배지·쿠폰)는 TanStack Query로 캐싱·동기화(staleTime 5분, retry 1회), 클라이언트 전역 UI 상태(모달·회원가입 의도·게임)는 Zustand로 관리. 채팅 세션은 페이지 단위 `useState`로 일시적 상태로 처리해 불필요한 전역화 방지
+- **채팅 로직 훅 합성 패턴**: `useChat`이 10개 서브 훅(useChatState, useChatActions, useChatAbort, useChatCompare, useChatReport, useChatGames, useChatQuiz, useChatSubscription, useChatAuthGate, useChatProfile)을 조합해 관심사별 분리. 각 기능을 독립적으로 수정·테스트 가능
+- **OpenAI API 연동**: Supabase Edge Function(`ai-consult`)에서 OpenAI `/v1/chat/completions`를 호출해 요금제 추천·비교·상담 레포트를 생성. API 키를 서버리스 환경에서만 보관해 프론트엔드 노출 차단
+- **프롬프트 모듈화**: systemPrompt, recommendPrompt, comparePrompt, reportPrompt, reasonPrompt, noticePrompt, usageAnalysisPrompt, generalReportPrompt 8개 프롬프트를 분리해 각 기능의 프롬프트를 독립적으로 튜닝
 - **채팅 흐름 내 조건 수집**: 데이터 사용량 · 통화량 · 예산 · 부가서비스 선호도를 채팅 흐름 안에서 입력 · 선택할 수 있는 UI/상태 관리
-- **응답 상태 UI 처리**: LLM 응답 생성 중 / 완료 / 실패 / 재시도 상황에 따른 화면 상태 분기 처리
+- **응답 상태 UI 처리**: LLM 응답 대기(loading) / 완료 / 실패 / 중단(AbortController) 상황에 따른 화면 상태 분기 처리. 사용자가 "정지" 버튼으로 진행 중인 요청을 취소할 수 있어 불필요한 대기·API 비용 절감
+- **프론트엔드 폴백**: 통신과 무관한 입력은 Edge Function 호출 전 프론트엔드에서 차단해 API 호출 비용·지연 절감
 - **추천 카드 렌더링**: 분석 결과를 추천 요금제 카드(추천 사유 · 예상 절감액 포함)로 채팅 메시지 내에 렌더링
 - **가입 흐름 연결**: 추천 요금제 선택부터 가입 신청 정보 입력, 최종 가입 완료까지 단계형 채팅 흐름으로 구현
-- **서버 상태 관리**: TanStack Query로 요금제 · 상담 이력 등 서버 데이터 캐싱 및 동기화, Zustand로 클라이언트 전역 상태 관리
+- **인증 의존적 데이터 fetching**: TanStack Query의 `enabled: isLoggedIn && !!user` 패턴으로 로그인 전 불필요한 API 호출 차단
+- **컴포넌트 문서화**: `shared/ui`에 13개 베이스 컴포넌트(Button, Card, BottomSheet, Modal, Tab, LineChart 등)를 구축하고 Storybook 31개 stories로 컴포넌트 카탈로그화
+- **독립 개발 환경**: MSW(Mock Service Worker)로 백엔드 없이도 프론트엔드 독립 개발·테스트 환경 구축. `VITE_USE_MOCK=true`일 때만 활성화, Supabase 실제 요청은 bypass
 
 <br/>
 
@@ -389,6 +404,23 @@ compProject/
 - **프론트엔드**: [Vercel](https://vercel.com/) 배포 예정
 - **BaaS/DB**: [Supabase](https://supabase.com/) 호스팅
 - **AI**: OpenAI API
+
+<br/>
+
+---
+
+## 🌱 향후 계획
+
+- **접근성 모드**: 쉬운 모드 · 큰 글씨 모드 · 시니어 친화 UI 구현 (서비스 영역 08)
+- **AI 응답 스트리밍**: 현재 일회성 요청 + AbortController 중단 처리 → SSE/스트리밍으로 응답 지연 체감 개선
+- **단위 테스트 도입**: Vitest 설정이 있으나 테스트 코드 작성 전. 핵심 유틸·훅부터 단위 테스트 추가 예정
+- **라우팅 도입 검토**: 현재 단일 페이지 + BottomSheet 전환 구조. 페이지 확장 시 React Router 도입 검토
+- **AI 상담 음성 입력(STT)**: `P2` 기능, 음성으로 상담 입력 지원
+- **푸시 알림 인프라**: FCM/APNs 연동, 쿠폰 만료·신규 요금제 출시 알림
+
+<br/>
+
+---
 
 ## 참고
 

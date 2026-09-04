@@ -27,7 +27,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
     : `${product.brand} ${product.name}`;
 
   const content = (
-    <>
+    <div className="p-2 w-full flex flex-col gap-1.5 justify-center items-center">
       <div
         style={{ backgroundImage: `url(${product.imageUrl})` }}
         className="
@@ -36,7 +36,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
         "
       />
 
-      <h2 className=" shrink-0 truncate w-full px-1 text-center font-medium leading-[130%]">
+      <h2 className=" shrink-0 truncate w-full px-1 text-center font-medium leading-[130%] mt-0.5">
         {displayName}
       </h2>
 
@@ -51,7 +51,7 @@ export default function ProductCard<T extends RewardProduct | Coupon>({
           유효기간 : {product.expiresAt}
         </div>
       )}
-    </>
+    </div>
   );
 
   if (!onSelect) {
